@@ -19,7 +19,7 @@ function Logs({ name, deploying }: { name: string, deploying?: boolean }) {
 
     useEffect(() => {
         if (!name) return;
-        const interval = setInterval(async () => {
+        const interval: ReturnType<typeof setInterval> = setInterval(async () => {
             if (!deploying) return clearInterval(interval);
             const logs = await axios.get(`${BUILDER_BACKEND}/logs/${name}`);
             console.log(logs.data);
