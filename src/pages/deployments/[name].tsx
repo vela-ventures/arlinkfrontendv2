@@ -27,7 +27,7 @@ export default function Deployment() {
 
     useEffect(() => {
         if (!deployment?.RepoUrl) return
-        const interval = setInterval(async () => {
+        const interval: ReturnType<typeof setInterval> = setInterval(async () => {
             const folderName = deployment?.RepoUrl.replace(/\.git|\/$/, '').split('/').pop() as string;
             if (!redeploying) return clearInterval(interval)
             const logs = await axios.get(`${BUILDER_BACKEND}/logs/${folderName}`)
