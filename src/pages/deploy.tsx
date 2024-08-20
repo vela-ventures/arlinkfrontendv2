@@ -128,13 +128,13 @@ export default function Deploy() {
                 console.log("https://arweave.net/" + txid.data);
                 toast.success("Deployment successful");
 
-                const mres = await runLua("", arnsProcess, [
-                    { name: "Action", value: "Set-Record" },
-                    { name: "Sub-Domain", value: "@" },
-                    { name: "Transaction-Id", value: txid.data },
-                    { name: "TTL-Seconds", value: "3600" },
-                ]);
-                console.log("set arns name", mres);
+                // const mres = await runLua("", arnsProcess, [
+                //     { name: "Action", value: "Set-Record" },
+                //     { name: "Sub-Domain", value: "@" },
+                //     { name: "Transaction-Id", value: txid.data },
+                //     { name: "TTL-Seconds", value: "3600" },
+                // ]);
+                // console.log("set arns name", mres);
 
                 const updres = await runLua(`db:exec[[UPDATE Deployments SET DeploymentId='${txid.data}' WHERE Name='${projName}']]`, globalState.managerProcess);
 

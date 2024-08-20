@@ -37,6 +37,7 @@ export async function deployFolder(path) {
         throw new Error(errors);
     } else {
         console.log('No errors found');
+        console.log('Transaction ID:', txResult.id);
         return txResult.id;
     }
 
@@ -61,7 +62,8 @@ app.post('/deploy', async (req, res) => {
     console.log('Folder name:', folderName);
 
     if (!fs.existsSync(`./builds/${folderName}`)) {
-        fs.mkdirSync(`./builds/${folderName}`, { recursive: true, force: true });
+        fs.rmSync(`./builds/${folderName}`, { recursive: true, force: true });
+        fs.mkdirSync(`./builds/${folderName}`, { recursive: true });
     }
     fs.writeFileSync(`./builds/${folderName}/log.txt`, '');
 
@@ -70,7 +72,7 @@ app.post('/deploy', async (req, res) => {
     // 3. move the output folder outside the container in ./builds folder
     // 4. remove the container
 
-    const docker = new dockerode();
+    const docker = new dockerode({ socketPath: '/var/run/docker.sock' });
 
     await docker.pull('node')
     console.log('Pulled node image');
@@ -101,7 +103,6 @@ app.post('/deploy', async (req, res) => {
     cd /home/node/${folderName};
     ${installCommand};
     ${buildCommand};
-    mkdir /home/node/builds/${folderName};
     cp -r /home/node/${folderName}/${outputDir} /home/node/builds/${folderName}`;
 
     if (installCommand.startsWith('pnpm')) {
@@ -114,7 +115,7 @@ app.post('/deploy', async (req, res) => {
     fs.rmSync(`./builds/${folderName}`, { recursive: true, force: true });
     fs.mkdirSync(`./builds/${folderName}`, { recursive: true });
 
-    const exec = await container.exec({
+    const exec = await container.exec({    
         Cmd: ['sh', '-c', containerCommand],
         AttachStderr: true,
         AttachStdout: true,
@@ -137,7 +138,7 @@ app.post('/deploy', async (req, res) => {
         container.modem.demuxStream(stream, fileStream, fileStream);
 
         stream.on('end', async (err) => {
-            console.log(err)
+            // console.log(err)
             console.log('Exec end');
             await container.commit();
             if (!fs.existsSync(`./builds/${folderName}/${outputDir}/index.html`)) {
