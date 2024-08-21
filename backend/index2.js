@@ -18,7 +18,7 @@ app.use(cors());
 export async function deployFolder(path) {
     console.log("Deploying folder at", path);
 
-    const jwk = JSON.parse(fs.readFileSync('./wallet.json', 'utf-8'));
+    //const jwk = JSON.parse(fs.readFileSync('./wallet.json', 'utf-8'));
     const irys = new Irys({ url: 'https://turbo.ardrive.io', token: 'arweave', key: jwk });
     irys.uploader.useChunking = false;
 
@@ -44,7 +44,7 @@ export async function deployFolder(path) {
 }
 
 app.get('/', (req, res) => {
-    res.send('<pre>permaDeploy Builder Running!</pre>');
+    res.send('<pre>DumDumDeploy Builder Running!</pre>');
 });
 
 app.post('/deploy', async (req, res) => {
@@ -59,7 +59,7 @@ app.post('/deploy', async (req, res) => {
 
     const folderName = `${repository}`.replace(/\.git|\/$/, '').split('/').pop();
     console.log('Folder name:', folderName);
-
+    //  we will only allow 3 concerrent build containers at a time all other requests will be queued
     if (activeContainers >= MAX_CONTAINERS) {
         queue.push({ req, res });
         console.log('Added to queue:', queue.length);
@@ -174,7 +174,7 @@ app.get('/logs/:folder', (req, res) => {
     } catch (e) {
         res.status(200).send('Log not found');
     }
-}); 
+});
 
 const server = app.listen(PORT, () => {
     console.log('Server is running on port ' + PORT);
