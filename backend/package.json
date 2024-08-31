@@ -17,6 +17,8 @@
     "cors": "^2.8.5",
     "dockerode": "^4.0.2",
     "express": "^4.19.2",
-    "nodemon": "^3.1.4"
+    "kafka-node": "^5.0.0",
+    "nodemon": "^3.1.4",
+    "redis": "^4.7.0"
   }
 }

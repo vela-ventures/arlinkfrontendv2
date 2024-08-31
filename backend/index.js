@@ -5,11 +5,22 @@ import cors from "cors";
 import dockerode from "dockerode";
 import fs from "fs";
 import Irys from "@irys/sdk";
+import { createClient } from "redis";
 
 const PORT = 3001;
 const MAX_CONTAINERS = 3;
 let activeContainers = 0;
-const queue = [];
+
+const redisClient = createClient();
+redisClient.on("error", (err) => console.error("Redis Client Error", err));
+(async () => {
+    try {
+        await redisClient.connect();
+        console.log("Connected to Redis");
+    } catch (err) {
+        console.error("Failed to connect to Redis do you have redis installed????", err);
+    }
+})();
 
 const app = express();
 app.use(express.json());
@@ -18,7 +29,7 @@ app.use(cors());
 export async function deployFolder(path) {
     console.log("Deploying folder at", path);
 
-    const jwk = JSON.parse(fs.readFileSync('./wallet.json', 'utf-8'));
+    //const jwk = JSON.parse(fs.readFileSync('./wallet.json', 'utf-8'));
     const irys = new Irys({ url: 'https://turbo.ardrive.io', token: 'arweave', key: jwk });
     irys.uploader.useChunking = false;
 
@@ -61,8 +72,8 @@ app.post('/deploy', async (req, res) => {
     console.log('Folder name:', folderName);
 
     if (activeContainers >= MAX_CONTAINERS) {
-        queue.push({ req, res });
-        console.log('Added to queue:', queue.length);
+        await redisClient.rPush("deployQueue", JSON.stringify({ req: req.body, res: res }));
+        console.log('Added to queue');
     } else {
         activeContainers++;
         handleDeployment({ req, res, folderName, repository, installCommand, buildCommand, outputDir, branch });
@@ -156,13 +167,16 @@ async function handleDeployment({ req, res, folderName, repository, installComma
     });
 }
 
-function processQueue() {
-    if (queue.length > 0 && activeContainers < MAX_CONTAINERS) {
-        const { req, res } = queue.shift();
-        activeContainers++;
-        const { repository, installCommand, buildCommand, outputDir, branch } = req.body;
-        const folderName = `${repository}`.replace(/\.git|\/$/, '').split('/').pop();
-        handleDeployment({ req, res, folderName, repository, installCommand, buildCommand, outputDir, branch });
+async function processQueue() {
+    if (activeContainers < MAX_CONTAINERS) {
+        const queueItem = await redisClient.lPop("deployQueue");
+        if (queueItem) {
+            const { req, res } = JSON.parse(queueItem);
+            activeContainers++;
+            const { repository, installCommand, buildCommand, outputDir, branch } = req;
+            const folderName = `${repository}`.replace(/\.git|\/$/, '').split('/').pop();
+            handleDeployment({ req, res, folderName, repository, installCommand, buildCommand, outputDir, branch });
+        }
     }
 }
 
