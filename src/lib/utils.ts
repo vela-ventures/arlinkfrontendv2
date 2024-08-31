@@ -17,8 +17,8 @@ export async function getManagerProcessFromAddress(address: string) {
   transactions(
     owners: ["${address}"]
     tags: [
-      { name: "App-Name", values: ["DumDumDeploy"] }
-      { name: "Name", values: ["DumDumDeploy-Manager"] }
+      { name: "App-Name", values: ["ARlink"] }
+      { name: "Name", values: ["ARlink-Manager"] }
     ]
   ) {
     edges {

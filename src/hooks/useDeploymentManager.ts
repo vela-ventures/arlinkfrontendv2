@@ -27,8 +27,8 @@ db:exec[[
 ]]
 
 Handlers.add(
-    "DumDumDeploy.GetDeployments",
-    Handlers.utils.hasMatchingTag("Action","DumDumDeploy.GetDeployments"),
+    "ARlink.GetDeployments",
+    Handlers.utils.hasMatchingTag("Action","ARlink.GetDeployments"),
     function(msg)
         local deployments = {}
         for row in db:nrows[[SELECT * FROM Deployments]] do
@@ -55,7 +55,7 @@ export default function useDeploymentManager() {
                     globalState.setManagerProcess(id);
                 } else {
                     console.log("No manager process found, spawning new one");
-                    spawnProcess("DumDumDeploy-Manager").then(async (newId) => {
+                    spawnProcess("ARlink-Manager").then(async (newId) => {
                         await runLua(setupCommands, newId)
                         console.log("deployment manager id", newId);
                         globalState.setManagerProcess(newId);
@@ -76,7 +76,7 @@ export default function useDeploymentManager() {
 
         const result = await connect().dryrun({
             process: globalState.managerProcess,
-            tags: [{ name: "Action", value: "DumDumDeploy.GetDeployments" }],
+            tags: [{ name: "Action", value: "ARlink.GetDeployments" }],
             Owner: address
         })
 

@@ -14,7 +14,7 @@ export default function Home() {
   return (
     <WavyBackground blur={10} waveWidth={100} colors={["#ff9f00", "#ff5a36", "#ff8c69", "#ffcc99"]} backgroundFill="#111" className="w-full">
       <div className="flex flex-col items-center justify-center w-full">
-        <h1 className="text-center text-5xl md:text-6xl font-bold">DumDumDeploy</h1>
+        <h1 className="text-center text-5xl md:text-6xl font-bold">ARlink</h1>
         <p className="md:text-xl my-1">Deploy & manage permaweb apps easily</p>
         <Link href={connected ? "/dashboard" : "/deploy"}><Button className="rounded-full my-6">{connected ? "View Deployments" : "Deploy your first app"} <span className="text-2xl ml-1">🧃</span></Button></Link>
       </div>

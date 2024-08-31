@@ -14,7 +14,7 @@ export default function App({ Component, pageProps }: AppProps) {
     ensurePermissions: true,
   }}>
       <Head>
-        <title>DumDumDeploy</title>
+        <title>ARlink</title>
         <meta name="description" content="Deploy & manage permaweb apps easily" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
 

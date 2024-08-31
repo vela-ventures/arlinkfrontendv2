@@ -7,7 +7,7 @@ export const AOScheduler = "_GQ33BkPtZrqxA84vM8Zk-N2aO0toNNu_C-l-rawrBA";
 
 
 const CommonTags = [
-    { name: "App-Name", value: "DumDumDeploy" },
+    { name: "App-Name", value: "ARlink" },
     { name: "App-Version", value: AppVersion },
 ];
 

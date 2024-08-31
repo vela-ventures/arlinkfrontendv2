@@ -48,7 +48,7 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
             <Sidebar open={open} setOpen={setOpen}>
                 <SidebarBody className="justify-between gap-10 min-h-screen overflow-clip">
                     <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
-                        <Link href="/" className="text-2xl whitespace-nowrap">{open ? "🧃 DumDumDeploy" : "🧃"}</Link>
+                        <Link href="/" className="text-2xl whitespace-nowrap">{open ? "🧃 ARlink" : "🧃"}</Link>
                         <div className="mt-8 flex flex-col gap-2">
                             {links.map((link, idx) => (
                                 <SidebarLink key={idx} link={link} />
