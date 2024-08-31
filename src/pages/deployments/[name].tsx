@@ -105,12 +105,18 @@ export default function Deployment() {
             process: deployment?.ArnsProcess,
             tags: [{ name: "Action", value: "Info" }]
         }).then(r => {
-            const d = JSON.parse(r.Messages[0].Data);
-            console.log(d);
-            setAntName(d.Name);
+            if (r.Messages && r.Messages.length > 0) {
+                const d = JSON.parse(r.Messages[0].Data);
+                console.log(d);
+                setAntName(d.Name);
+            } else {
+                console.error("No messages received or messages array is empty");
+            }
+        }).catch(error => {
+            console.error("Error during dryrun:", error);
         });
-    }, [deployment]);
-
+    }, [deployment]); // Ensure to add dependencies to the useEffect hook
+    
     async function deleteDeployment() {
         if (!deployment) return toast.error("Deployment not found");
 
