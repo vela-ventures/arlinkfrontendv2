@@ -13,15 +13,20 @@ import Ansi from "ansi-to-react";
 import { BUILDER_BACKEND } from "@/lib/utils";
 import useDeploymentManager from "@/hooks/useDeploymentManager";
 
-function Logs({ name, deploying }: { name: string, deploying?: boolean }) {
+function extractRepoName(url: string): string {
+    return url.replace(/\.git|\/$/, '').split('/').pop() as string;
+}
+
+function Logs({ name, deploying, repoUrl }: { name: string, deploying?: boolean, repoUrl: string }) {
     console.log(name);
     const [output, setOutput] = useState("");
 
     useEffect(() => {
-        if (!name) return;
+        if (!name || !repoUrl) return;
+        const repo = extractRepoName(repoUrl);
         const interval: ReturnType<typeof setInterval> = setInterval(async () => {
             if (!deploying) return clearInterval(interval);
-            const logs = await axios.get(`${BUILDER_BACKEND}/logs/${name}`);
+            const logs = await axios.get(`${BUILDER_BACKEND}/logs/${repo}`);
             console.log(logs.data);
             setOutput((logs.data as string).replaceAll(/\\|\||\-/g, ""));
             setTimeout(() => {
@@ -31,7 +36,7 @@ function Logs({ name, deploying }: { name: string, deploying?: boolean }) {
         }, 1000);
 
         return () => { clearInterval(interval); }
-    }, [name, deploying]);
+    }, [name, deploying, repoUrl]);
 
     return (
         <div>
@@ -74,7 +79,6 @@ export default function Deploy() {
         try {
             const response = await axios.get(
                 `https://api.github.com/repos/${owner}/${repo}/branches`,
-
             );
             setBranches(response.data.map((branch: any) => branch.name));
         } catch (error) {
@@ -196,7 +200,7 @@ export default function Deploy() {
                     {deploying ? <Loader className="animate-spin mr-2" /> : "Deploy"}
                 </Button>
 
-                {deploying && <Logs name={projName} deploying={deploying} />}
+                {deploying && <Logs name={projName} deploying={deploying} repoUrl={repoUrl} />}
             </div>
         </Layout>
     );
