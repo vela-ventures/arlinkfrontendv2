@@ -4,10 +4,10 @@ import express from "express";
 import cors from "cors";
 import dockerode from "dockerode";
 import fs from "fs";
-import Irys from "@irys/sdk";
+import path from "path";
+import Arweave from "arweave";
 import { createClient } from "redis";
 import  removeDanglingImages  from "./rmdockerimg.js";
-
 const PORT = 3001;
 const MAX_CONTAINERS = 3;
 let activeContainers = 0;
@@ -27,31 +27,70 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-export async function deployFolder(path) {
-    console.log("Deploying folder at", path);
+const arweave = Arweave.init({
+    host: 'localhost',
+    port: 8080,
+    protocol: 'http'
+});
 
-    //const jwk = JSON.parse(fs.readFileSync('./wallet.json', 'utf-8'));
-    const irys = new Irys({ url: 'https://turbo.ardrive.io', token: 'arweave', key: jwk });
-    irys.uploader.useChunking = false;
+async function generateWallet() {
+    const wallet = await arweave.wallets.generate();
+    const address = await arweave.wallets.jwkToAddress(wallet);
+    await arweave.api.get(`mint/${address}/1000000000000`); // Mint tokens
+    return wallet;
+}
 
-    const txResult = await irys.uploadFolder(path, {
-        indexFile: 'index.html',
-        interactivePreflight: false,
-        logFunction: (log) => {
-            console.log(log);
-            fs.appendFileSync(`${path}/../log.txt`, log + '\n');
+export async function deployFolder(folderPath) {
+    console.log("Deploying folder at", folderPath);
+
+    try {
+        const jwk = await generateWallet();
+
+        const files = fs.readdirSync(folderPath);
+        const transactions = [];
+
+        for (const file of files) {
+            const filePath = path.join(folderPath, file);
+            const stat = fs.statSync(filePath);
+
+            if (stat.isDirectory()) {
+                console.log(`Skipping directory ${filePath}`);
+                continue;
+            }
+
+            const data = fs.readFileSync(filePath);
+
+            const transaction = await arweave.createTransaction({ data }, jwk);
+            transaction.addTag('Content-Type', getContentType(file));
+
+            await arweave.transactions.sign(transaction, jwk);
+            await arweave.transactions.post(transaction);
+
+            transactions.push(transaction);
         }
-    });
 
-    if (fs.existsSync(`${path}/../out-errors.txt`)) {
-        const errors = fs.readFileSync(`${path}/../out-errors.txt`, 'utf-8');
-        console.log('Errors:', errors);
-        fs.appendFileSync(`${path}/../log.txt`, errors + '\n');
-        throw new Error(errors);
-    } else {
-        console.log('No errors found');
-        console.log('Transaction ID:', txResult.id);
-        return txResult.id;
+        await arweave.api.get('mine');
+
+        console.log('Transactions:', transactions.map(tx => tx.id));
+        return transactions.map(tx => tx.id);
+    } catch (error) {
+        console.error("Error during folder deployment:", error);
+        throw error;
+    }
+}
+
+function getContentType(file) {
+    const ext = path.extname(file).toLowerCase();
+    switch (ext) {
+        case '.html': return 'text/html';
+        case '.css': return 'text/css';
+        case '.js': return 'application/javascript';
+        case '.png': return 'image/png';
+        case '.jpg': return 'image/jpeg';
+        case '.jpeg': return 'image/jpeg';
+        case '.gif': return 'image/gif';
+        case '.svg': return 'image/svg+xml';
+        default: return 'application/octet-stream';
     }
 }
 
@@ -156,14 +195,14 @@ async function handleDeployment({ req, res, folderName, repository, installComma
                     const dres = await deployFolder(`./builds/${folderName}/${outputDir}`);
                     res.send(dres);
                 } catch (e) {
+                    console.error("Error in deployFolder:", e);
                     res.status(400).send(e.message);
                 }
             }
 
             await container.stop();
             await container.remove();
-            await removeDanglingImages();
-          
+           await removeDanglingImages();
             activeContainers--;
             processQueue();
         });
