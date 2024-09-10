@@ -1,13 +1,23 @@
 #!/usr/bin/env node
 
-import express from "express";
+import express, { response } from "express";
 import cors from "cors";
 import dockerode from "dockerode";
-import fs from "fs";
-import Irys from "@irys/sdk";
-import { createClient } from "redis";
-import  removeDanglingImages  from "./rmdockerimg.js";
+import path from 'path';
+import fs from 'fs';
+import fsPromises from 'fs/promises'; // Import the fs/promises module for async methods
+import mime from 'mime-types';
 
+import { Readable } from 'stream';
+import {
+    TurboFactory,
+    developmentTurboConfiguration,
+  } from "@ardrive/turbo-sdk";
+
+
+import { createClient } from "redis";
+import removeDanglingImages from "./rmdockerimg.js";
+import { concatBuffers } from "arweave/node/lib/utils.js";
 
 const PORT = 3001;
 const MAX_CONTAINERS = 3;
@@ -28,36 +38,54 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-export async function deployFolder(path) {
-    console.log("Deploying folder at", path);
+async function deployFolder(folderPath) {
+    try {
+        console.log("Deploying folder at", folderPath);
+        const normalizedFolderPath = path.normalize(folderPath);
+        const updatedFolderPath = path.dirname(normalizedFolderPath);
+        console.log("Updated folder path:", updatedFolderPath);
 
-     const jwk = JSON.parse(fs.readFileSync('/Users/nischalnaik/Documents/permadeploy/backend/Wallet .json', 'utf-8'));
-    
-    const irys = new Irys({ url: 'https://turbo.ardrive.io', token: 'arweave', key: jwk });
-    irys.uploader.useChunking = false;
+        // Load your JWK
+        const jwk = JSON.parse(await fsPromises.readFile('/Users/nischalnaik/Documents/permadeploy/backend/Wallet .json', 'utf-8'));
+        console.log('JWK loaded');
 
-    const txResult = await irys.uploadFolder(path, {
-        indexFile: 'index.html',
-        interactivePreflight: false,
-        logFunction: (log) => {
-            console.log(log);
-            fs.appendFileSync(`${path}/../log.txt`, log + '\n');
+        // Initialize Turbo
+        const turbo = TurboFactory.authenticated({ privateKey: jwk });
+        console.log('Turbo initialized');
+
+        // Get the wallet balance
+        const { winc: balance } = await turbo.getBalance();
+        console.log(`Current balance: ${balance} winc`);
+
+        // Determine the target folder (dist or build)
+        let targetFolderPath = path.join(updatedFolderPath, 'dist');
+        if (!fs.existsSync(targetFolderPath)) {
+            targetFolderPath = path.join(updatedFolderPath, 'build');
+            if (!fs.existsSync(targetFolderPath)) {
+                throw new Error('Neither dist nor build folder found in the provided path.');
+            }
         }
-    });
-    console.log('Transaction ID:', txResult.id);
 
-    if (fs.existsSync(`${path}/../out-errors.txt`)) {
-        const errors = fs.readFileSync(`${path}/../out-errors.txt`, 'utf-8');
-        console.log('Errors:', errors);
-        fs.appendFileSync(`${path}/../log.txt`, errors + '\n');
-        throw new Error(errors);
-    } else {
-        console.log('No errors found');
-        console.log('Transaction ID:', txResult.id);
-        return txResult.id;
+        console.log("Target folder for upload:", targetFolderPath);
+
+        // Upload the entire folder using the uploadFolder method
+        console.log('Uploading folder...');
+        const { manifest, fileResponses, manifestResponse } = await turbo.uploadFolder({
+            folderPath: targetFolderPath,
+            manifestOptions: {
+                indexFile: 'index.html',
+            },
+        });
+
+        console.log('Folder uploaded successfully');
+        console.log('Manifest:', manifest); 
+        console.log('Manifest response:', manifestResponse);
+        console.log('arweave.net link:', `https://arweave.net/${manifestResponse.id}`); 
+        return `https://arweave.net/${manifestResponse.id}`;    
+    }catch (e) {
+        console.error('Error:', e);
+        }
     }
-}
-
 app.get('/', (req, res) => {
     res.send('<pre>permaDeploy Builder Running!</pre>');
 });

@@ -1,9 +1,12 @@
 #!/usr/bin/env node
-
+import path from "path";
+import { ArweaveSigner, createData } from "arbundles";
 import express from "express";
 import cors from "cors";
 import dockerode from "dockerode";
 import fs from "fs";
+import { Liteseed } from "@liteseed/sdk/dist/index.js";
+import Arweave from "arweave";
 import Irys from "@irys/sdk";
 import { createClient } from "redis";
 import  removeDanglingImages  from "./rmdockerimg.js";
@@ -28,36 +31,88 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-export async function deployFolder(path) {
-    console.log("Deploying folder at", path);
+async function readDirectoryRecursively(dir, signer, dataItems, manifestPaths, basePath) {
+    const files = fs.readdirSync(dir);
 
-     const jwk = JSON.parse(fs.readFileSync('/Users/nischalnaik/Documents/permadeploy/backend/Wallet .json', 'utf-8'));
-    
-    const irys = new Irys({ url: 'https://turbo.ardrive.io', token: 'arweave', key: jwk });
-    irys.uploader.useChunking = false;
+    for (const file of files) {
+        const filePath = path.join(dir, file);
+        const stat = fs.statSync(filePath);
 
-    const txResult = await irys.uploadFolder(path, {
-        indexFile: 'index.html',
-        interactivePreflight: false,
-        logFunction: (log) => {
-            console.log(log);
-            fs.appendFileSync(`${path}/../log.txt`, log + '\n');
+        if (stat.isFile()) {
+            const data = fs.readFileSync(filePath);
+            const dataItem = await createData(data, signer);
+            await dataItem.sign(signer);
+            dataItems.push(dataItem);
+            manifestPaths[path.relative(basePath, filePath)] = { id: dataItem.id };
+        } else if (stat.isDirectory()) {
+            await readDirectoryRecursively(filePath, signer, dataItems, manifestPaths, basePath);
         }
-    });
-    console.log('Transaction ID:', txResult.id);
-
-    if (fs.existsSync(`${path}/../out-errors.txt`)) {
-        const errors = fs.readFileSync(`${path}/../out-errors.txt`, 'utf-8');
-        console.log('Errors:', errors);
-        fs.appendFileSync(`${path}/../log.txt`, errors + '\n');
-        throw new Error(errors);
-    } else {
-        console.log('No errors found');
-        console.log('Transaction ID:', txResult.id);
-        return txResult.id;
     }
 }
 
+export async function deployFolder(folderPath) {
+    console.log("Deploying folder at", folderPath);
+
+    const jwk = JSON.parse(fs.readFileSync('/Users/nischalnaik/Documents/permadeploy/backend/Wallet .json', 'utf-8'));
+    const liteseed = new Liteseed(jwk);
+
+    const dataItems = [];
+    const manifestPaths = {};
+
+    async function processFile(filePath, relativePath) {
+        const data = fs.readFileSync(filePath);
+        const dataItem = await liteseed.signData({ data });
+        dataItems.push(dataItem);
+        manifestPaths[relativePath] = { id: dataItem.id };
+    }
+
+    async function readDirectoryRecursively(dir, basePath = '') {
+        const files = fs.readdirSync(dir);
+
+        for (const file of files) {
+            const filePath = path.join(dir, file);
+            const relativePath = path.join(basePath, file);
+            const stat = fs.statSync(filePath);
+
+            if (stat.isFile()) {
+                await processFile(filePath, relativePath);
+            } else if (stat.isDirectory()) {
+                await readDirectoryRecursively(filePath, relativePath);
+            }
+        }
+    }
+
+    await readDirectoryRecursively(folderPath);
+
+    // Create manifest
+    const manifest = {
+        manifest: "arweave/paths",
+        version: "0.1.0",
+        index: {
+            path: "index.html"
+        },
+        paths: manifestPaths
+    };
+
+    const manifestDataItem = await liteseed.signData({ data: JSON.stringify(manifest) });
+    dataItems.push(manifestDataItem);
+
+    // Upload data items to Liteseed
+    for (const dataItem of dataItems) {
+        try {
+            const receipt = await liteseed.postSignedData({ dataItem });
+            console.log(`Uploaded ${dataItem.id}, receipt:`, receipt);
+
+            const payment = await liteseed.sendPayment({ dataItem });
+            console.log(`Payment sent for ${dataItem.id}, payment:`, payment);
+        } catch (error) {
+            console.error(`Error uploading ${dataItem.id}:`, error);
+        }
+    }
+
+    console.log('Manifest ID:', manifestDataItem.id);
+    return manifestDataItem.id;
+}
 app.get('/', (req, res) => {
     res.send('<pre>permaDeploy Builder Running!</pre>');
 });
