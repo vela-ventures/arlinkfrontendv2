@@ -3,11 +3,13 @@
 import express from "express";
 import cors from "cors";
 import dockerode from "dockerode";
-import fs from "fs";
-import Irys from "@irys/sdk";
+import path from 'path';
+import fs from 'fs';
+import fsPromises from 'fs/promises'; 
+import mime from 'mime'; 
+import { TurboFactory } from "@ardrive/turbo-sdk";
 import { createClient } from "redis";
-import  removeDanglingImages  from "./rmdockerimg.js";
-
+import removeDanglingImages from "./rmdockerimg.js";
 
 const PORT = 3001;
 const MAX_CONTAINERS = 3;
@@ -28,33 +30,137 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-export async function deployFolder(path) {
-    console.log("Deploying folder at", path);
+export async function deployFolder(folderPath) {
+    try {
+        console.log("Deploying folder at", folderPath);
 
-     const jwk = JSON.parse(fs.readFileSync('/Users/nischalnaik/Documents/permadeploy/backend/Wallet .json', 'utf-8'));
-    
-    const irys = new Irys({ url: 'https://turbo.ardrive.io', token: 'arweave', key: jwk });
-    irys.uploader.useChunking = false;
+        // Load your JWK
+        const jwk = JSON.parse(await fsPromises.readFile('/Users/nischalnaik/Documents/permadeploy/backend/Wallet .json', 'utf-8'));
+        console.log('JWK loaded');
 
-    const txResult = await irys.uploadFolder(path, {
-        indexFile: 'index.html',
-        interactivePreflight: false,
-        logFunction: (log) => {
-            console.log(log);
-            fs.appendFileSync(`${path}/../log.txt`, log + '\n');
+        // Initialize Turbo
+        const turbo = TurboFactory.authenticated({ privateKey: jwk });
+        console.log('Turbo initialized');
+
+        // Get the wallet balance
+        const { winc: balance } = await turbo.getBalance();
+        console.log(`Current balance: ${balance} winc`);
+        
+        // Read and modify index.html paths
+        const indexPath = path.join(folderPath, 'index.html');
+        if (fs.existsSync(indexPath)) {
+            let indexContent = await fsPromises.readFile(indexPath, 'utf-8');
+            const modifiedContent = indexContent.replace(/ src="\//g, ' src="./').replace(/ href="\//g, ' href="./');
+            if (indexContent !== modifiedContent) {
+                await fsPromises.writeFile(indexPath, modifiedContent, 'utf-8');
+                console.log('index.html paths modified');
+            } else {
+                console.log('index.html paths are already correct');
+            }
+        } else {
+            throw new Error('index.html not found in the target folder.');
         }
-    });
-    console.log('Transaction ID:', txResult.id);
 
-    if (fs.existsSync(`${path}/../out-errors.txt`)) {
-        const errors = fs.readFileSync(`${path}/../out-errors.txt`, 'utf-8');
-        console.log('Errors:', errors);
-        fs.appendFileSync(`${path}/../log.txt`, errors + '\n');
-        throw new Error(errors);
-    } else {
-        console.log('No errors found');
-        console.log('Transaction ID:', txResult.id);
-        return txResult.id;
+        // Prepare files for upload
+        const files = [];
+        const readDir = async (dir) => {
+            const items = await fsPromises.readdir(dir, { withFileTypes: true });
+            for (const item of items) {
+                const itemPath = path.join(dir, item.name);
+                if (item.isDirectory()) {
+                    await readDir(itemPath);
+                } else {
+                    const relativePath = path.relative(folderPath, itemPath);
+                    const stats = await fsPromises.stat(itemPath);
+                    files.push({ path: relativePath, size: stats.size });
+                }
+            }
+        };
+        await readDir(folderPath);
+
+        // Calculate total upload cost
+        const totalSize = files.reduce((acc, file) => acc + file.size, 0);
+        const [{ winc: uploadCost }] = await turbo.getUploadCosts({ bytes: [totalSize] });
+        console.log(`Total upload cost: ${uploadCost} winc`);
+
+        // Upload files
+        const uploadedFiles = [];
+        for (const file of files) {
+            const filePath = path.join(folderPath, file.path);
+            try {
+                console.log(`Uploading file: ${file.path}`);
+        
+                // Determine the content type using mime package
+                const contentType = mime.getType(filePath) || 'application/octet-stream';
+        
+                const uploadResult = await turbo.uploadFile({
+                    fileStreamFactory: () => fs.createReadStream(filePath),
+                    fileSizeFactory: () => file.size,
+                    signal: AbortSignal.timeout(60000),
+                    dataItemOpts: {
+                        tags: [
+                            {
+                                name: 'Content-Type',
+                                value: contentType,
+                            },
+                        ],
+                    },
+                });
+                console.log(contentType); 
+                uploadedFiles.push({ path: file.path, id: uploadResult.id });
+                console.log(`Uploaded ${file.path}: ${uploadResult.id}`);
+
+            } catch (error) {
+                console.error(`Failed to upload ${file.path}:`, error);
+            }
+        }
+        // Create and upload manifest
+        const manifest = {
+            manifest: 'arweave/paths',
+            version: '0.2.0',
+            index: {
+                path: 'index.html'
+            },
+            paths: {}
+        };
+
+        for (const file of uploadedFiles) {
+            manifest.paths[file.path] = { id: file.id };
+        }
+
+        const manifestJson = JSON.stringify(manifest, null, 2);
+        const manifestFilePath = path.join(folderPath, 'manifest.json');
+        await fsPromises.writeFile(manifestFilePath, manifestJson);
+        console.log('Manifest saved:', manifestFilePath);
+        const fileSize = fs.statSync(manifestFilePath).size;
+        console.log(`Manifest size: ${fileSize} bytes`);
+
+        // Upload the saved manifest file
+        console.log('Uploading manifest...');
+        const manifestUpload = await turbo.uploadFile({
+            fileStreamFactory: () => fs.createReadStream(manifestFilePath),
+            fileSizeFactory: () => fileSize, 
+            signal: AbortSignal.timeout(10_000),
+                dataItemOpts: {
+                    tags: [
+                        {
+                            name: 'Content-Type',
+                            value: 'application/x.arweave-manifest+json',
+                        }
+                        
+                    ],
+                },
+            });    
+        console.log('Manifest uploaded:', manifestUpload.id);
+        console.log('Deployment complete. Access at:', `https://arweave.net/${manifestUpload.id}`);
+         // Delete the folder after deployment
+       await fsPromises.rm(folderPath, { recursive: true, force: true });
+       console.log('Deleted folder:', folderPath);
+
+        return manifestUpload.id;
+    } catch (error) {
+        console.error('Error:', error);
+        throw error;
     }
 }
 
@@ -177,11 +283,9 @@ async function handleDeployment({ req, res, folderName, repository, installComma
                     res.status(400).send(e.message);
                 }
             }
-
             await container.stop();
             await container.remove();
             await removeDanglingImages();
-          
             activeContainers--;
             processQueue();
         });

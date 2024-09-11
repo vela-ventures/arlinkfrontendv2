@@ -5,17 +5,11 @@ import cors from "cors";
 import dockerode from "dockerode";
 import path from 'path';
 import fs from 'fs';
-import fsPromises from 'fs/promises'; // Import the fs/promises module for async methods
-
-import {
-    TurboFactory,
-    developmentTurboConfiguration,
-  } from "@ardrive/turbo-sdk";
-
-
+import fsPromises from 'fs/promises'; 
+import mime from 'mime'; 
+import { TurboFactory } from "@ardrive/turbo-sdk";
 import { createClient } from "redis";
 import removeDanglingImages from "./rmdockerimg.js";
-import { concatBuffers } from "arweave/node/lib/utils.js";
 
 const PORT = 3001;
 const MAX_CONTAINERS = 3;
@@ -36,11 +30,6 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Gets MIME types for each file to tag the upload
-async function getContentType(filePath) {
-    return mime.lookup(filePath);
-}
-
 export async function deployFolder(folderPath) {
     try {
         console.log("Deploying folder at", folderPath);
@@ -56,103 +45,119 @@ export async function deployFolder(folderPath) {
         // Get the wallet balance
         const { winc: balance } = await turbo.getBalance();
         console.log(`Current balance: ${balance} winc`);
-
-        // Initialize the manifest
-        let manifest = {
-            manifest: 'arweave/paths',
-            version: '0.2.0',
-            index: { path: 'index.html' },
-            fallback: {},
-            paths: {},
-        };
-
-        async function processFiles(dir) {
-            const files = await fsPromises.readdir(dir);
-            for (const file of files) {
-                try {
-                    const filePath = path.join(dir, file);
-                    const relativePath = path.relative(folderPath, filePath);
-                    const stat = await fsPromises.stat(filePath);
-
-                    if (stat.isDirectory()) {
-                        // Recursively process all files in a directory
-                        await processFiles(filePath);
-                    } else {
-                        console.log(`Uploading file: ${relativePath}`);
-                        try {
-                            const fileSize = stat.size;
-                            const contentType = await getContentType(filePath);
-                            const uploadResult = await turbo.uploadFile({
-                                fileStreamFactory: () => fs.createReadStream(filePath),
-                                fileSizeFactory: () => fileSize,
-                                signal: AbortSignal.timeout(60000), // Cancel the upload after 60 seconds
-                                dataItemOpts: {
-                                    tags: [
-                                        { name: 'Content-Type', value: contentType },
-                                        { name: 'App-Name', value: 'Permaweb-Deploy' },
-                                    ],
-                                },
-                            });
-                            console.log(`Uploaded ${relativePath} with id:`, uploadResult.id);
-                            // Add uploaded file txId to the manifest
-                            manifest.paths[relativePath] = { id: uploadResult.id };
-                            if (file === '404.html') {
-                                // Set manifest fallback to 404.html if found
-                                manifest.fallback.id = uploadResult.id;
-                            }
-                        } catch (err) {
-                            console.error(`Error uploading file ${relativePath}:`, err);
-                        }
-                    }
-                } catch (err) {
-                    console.error('ERROR:', err);
-                }
+        
+        // Read and modify index.html paths
+        const indexPath = path.join(folderPath, 'index.html');
+        if (fs.existsSync(indexPath)) {
+            let indexContent = await fsPromises.readFile(indexPath, 'utf-8');
+            const modifiedContent = indexContent.replace(/ src="\//g, ' src="./').replace(/ href="\//g, ' href="./');
+            if (indexContent !== modifiedContent) {
+                await fsPromises.writeFile(indexPath, modifiedContent, 'utf-8');
+                console.log('index.html paths modified');
+            } else {
+                console.log('index.html paths are already correct');
             }
+        } else {
+            throw new Error('index.html not found in the target folder.');
         }
 
-        async function uploadManifest(manifest) {
+        // Prepare files for upload
+        const files = [];
+        const readDir = async (dir) => {
+            const items = await fsPromises.readdir(dir, { withFileTypes: true });
+            for (const item of items) {
+                const itemPath = path.join(dir, item.name);
+                if (item.isDirectory()) {
+                    await readDir(itemPath);
+                } else {
+                    const relativePath = path.relative(folderPath, itemPath);
+                    const stats = await fsPromises.stat(itemPath);
+                    files.push({ path: relativePath, size: stats.size });
+                }
+            }
+        };
+        await readDir(folderPath);
+
+        // Calculate total upload cost
+        const totalSize = files.reduce((acc, file) => acc + file.size, 0);
+        const [{ winc: uploadCost }] = await turbo.getUploadCosts({ bytes: [totalSize] });
+        console.log(`Total upload cost: ${uploadCost} winc`);
+
+        // Upload files
+        const uploadedFiles = [];
+        for (const file of files) {
+            const filePath = path.join(folderPath, file.path);
             try {
-                const manifestString = JSON.stringify(manifest);
+                console.log(`Uploading file: ${file.path}`);
+        
+                // Determine the content type using mime package
+                const contentType = mime.getType(filePath) || 'application/octet-stream';
+        
                 const uploadResult = await turbo.uploadFile({
-                    fileStreamFactory: () => Readable.from(Buffer.from(manifestString)),
-                    fileSizeFactory: () => Buffer.byteLength(manifestString),
+                    fileStreamFactory: () => fs.createReadStream(filePath),
+                    fileSizeFactory: () => file.size,
                     signal: AbortSignal.timeout(60000),
                     dataItemOpts: {
                         tags: [
                             {
                                 name: 'Content-Type',
-                                value: 'application/x.arweave-manifest+json',
-                            },
-                            {
-                                name: 'App-Name',
-                                value: 'Permaweb-Deploy',
+                                value: contentType,
                             },
                         ],
                     },
                 });
-                return uploadResult.id;
+                console.log(contentType); 
+                uploadedFiles.push({ path: file.path, id: uploadResult.id });
+                console.log(`Uploaded ${file.path}: ${uploadResult.id}`);
+
             } catch (error) {
-                console.error('Error uploading manifest:', error);
-                return null;
+                console.error(`Failed to upload ${file.path}:`, error);
             }
         }
+        // Create and upload manifest
+        const manifest = {
+            manifest: 'arweave/paths',
+            version: '0.2.0',
+            index: {
+                path: 'index.html'
+            },
+            paths: {}
+        };
 
-        // Start processing files in the selected directory
-        await processFiles(folderPath);
-
-        if (!manifest.fallback.id) {
-            // If no 404.html file is found, set manifest fallback to the txId of index.html
-            manifest.fallback.id = manifest.paths['index.html'].id;
+        for (const file of uploadedFiles) {
+            manifest.paths[file.path] = { id: file.id };
         }
 
-        const manifestId = await uploadManifest(manifest);
-        if (manifestId) {
-            console.log(`Manifest uploaded with Id: ${manifestId}`);
-            console.log('Deployment complete. Access at:', `https://arweave.net/${manifestId}`);
-            return manifestId;
-        } else {
-            throw new Error('Failed to upload manifest');
-        }
+        const manifestJson = JSON.stringify(manifest, null, 2);
+        const manifestFilePath = path.join(folderPath, 'manifest.json');
+        await fsPromises.writeFile(manifestFilePath, manifestJson);
+        console.log('Manifest saved:', manifestFilePath);
+        const fileSize = fs.statSync(manifestFilePath).size;
+        console.log(`Manifest size: ${fileSize} bytes`);
+
+        // Upload the saved manifest file
+        console.log('Uploading manifest...');
+        const manifestUpload = await turbo.uploadFile({
+            fileStreamFactory: () => fs.createReadStream(manifestFilePath),
+            fileSizeFactory: () => fileSize, 
+            signal: AbortSignal.timeout(10_000),
+                dataItemOpts: {
+                    tags: [
+                        {
+                            name: 'Content-Type',
+                            value: 'application/x.arweave-manifest+json',
+                        }
+                        
+                    ],
+                },
+            });    
+        console.log('Manifest uploaded:', manifestUpload.id);
+        console.log('Deployment complete. Access at:', `https://arweave.net/${manifestUpload.id}`);
+         // Delete the folder after deployment
+       await fsPromises.rm(folderPath, { recursive: true, force: true });
+       console.log('Deleted folder:', folderPath);
+
+        return manifestUpload.id;
     } catch (error) {
         console.error('Error:', error);
         throw error;
@@ -278,11 +283,9 @@ async function handleDeployment({ req, res, folderName, repository, installComma
                     res.status(400).send(e.message);
                 }
             }
-
             await container.stop();
             await container.remove();
             await removeDanglingImages();
-          
             activeContainers--;
             processQueue();
         });

@@ -6,18 +6,15 @@ import dockerode from "dockerode";
 import path from 'path';
 import fs from 'fs';
 import fsPromises from 'fs/promises'; // Import the fs/promises module for async methods
-import mime from 'mime-types';
 
-import { Readable } from 'stream';
 import {
     TurboFactory,
-    developmentTurboConfiguration,
+    
   } from "@ardrive/turbo-sdk";
 
 
 import { createClient } from "redis";
 import removeDanglingImages from "./rmdockerimg.js";
-import { concatBuffers } from "arweave/node/lib/utils.js";
 
 const PORT = 3001;
 const MAX_CONTAINERS = 3;
@@ -68,6 +65,21 @@ async function deployFolder(folderPath) {
 
         console.log("Target folder for upload:", targetFolderPath);
 
+         // Read and modify index.html if necessary
+         const indexPath = path.join(targetFolderPath, 'index.html');
+         if (fs.existsSync(indexPath)) {
+             let indexContent = await fsPromises.readFile(indexPath, 'utf-8');
+             const modifiedContent = indexContent.replace(/ src="\//g, ' src="./').replace(/ href="\//g, ' href="./');
+             if (indexContent !== modifiedContent) {
+                 await fsPromises.writeFile(indexPath, modifiedContent, 'utf-8');
+                 console.log('index.html paths modified');
+             } else {
+                 console.log('index.html paths are already correct');
+             }
+         } else {
+             throw new Error('index.html not found in the target folder.');
+         }
+
         // Upload the entire folder using the uploadFolder method
         console.log('Uploading folder...');
         const { manifest, fileResponses, manifestResponse } = await turbo.uploadFolder({
@@ -77,15 +89,56 @@ async function deployFolder(folderPath) {
             },
         });
 
-        console.log('Folder uploaded successfully');
-        console.log('Manifest:', manifest); 
-        console.log('Manifest response:', manifestResponse);
-        console.log('arweave.net link:', `https://arweave.net/${manifestResponse.id}`); 
-        return `https://arweave.net/${manifestResponse.id}`;    
-    }catch (e) {
-        console.error('Error:', e);
-        }
+    // Update manifest paths to have id/pathname format
+    const updatedPaths = {};
+    for (const [filePath, fileData] of Object.entries(manifest.paths)) {
+        const newKey = `${filePath}`;
+        updatedPaths[newKey] = fileData;
     }
+    manifest.paths = updatedPaths;
+    
+    // Save the updated manifest to a local file
+    const manifestJson = JSON.stringify(manifest, null, 2);
+    const manifestFilePath = path.join(targetFolderPath, 'arweave-manifest.json');
+    await fsPromises.writeFile(manifestFilePath, manifestJson);
+    console.log('Updated manifest saved locally:', manifestFilePath);
+    
+    // Get the file size of the updated manifest
+    const stats = await fsPromises.stat(manifestFilePath);
+    const fileSize = stats.size;
+    
+    // Re-upload the updated manifest
+    const updatedManifestUpload = await turbo.uploadFile({
+        fileStreamFactory: () => fs.createReadStream(manifestFilePath),
+        fileSizeFactory: () => fileSize,
+        dataItemOpts: {
+            tags: [
+                {
+                    name: 'Content-Type',
+                    value: 'application/x.arweave-manifest+json',
+                },
+            ],
+        },
+    });
+    
+    console.log('Updated manifest uploaded:', updatedManifestUpload.id);
+    manifestResponse.id = updatedManifestUpload.id;
+    
+    console.log('Manifest:', manifest);
+    console.log('File responses:', fileResponses);
+    console.log('Manifest response:', manifestResponse);
+    
+    // The transaction ID of the manifest is the final ID for accessing the deployed folder
+    const txId = manifestResponse.id;
+    console.log('Deployment complete. Access at:', `https://arweave.net/${txId}`);
+       // Delete the folder after deployment
+       await fsPromises.rm(folderPath, { recursive: true, force: true });
+       console.log('Deleted folder:', folderPath);
+    return txId;
+    } catch (error) {
+        console.error('Error:', error);
+    }}
+
 app.get('/', (req, res) => {
     res.send('<pre>permaDeploy Builder Running!</pre>');
 });
