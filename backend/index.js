@@ -207,16 +207,17 @@ app.post("/deploy", async (req, res) => {
     console.error("Branch is required");
     return res.status(400).send("Branch is required");
   }
-  if (!fs.existsSync(`./builds/${folderName}`)) {
-    console.error("Repo Already Deployed");
-    return res.status(400).send("Repo Already Deployed");
-  }
 
   const folderName = `${repository}`
     .replace(/\.git|\/$/, "")
     .split("/")
     .pop();
   console.log("Folder name:", folderName);
+
+  if (!fs.existsSync(`./builds/${folderName}`)) {
+    console.error("Repo Already Deployed");
+    return res.status(400).send("Repo Already Deployed");
+  }
 
   if (activeContainers >= MAX_CONTAINERS) {
     await redisClient.rPush(
