@@ -367,10 +367,10 @@ async function processQueue() {
   }
 }
 
-app.get("/logs/:folder", (req, res) => {
-  const { folder } = req.params;
+app.get("/logs/:owner/:repo", (req, res) => {
+  const { owner, repo } = req.params;
   try {
-    const log = fs.readFileSync(`./builds/${folder}/log.txt`, "utf-8");
+    const log = fs.readFileSync(`./builds/${owner}/${repo}/build.log`, "utf-8");
     res.send(log);
   } catch (e) {
     res.status(200).send("Log not found");
@@ -382,4 +382,3 @@ const server = app.listen(PORT, () => {
 });
 server.setTimeout(60 * 60 * 1000);
 server.keepAliveTimeout = 60 * 60 * 1000;
-

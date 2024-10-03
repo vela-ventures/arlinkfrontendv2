@@ -5,3 +5,5 @@ _wallet.json
 builds/*
 !builds/.gitkeep
 node_modules
+bun.lockb
+codebase.md
