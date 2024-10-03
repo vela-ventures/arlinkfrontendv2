@@ -1,16 +1,34 @@
-import { runBuilds } from "./buildManager.js";
+import { runBuild } from "./buildManager.js";
 
-const builds = [
-  {
-    gitRepo: "https://github.com/internettrashh/preact-test-template.git",
-    branch: "main",
-    installCommand: "bun install",
-    buildCommand: "bun run build",
-    distFolder: "dist",
-  },
-  // Add more build configurations here
-];
+// First build
+runBuild(
+  "https://github.com/internettrashh/preact-test-template.git",
+  "main",
+  "bun install",
+  "bun run build",
+  "dist",
+)
+  .then(console.log)
+  .catch(console.error);
 
-runBuilds(builds)
-  .then(() => console.log("All builds completed"))
-  .catch((error) => console.error("Error running builds:", error));
+// First build
+runBuild(
+  "https://github.com/internettrashh/preact-test-template.git",
+  "main",
+  "bun install",
+  "bun run build",
+  "dist",
+)
+  .then(console.log)
+  .catch(console.error); // You can keep adding more builds, they will be queued and run as slots become available
+
+// First build
+runBuild(
+  "https://github.com/internettrashh/preact-test-template.git",
+  "main",
+  "bun install",
+  "bun run build",
+  "dist",
+)
+  .then(console.log)
+  .catch(console.error); // You can keep adding more builds, they will be queued and run as slots become available

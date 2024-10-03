@@ -10,6 +10,7 @@ import mime from "mime";
 import { TurboFactory } from "@ardrive/turbo-sdk";
 import { createClient } from "redis";
 import removeDanglingImages from "./rmdockerimg.js";
+import { runBuilds } from "./buildManager.js";
 
 const PORT = 3001;
 const MAX_CONTAINERS = 3;

@@ -1,7 +1,7 @@
 import { parentPort, workerData } from "worker_threads";
 import { spawn } from "child_process";
 
-function runBuild(buildData) {
+function runBuild(buildParams) {
   const {
     gitRepo,
     branch,
@@ -9,7 +9,7 @@ function runBuild(buildData) {
     buildCommand,
     distFolder,
     subdirectory,
-  } = buildData;
+  } = buildParams;
 
   const nixShellCommand = `nix-shell build.nix --run 'build ${gitRepo} ${branch} "${installCommand}" "${buildCommand}" ${distFolder}${subdirectory ? ` ${subdirectory}` : ""}'`;
 

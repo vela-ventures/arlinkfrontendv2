@@ -1,51 +1,64 @@
 import { Worker } from "worker_threads";
-import { spawn } from "child_process";
 import path from "path";
 import os from "os";
 
 const MAX_CONCURRENT_BUILDS = os.cpus().length;
+let runningBuilds = 0;
+const buildQueue = [];
 
-export function runBuilds(builds) {
-  let runningBuilds = 0;
-  const buildQueue = [...builds];
+function createBuildWorker(buildParams) {
+  return new Promise((resolve, reject) => {
+    const worker = new Worker(path.resolve("buildWorker.js"), {
+      workerData: buildParams,
+    });
 
-  return new Promise((resolve) => {
-    function startNextBuild() {
-      if (buildQueue.length === 0 && runningBuilds === 0) {
-        resolve();
-        return;
+    worker.on("message", (message) => {
+      console.log(`Build completed: ${message}`);
+      resolve(message);
+    });
+
+    worker.on("error", reject);
+
+    worker.on("exit", (code) => {
+      runningBuilds--;
+      if (code !== 0) {
+        reject(new Error(`Worker stopped with exit code ${code}`));
       }
+      processQueue();
+    });
+  });
+}
 
-      if (runningBuilds >= MAX_CONCURRENT_BUILDS || buildQueue.length === 0) {
-        return;
-      }
+function processQueue() {
+  while (runningBuilds < MAX_CONCURRENT_BUILDS && buildQueue.length > 0) {
+    const nextBuild = buildQueue.shift();
+    runningBuilds++;
+    createBuildWorker(nextBuild);
+  }
+}
 
-      const build = buildQueue.shift();
-      runningBuilds++;
+export function runBuild(
+  gitRepo,
+  branch,
+  installCommand,
+  buildCommand,
+  distFolder,
+  subdirectory = "",
+) {
+  const buildParams = {
+    gitRepo,
+    branch,
+    installCommand,
+    buildCommand,
+    distFolder,
+    subdirectory,
+  };
 
-      const worker = new Worker(path.resolve("buildWorker.js"), {
-        workerData: build,
-      });
+  return new Promise((resolve, reject) => {
+    buildQueue.push(buildParams);
+    processQueue();
 
-      worker.on("message", (message) => {
-        console.log(`Build completed: ${message}`);
-      });
-
-      worker.on("error", (error) => {
-        console.error(`Build error: ${error}`);
-      });
-
-      worker.on("exit", (code) => {
-        runningBuilds--;
-        if (code !== 0) {
-          console.error(`Worker stopped with exit code ${code}`);
-        }
-        startNextBuild();
-      });
-    }
-
-    for (let i = 0; i < MAX_CONCURRENT_BUILDS; i++) {
-      startNextBuild();
-    }
+    // We resolve immediately, but the build will run when a slot is available
+    resolve(`Build for ${gitRepo} queued`);
   });
 }
