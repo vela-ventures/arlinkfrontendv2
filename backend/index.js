@@ -8,27 +8,27 @@ import fs from "fs";
 import fsPromises from "fs/promises";
 import mime from "mime";
 import { TurboFactory } from "@ardrive/turbo-sdk";
-import { createClient } from "redis";
-import removeDanglingImages from "./rmdockerimg.js";
-import { runBuilds } from "./buildManager.js";
+// import { createClient } from "redis";
+// import removeDanglingImages from "./rmdockerimg.js";
+import { runBuild } from "./buildManager.js";
 
 const PORT = 3001;
-const MAX_CONTAINERS = 3;
-let activeContainers = 0;
+//const MAX_CONTAINERS = 3;
+//let activeContainers = 0;
 
-const redisClient = createClient();
-redisClient.on("error", (err) => console.error("Redis Client Error", err));
-(async () => {
-  try {
-    await redisClient.connect();
-    console.log("Connected to Redis");
-  } catch (err) {
-    console.error(
-      "Failed to connect to Redis do you have redis installed????",
-      err,
-    );
-  }
-})();
+//const redisClient = createClient();
+//redisClient.on("error", (err) => console.error("Redis Client Error", err));
+//(async () => {
+//  try {
+//    await redisClient.connect();
+//    console.log("Connected to Redis");
+//  } catch (err) {
+//    console.error(
+//      "Failed to connect to Redis do you have redis installed????",
+//      err,
+//    );
+//  }
+//})();
 
 const app = express();
 app.use(express.json());
@@ -185,8 +185,14 @@ app.get("/", (req, res) => {
 
 app.post("/deploy", async (req, res) => {
   console.log("Request:", req.body);
-  const { repository, installCommand, buildCommand, outputDir, branch } =
-    req.body;
+  const {
+    repository,
+    installCommand,
+    buildCommand,
+    outputDir,
+    branch,
+    subDirectory,
+  } = req.body;
 
   if (!repository) {
     console.error("Repository is required");
@@ -209,173 +215,198 @@ app.post("/deploy", async (req, res) => {
     return res.status(400).send("Branch is required");
   }
 
+  //owner will be the github username, extracted from the repository url, index it from reverse so it's compatible with all git urls
+  const owner = `${repository}`.split("/").reverse()[1];
+
   const folderName = `${repository}`
     .replace(/\.git|\/$/, "")
     .split("/")
     .pop();
   console.log("Folder name:", folderName);
 
-  if (!fs.existsSync(`./builds/${folderName}`)) {
+  if (fs.existsSync(`./builds/${owner}/${folderName}`)) {
     console.error("Repo Already Deployed");
-    return res.status(400).send("Repo Already Deployed");
+    //return res.status(400).send("Repo Already Deployed");
   }
 
-  if (activeContainers >= MAX_CONTAINERS) {
-    await redisClient.rPush(
-      "deployQueue",
-      JSON.stringify({ req: req.body, res: res }),
-    );
-    console.log("Added to queue");
-  } else {
-    activeContainers++;
-    handleDeployment({
-      req,
-      res,
-      folderName,
-      repository,
-      installCommand,
-      buildCommand,
-      outputDir,
-      branch,
+  // run builds returns a promise, handle the result or error and send it back to the client
+  runBuild(
+    repository,
+    branch,
+    installCommand,
+    buildCommand,
+    outputDir,
+    subDirectory,
+  )
+    .then((result) => {
+      console.log("Build completed:", result);
+      res.status(200).send(result);
+    })
+    .catch((error) => {
+      console.error("Build failed:", error);
+      res.status(500).send(error.message);
     });
-  }
+
+  //if (activeContainers >= MAX_CONTAINERS) {
+  //  await redisClient.rPush(
+  //    "deployQueue",
+  //    JSON.stringify({ req: req.body, res: res }),
+  //  );
+  //  console.log("Added to queue");
+  //} else {
+  //  activeContainers++;
+  //handleDeployment({
+  //  req,
+  //  res,
+  //  folderName,
+  //  repository,
+  //  installCommand,
+  //  buildCommand,
+  //  outputDir,
+  //  branch,
+  //});
+  // }
 });
 
-async function handleDeployment({
-  req,
-  res,
-  folderName,
-  repository,
-  installCommand,
-  buildCommand,
-  outputDir,
-  branch,
-}) {
-  if (!fs.existsSync(`./builds/${folderName}`)) {
-    fs.rmSync(`./builds/${folderName}`, { recursive: true, force: true });
-    fs.mkdirSync(`./builds/${folderName}`, { recursive: true });
-  }
-  fs.writeFileSync(`./builds/${folderName}/log.txt`, "");
-
-  const docker = new dockerode({ socketPath: "/var/run/docker.sock" });
-
-  await docker.pull("node");
-  console.log("Pulled node image");
-
-  const container = await docker.createContainer({
-    Image: "node",
-    Cmd: ["sh"],
-    AttachStdout: true,
-    AttachStderr: true,
-    Tty: true,
-    OpenStdin: true,
-    HostConfig: {
-      Binds: [`${process.cwd()}/builds:/home/node/builds`],
-    },
-  });
-  console.log("Created container");
-  await container.start();
-
-  var containerCommand = `cd /home/node;
-    rm -rf /home/node/${folderName}/${outputDir};
-    echo "" > /home/node/${folderName}/log.txt;
-    git clone -b ${branch} ${repository} ${folderName};
-    cd /home/node/${folderName};
-    ${installCommand};
-    ${buildCommand};
-    cp -r /home/node/${folderName}/${outputDir} /home/node/builds/${folderName}`;
-
-  if (installCommand.startsWith("pnpm")) {
-    containerCommand = `npm i -g pnpm; ${containerCommand}`;
-  } else if (installCommand.startsWith("yarn")) {
-    containerCommand = `npm i -g yarn; ${containerCommand}`;
-  }
-
-  fs.rmSync(`./builds/${folderName}`, { recursive: true, force: true });
-  fs.mkdirSync(`./builds/${folderName}`, { recursive: true });
-
-  const exec = await container.exec({
-    Cmd: ["sh", "-c", containerCommand],
-    AttachStderr: true,
-    AttachStdout: true,
-    Tty: true,
-  });
-
-  exec.start(
-    {
-      hijack: true,
-      stdin: true,
-      Detach: false,
-    },
-    (err, stream) => {
-      if (err) {
-        console.log("Exec error:", err);
-        return;
-      }
-
-      container.modem.demuxStream(stream, process.stdout, process.stderr);
-      const fileStream = fs.createWriteStream(`./builds/${folderName}/log.txt`);
-      container.modem.demuxStream(stream, fileStream, fileStream);
-
-      stream.on("end", async (err) => {
-        console.log("Exec end");
-        await container.commit();
-        if (!fs.existsSync(`./builds/${folderName}/${outputDir}/index.html`)) {
-          res.status(500).send("index.html does not exist in build");
-        } else {
-          try {
-            const dres = await deployFolder(
-              `./builds/${folderName}/${outputDir}`,
-            );
-            res.send(dres);
-          } catch (e) {
-            res.status(400).send(e.message);
-          }
-        }
-        await container.stop();
-        await container.remove();
-        await removeDanglingImages();
-        activeContainers--;
-        processQueue();
-      });
-    },
-  );
-}
-
-async function processQueue() {
-  if (activeContainers < MAX_CONTAINERS) {
-    const queueItem = await redisClient.lPop("deployQueue");
-    if (queueItem) {
-      const { req, res } = JSON.parse(queueItem);
-      activeContainers++;
-      const { repository, installCommand, buildCommand, outputDir, branch } =
-        req;
-      const folderName = `${repository}`
-        .replace(/\.git|\/$/, "")
-        .split("/")
-        .pop();
-      handleDeployment({
-        req,
-        res,
-        folderName,
-        repository,
-        installCommand,
-        buildCommand,
-        outputDir,
-        branch,
-      });
-    }
-  }
-}
+//async function handleDeployment({
+//  req,
+//  res,
+//  folderName,
+//  repository,
+//  installCommand,
+//  buildCommand,
+//  outputDir,
+//  branch,
+//}) {
+//  if (!fs.existsSync(`./builds/${folderName}`)) {
+//    fs.rmSync(`./builds/${folderName}`, { recursive: true, force: true });
+//    fs.mkdirSync(`./builds/${folderName}`, { recursive: true });
+//  }
+//  fs.writeFileSync(`./builds/${folderName}/log.txt`, "");
+//
+//  const docker = new dockerode({ socketPath: "/var/run/docker.sock" });
+//
+//  await docker.pull("node");
+//  console.log("Pulled node image");
+//
+//  const container = await docker.createContainer({
+//    Image: "node",
+//    Cmd: ["sh"],
+//    AttachStdout: true,
+//    AttachStderr: true,
+//    Tty: true,
+//    OpenStdin: true,
+//    HostConfig: {
+//      Binds: [`${process.cwd()}/builds:/home/node/builds`],
+//    },
+//  });
+//  console.log("Created container");
+//  await container.start();
+//
+//  var containerCommand = `cd /home/node;
+//    rm -rf /home/node/${folderName}/${outputDir};
+//    echo "" > /home/node/${folderName}/log.txt;
+//    git clone -b ${branch} ${repository} ${folderName};
+//    cd /home/node/${folderName};
+//    ${installCommand};
+//    ${buildCommand};
+//    cp -r /home/node/${folderName}/${outputDir} /home/node/builds/${folderName}`;
+//
+//  if (installCommand.startsWith("pnpm")) {
+//    containerCommand = `npm i -g pnpm; ${containerCommand}`;
+//  } else if (installCommand.startsWith("yarn")) {
+//    containerCommand = `npm i -g yarn; ${containerCommand}`;
+//  }
+//
+//  fs.rmSync(`./builds/${folderName}`, { recursive: true, force: true });
+//  fs.mkdirSync(`./builds/${folderName}`, { recursive: true });
+//
+//  const exec = await container.exec({
+//    Cmd: ["sh", "-c", containerCommand],
+//    AttachStderr: true,
+//    AttachStdout: true,
+//    Tty: true,
+//  });
+//
+//  exec.start(
+//    {
+//      hijack: true,
+//      stdin: true,
+//      Detach: false,
+//    },
+//    (err, stream) => {
+//      if (err) {
+//        console.log("Exec error:", err);
+//        return;
+//      }
+//
+//      container.modem.demuxStream(stream, process.stdout, process.stderr);
+//      const fileStream = fs.createWriteStream(`./builds/${folderName}/log.txt`);
+//      container.modem.demuxStream(stream, fileStream, fileStream);
+//
+//      stream.on("end", async (err) => {
+//        console.log("Exec end");
+//        await container.commit();
+//        if (!fs.existsSync(`./builds/${folderName}/${outputDir}/index.html`)) {
+//          res.status(500).send("index.html does not exist in build");
+//        } else {
+//          try {
+//            const dres = await deployFolder(
+//              `./builds/${folderName}/${outputDir}`,
+//            );
+//            res.send(dres);
+//          } catch (e) {
+//            res.status(400).send(e.message);
+//          }
+//        }
+//        await container.stop();
+//        await container.remove();
+//        await removeDanglingImages();
+//        activeContainers--;
+//        processQueue();
+//      });
+//    },
+//  );
+//}
+//
+//async function processQueue() {
+//  if (activeContainers < MAX_CONTAINERS) {
+//    const queueItem = await redisClient.lPop("deployQueue");
+//    if (queueItem) {
+//      const { req, res } = JSON.parse(queueItem);
+//      activeContainers++;
+//      const { repository, installCommand, buildCommand, outputDir, branch } =
+//        req;
+//      const folderName = `${repository}`
+//        .replace(/\.git|\/$/, "")
+//        .split("/")
+//        .pop();
+//      handleDeployment({
+//        req,
+//        res,
+//        folderName,
+//        repository,
+//        installCommand,
+//        buildCommand,
+//        outputDir,
+//        branch,
+//      });
+//    }
+//  }
+//}
 
 app.get("/logs/:owner/:repo", (req, res) => {
   const { owner, repo } = req.params;
-  try {
-    const log = fs.readFileSync(`./builds/${owner}/${repo}/build.log`, "utf-8");
-    res.send(log);
-  } catch (e) {
-    res.status(200).send("Log not found");
-  }
+  const logPath = `./builds/${owner}/${repo}/build.log`;
+
+  fs.readFile(logPath, "utf-8", (err, data) => {
+    if (err) {
+      console.error(`Error reading log: ${err.message}`);
+      res.status(404).send("Log not found");
+    } else {
+      res.status(200).send(data);
+    }
+  });
 });
 
 const server = app.listen(PORT, () => {
