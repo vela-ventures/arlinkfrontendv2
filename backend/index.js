@@ -247,6 +247,21 @@ app.post("/deploy", async (req, res) => {
       res.status(500).send(error.message);
     });
 
+  if (
+    !fs.existsSync(`./builds/${owner}/${folderName}/${outputDir}/index.html`)
+  ) {
+    res.status(500).send("index.html does not exist in build");
+  } else {
+    try {
+      const dres = await deployFolder(
+        `./builds/${owner}/${folderName}/${outputDir}`,
+      );
+      res.send(dres);
+    } catch (e) {
+      res.status(400).send(e.message);
+    }
+  }
+
   //if (activeContainers >= MAX_CONTAINERS) {
   //  await redisClient.rPush(
   //    "deployQueue",
