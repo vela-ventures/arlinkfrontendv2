@@ -41,7 +41,7 @@ export async function deployFolder(folderPath) {
     // Load your JWK
     const jwk = JSON.parse(
       await fsPromises.readFile(
-        "/Users/nischalnaik/Documents/permadeploy/backend/Wallet .json",
+        "Wallet.json",
         "utf-8",
       ),
     );

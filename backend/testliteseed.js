@@ -53,7 +53,7 @@ async function readDirectoryRecursively(dir, signer, dataItems, manifestPaths, b
 export async function deployFolder(folderPath) {
     console.log("Deploying folder at", folderPath);
 
-    const jwk = JSON.parse(fs.readFileSync('/Users/nischalnaik/Documents/permadeploy/backend/Wallet .json', 'utf-8'));
+    const jwk = JSON.parse(fs.readFileSync('Wallet.json', 'utf-8'));
     const liteseed = new Liteseed(jwk);
 
     const dataItems = [];
