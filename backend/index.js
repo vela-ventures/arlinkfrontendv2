@@ -12,7 +12,7 @@ import { TurboFactory } from "@ardrive/turbo-sdk";
 // import removeDanglingImages from "./rmdockerimg.js";
 import { runBuild } from "./buildManager.js";
 
-const PORT = 3001;
+const PORT = 3050;
 //const MAX_CONTAINERS = 3;
 //let activeContainers = 0;
 
