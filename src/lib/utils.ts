@@ -1,16 +1,16 @@
-import { type ClassValue, clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
-import { gql, GraphQLClient } from "graphql-request"
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+import { gql, GraphQLClient } from "graphql-request";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
-export const BUILDER_BACKEND = "https://vmi1968527.contaboserver.net/test-frontend/test-api/"
-export const DEPLOYMENT_WALLET = "CUO_Jtx-J9Ph4NVKY_Bgii4HSUwK3NbdaIlPDSiy8Cs"
+export const BUILDER_BACKEND = "https://vmi1968527.contaboserver.net/api/";
+export const DEPLOYMENT_WALLET = "CUO_Jtx-J9Ph4NVKY_Bgii4HSUwK3NbdaIlPDSiy8Cs";
 
 export async function getManagerProcessFromAddress(address: string) {
-  const client = new GraphQLClient("https://arweave.net/graphql")
+  const client = new GraphQLClient("https://arweave.net/graphql");
 
   const query = gql`
   query {
@@ -27,18 +27,21 @@ export async function getManagerProcessFromAddress(address: string) {
       }
     }
   }
-}`
+}`;
 
   type response = {
     transactions: {
       edges: {
         node: {
-          id: string
-        }
-      }[]
-    }
-  }
+          id: string;
+        };
+      }[];
+    };
+  };
 
-  const data: response = await client.request(query)
-  return data.transactions.edges.length > 0 ? data.transactions.edges[0].node.id : null
+  const data: response = await client.request(query);
+  return data.transactions.edges.length > 0
+    ? data.transactions.edges[0].node.id
+    : null;
 }
+
