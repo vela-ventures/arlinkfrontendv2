@@ -1,33 +1,26 @@
-import { parentPort, workerData } from "worker_threads";
-import { spawn } from "child_process";
+import { parentPort, workerData } from 'worker_threads';
+import { spawn } from 'child_process';
 
 function runBuild(buildParams) {
-  const {
-    gitRepo,
-    branch,
-    installCommand,
-    buildCommand,
-    distFolder,
-    subdirectory,
-  } = buildParams;
+  const { repository, branch, installCommand, buildCommand, outputDist, subDirectory } = buildParams;
 
-  const nixShellCommand = `nix-shell build.nix --run 'build ${gitRepo} ${branch} "${installCommand}" "${buildCommand}" ${distFolder}${subdirectory ? ` ${subdirectory}` : ""}'`;
+  const nixShellCommand = `nix-shell build.nix --run 'build ${repository} ${branch} "${installCommand}" "${buildCommand}" ${outputDist}${subDirectory ? ` ${subDirectory}` : ''}'`;
 
-  const buildProcess = spawn("sh", ["-c", nixShellCommand]);
+  const buildProcess = spawn('sh', ['-c', nixShellCommand]);
 
-  buildProcess.stdout.on("data", (data) => {
+  buildProcess.stdout.on('data', (data) => {
     console.log(`${data}`);
   });
 
-  buildProcess.stderr.on("data", (data) => {
+  buildProcess.stderr.on('data', (data) => {
     console.error(`${data}`);
   });
 
-  buildProcess.on("close", (code) => {
+  buildProcess.on('close', (code) => {
     if (code === 0) {
-      parentPort.postMessage(`Build for ${gitRepo} completed successfully`);
+      parentPort.postMessage(`Build for ${repository} completed successfully`);
     } else {
-      parentPort.postMessage(`Build for ${gitRepo} failed with code ${code}`);
+      parentPort.postMessage(`Build for ${repository} failed with code ${code}`);
     }
     parentPort.close();
   });

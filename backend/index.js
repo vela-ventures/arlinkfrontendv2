@@ -226,50 +226,11 @@ app.post("/deploy", async (req, res) => {
   console.log("Folder name:", folderName);
 
   if (fs.existsSync(`./builds/${owner}/${folderName}`)) {
-    console.error("Repo Already Deployed");
+    console.log("Repo Already Deployed, proceeding with rebuild");
     //return res.status(400).send("Repo Already Deployed");
   }
 
-  // run builds returns a promise, handle the result or error and send it back to the client
-runBuild(
-    repository,
-    branch,
-    installCommand,
-    buildCommand,
-    outputDist,
-    subDirectory,
-  )
-    .then(async (result) => {
-      console.log("Build completed:", result);
-      if (
-        !fs.existsSync(
-          `./builds/${owner}/${folderName}/${outputDist}/index.html`,
-        )
-      ) {
-       return res.status(500).send("index.html does not exist in build");
-      } else {
-        try {
-          const dres = await deployFolder(
-            `./builds/${owner}/${folderName}/${outputDist}`,
-          );
-          res.send(dres);
-        } catch (e) {
-        return res.status(400).send(e.message);
-        }
-      }
-
-      //delete the folder builds/owner/folderName/outputDist
-      fs.rmSync(
-        `./builds/${owner}/${folderName}/${outputDist}`,
-        { recursive: true, force: true },
-      );
-    //  return res.status(200).send(result);
-    })
-
-    .catch((error) => {
-      console.error("Build failed:", error);
-      return res.status(500).send(error.message);
-    });
+await handleBuild(req, res);
 
   //if (activeContainers >= MAX_CONTAINERS) {
   //  await redisClient.rPush(
@@ -292,6 +253,40 @@ runBuild(
   // }
 });
 
+async function handleBuild(req, res) {
+  const { repository, branch, installCommand, buildCommand, outputDir, subDirectory } = req.body;
+
+  // Convert outputDir to outputDist
+  const outputDist = outputDir.startsWith("./") ? outputDir.slice(2) : outputDir;
+
+  const buildParams = {
+    repository,
+    branch,
+    installCommand,
+    buildCommand,
+    outputDist,  // Use outputDist instead of outputDir
+    subDirectory
+  };
+
+  try {
+    const { result, buildPath } = await runBuild(buildParams);
+
+    console.log("Build completed:", result);
+
+    try {
+      const deployResult = await deployFolder(buildPath);
+      res.send(deployResult);
+    } catch (deployError) {
+      return res.status(400).send(deployError.message);
+    } finally {
+      // Clean up the build folder
+      fs.rmSync(buildPath, { recursive: true, force: true });
+    }
+  } catch (buildError) {
+    console.error("Build failed:", buildError);
+    return res.status(500).send(buildError.message);
+  }
+}
 //async function handleDeployment({
 //  req,
 //  res,
