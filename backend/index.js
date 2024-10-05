@@ -189,6 +189,8 @@ app.post("/deploy", async (req, res) => {
     subDirectory,
   } = req.body;
 
+
+
   if (!repository) {
     console.error("Repository is required");
     return res.status(400).send("Repository is required");
@@ -205,6 +207,10 @@ app.post("/deploy", async (req, res) => {
     console.error("Output Directory is required");
     return res.status(400).send("Output Directory is required");
   }
+  //const outputDist =  a function which checks if outputDir is prefixed with ./ if it is removes it
+  const outputDist = outputDir.startsWith("./") ? outputDir.slice(2) : outputDir;
+
+
   if (!branch) {
     console.error("Branch is required");
     return res.status(400).send("Branch is required");
@@ -230,7 +236,7 @@ app.post("/deploy", async (req, res) => {
     branch,
     installCommand,
     buildCommand,
-    outputDir,
+    outputDist,
     subDirectory,
   )
     .then(async (result) => {
