@@ -246,7 +246,7 @@ app.post("/deploy", async (req, res) => {
           `./builds/${owner}/${folderName}/${outputDist}/index.html`,
         )
       ) {
-        return res.status(500).send("index.html does not exist in build");
+       return res.status(500).send("index.html does not exist in build");
       } else {
         try {
           const dres = await deployFolder(
@@ -254,7 +254,7 @@ app.post("/deploy", async (req, res) => {
           );
           res.send(dres);
         } catch (e) {
-          return res.status(400).send(e.message);
+        return res.status(400).send(e.message);
         }
       }
 
@@ -263,7 +263,7 @@ app.post("/deploy", async (req, res) => {
         `./builds/${owner}/${folderName}/${outputDist}`,
         { recursive: true, force: true },
       );
-      return res.status(200).send(result);
+    //  return res.status(200).send(result);
     })
 
     .catch((error) => {
