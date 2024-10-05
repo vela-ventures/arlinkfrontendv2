@@ -3,7 +3,7 @@
 for i in {1..20}
 do
    echo "Sending request $i"
-   curl -X POST http://localhost:3001/deploy \
+   curl -X POST http://localhost:3050/deploy \
      -H "Content-Type: application/json" \
      -d '{
        "repository": "https://github.com/internettrashh/preact-test-template.git",

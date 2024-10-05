@@ -39,12 +39,7 @@ export async function deployFolder(folderPath) {
     console.log("Deploying folder at", folderPath);
 
     // Load your JWK
-    const jwk = JSON.parse(
-      await fsPromises.readFile(
-        "Wallet.json",
-        "utf-8",
-      ),
-    );
+    const jwk = JSON.parse(await fsPromises.readFile("Wallet.json", "utf-8"));
     console.log("JWK loaded");
 
     // Initialize Turbo
@@ -238,29 +233,30 @@ app.post("/deploy", async (req, res) => {
     outputDir,
     subDirectory,
   )
-    .then((result) => {
+    .then(async (result) => {
       console.log("Build completed:", result);
       res.status(200).send(result);
+      if (
+        !fs.existsSync(
+          `./builds/${owner}/${folderName}/${outputDir}/index.html`,
+        )
+      ) {
+        res.status(500).send("index.html does not exist in build");
+      } else {
+        try {
+          const dres = await deployFolder(
+            `./builds/${owner}/${folderName}/${outputDir}`,
+          );
+          res.send(dres);
+        } catch (e) {
+          res.status(400).send(e.message);
+        }
+      }
     })
     .catch((error) => {
       console.error("Build failed:", error);
       res.status(500).send(error.message);
     });
-
-  if (
-    !fs.existsSync(`./builds/${owner}/${folderName}/${outputDir}/index.html`)
-  ) {
-    res.status(500).send("index.html does not exist in build");
-  } else {
-    try {
-      const dres = await deployFolder(
-        `./builds/${owner}/${folderName}/${outputDir}`,
-      );
-      res.send(dres);
-    } catch (e) {
-      res.status(400).send(e.message);
-    }
-  }
 
   //if (activeContainers >= MAX_CONTAINERS) {
   //  await redisClient.rPush(
