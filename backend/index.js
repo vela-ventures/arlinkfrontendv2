@@ -241,7 +241,6 @@ app.post("/deploy", async (req, res) => {
   )
     .then(async (result) => {
       console.log("Build completed:", result);
-     // res.status(200).send(result);
       if (
         !fs.existsSync(
           `./builds/${owner}/${folderName}/${outputDist}/index.html`,
@@ -264,7 +263,9 @@ app.post("/deploy", async (req, res) => {
         `./builds/${owner}/${folderName}/${outputDist}`,
         { recursive: true, force: true },
       );
+      return res.status(200).send(result);
     })
+
     .catch((error) => {
       console.error("Build failed:", error);
       return res.status(500).send(error.message);
