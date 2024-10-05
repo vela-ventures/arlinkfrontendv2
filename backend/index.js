@@ -241,13 +241,13 @@ app.post("/deploy", async (req, res) => {
   )
     .then(async (result) => {
       console.log("Build completed:", result);
-      res.status(200).send(result);
+     // res.status(200).send(result);
       if (
         !fs.existsSync(
           `./builds/${owner}/${folderName}/${outputDir}/index.html`,
         )
       ) {
-        res.status(500).send("index.html does not exist in build");
+        //res.status(500).send("index.html does not exist in build");
       } else {
         try {
           const dres = await deployFolder(
@@ -255,13 +255,13 @@ app.post("/deploy", async (req, res) => {
           );
           res.send(dres);
         } catch (e) {
-          res.status(400).send(e.message);
+       //   res.status(400).send(e.message);
         }
       }
     })
     .catch((error) => {
       console.error("Build failed:", error);
-      res.status(500).send(error.message);
+     // res.status(500).send(error.message);
     });
 
   //if (activeContainers >= MAX_CONTAINERS) {
