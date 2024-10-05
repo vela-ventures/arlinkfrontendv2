@@ -98,8 +98,9 @@ export default function Deployment() {
 
     useEffect(() => {
     if (!deployment) return;
+    const owner = deployment?.RepoUrl.split("/").reverse()[1];
     const folderName = deployment?.RepoUrl.replace(/\.git|\/$/, '').split('/').pop() as string;
-    axios.get(`${BUILDER_BACKEND}/logs/${folderName}`).then((res) => {
+    axios.get(`${BUILDER_BACKEND}/logs/${owner}/${folderName}`).then((res) => {
         setBuildOutput((res.data as string).replaceAll(/\\|\||\-/g, ""));
     });
     connect().dryrun({
