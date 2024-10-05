@@ -230,7 +230,7 @@ app.post("/deploy", async (req, res) => {
     //return res.status(400).send("Repo Already Deployed");
   }
 
-await handleBuild(req, res);
+await handleBuild(req, res, outputDist);
 
   //if (activeContainers >= MAX_CONTAINERS) {
   //  await redisClient.rPush(
@@ -253,11 +253,8 @@ await handleBuild(req, res);
   // }
 });
 
-async function handleBuild(req, res) {
-  const { repository, branch, installCommand, buildCommand, outputDir, subDirectory } = req.body;
-
-  // Convert outputDir to outputDist
-  const outputDist = outputDir.startsWith("./") ? outputDir.slice(2) : outputDir;
+async function handleBuild(req, res, outputDist) {
+  const { repository, branch, installCommand, buildCommand, subDirectory } = req.body;
 
   const buildParams = {
     repository,
