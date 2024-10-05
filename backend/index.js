@@ -244,24 +244,30 @@ app.post("/deploy", async (req, res) => {
      // res.status(200).send(result);
       if (
         !fs.existsSync(
-          `./builds/${owner}/${folderName}/${outputDir}/index.html`,
+          `./builds/${owner}/${folderName}/${outputDist}/index.html`,
         )
       ) {
-        //res.status(500).send("index.html does not exist in build");
+        return res.status(500).send("index.html does not exist in build");
       } else {
         try {
           const dres = await deployFolder(
-            `./builds/${owner}/${folderName}/${outputDir}`,
+            `./builds/${owner}/${folderName}/${outputDist}`,
           );
           res.send(dres);
         } catch (e) {
-       //   res.status(400).send(e.message);
+          return res.status(400).send(e.message);
         }
       }
+
+      //delete the folder builds/owner/folderName/outputDist
+      fs.rmSync(
+        `./builds/${owner}/${folderName}/${outputDist}`,
+        { recursive: true, force: true },
+      );
     })
     .catch((error) => {
       console.error("Build failed:", error);
-     // res.status(500).send(error.message);
+      return res.status(500).send(error.message);
     });
 
   //if (activeContainers >= MAX_CONTAINERS) {
