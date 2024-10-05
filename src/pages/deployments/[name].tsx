@@ -58,6 +58,7 @@ export default function Deployment() {
         try {
             const txid = await axios.post(`${BUILDER_BACKEND}/deploy`, {
                 repository: repoUrl,
+                branch,
                 installCommand,
                 buildCommand,
                 outputDir,
