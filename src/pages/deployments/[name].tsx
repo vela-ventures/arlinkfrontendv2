@@ -29,8 +29,9 @@ export default function Deployment() {
         if (!deployment?.RepoUrl) return
         const interval: ReturnType<typeof setInterval> = setInterval(async () => {
             const folderName = deployment?.RepoUrl.replace(/\.git|\/$/, '').split('/').pop() as string;
+            const owner = deployment?.RepoUrl.split("/").reverse()[1];
             if (!redeploying) return clearInterval(interval)
-            const logs = await axios.get(`${BUILDER_BACKEND}/logs/${folderName}`)
+            const logs = await axios.get(`${BUILDER_BACKEND}/logs/${owner}/${folderName}`)
             console.log(logs.data)
             setBuildOutput((logs.data as string).replaceAll(/\\|\||\-/g, ""))
             //scroll logs to bottom

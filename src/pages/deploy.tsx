@@ -17,6 +17,10 @@ function extractRepoName(url: string): string {
     return url.replace(/\.git|\/$/, '').split('/').pop() as string;
 }
 
+function extractOwnerName(url: string): string {
+    return url.split("/").reverse()[1];
+}
+
 function Logs({ name, deploying, repoUrl }: { name: string, deploying?: boolean, repoUrl: string }) {
     console.log(name);
     const [output, setOutput] = useState("");
@@ -24,9 +28,10 @@ function Logs({ name, deploying, repoUrl }: { name: string, deploying?: boolean,
     useEffect(() => {
         if (!name || !repoUrl) return;
         const repo = extractRepoName(repoUrl);
+        const owner = extractOwnerName(repoUrl);
         const interval: ReturnType<typeof setInterval> = setInterval(async () => {
             if (!deploying) return clearInterval(interval);
-            const logs = await axios.get(`${BUILDER_BACKEND}/logs/${repo}`);
+            const logs = await axios.get(`${BUILDER_BACKEND}/logs/${owner}/${repo}`);
             console.log(logs.data);
             setOutput((logs.data as string).replaceAll(/\\|\||\-/g, ""));
             setTimeout(() => {
