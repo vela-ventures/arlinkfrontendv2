@@ -225,9 +225,18 @@ app.post("/deploy", async (req, res) => {
     .pop();
   console.log("Folder name:", folderName);
 
-  if (fs.existsSync(`./builds/${owner}/${folderName}`)) {
-    console.log("Repo Already Deployed, proceeding with rebuild");
-    //return res.status(400).send("Repo Already Deployed");
+  // Check if the owner already has a repository deployed
+  const ownerPath = `./builds/${owner}`;
+  if (fs.existsSync(ownerPath)) {
+    const deployedRepos = fs.readdirSync(ownerPath);
+    if (deployedRepos.length > 0) {
+      if (deployedRepos.includes(folderName)) {
+        console.log("Repo Already Deployed, proceeding with rebuild");
+      } else {
+        console.error("User already has a different repository deployed");
+        return res.status(400).send("You can only have one repository deployed at a time. Please remove the existing repository before deploying a new one.");
+      }
+    }
   }
 
 await handleBuild(req, res, outputDist);
