@@ -231,7 +231,7 @@ app.post("/deploy", async (req, res) => {
   }
 
   // run builds returns a promise, handle the result or error and send it back to the client
-await runBuild(
+runBuild(
     repository,
     branch,
     installCommand,
