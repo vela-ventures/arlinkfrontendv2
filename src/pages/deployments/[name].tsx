@@ -9,7 +9,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { BUILDER_BACKEND } from "@/lib/utils";
-import Ansi from "ansi-to-react";
+import Ansi from "@agbishop/react-ansi-18";
 import { connect } from "@permaweb/aoconnect";
 import { toast } from "sonner";
 import { runLua } from "@/lib/ao-vars";
@@ -155,7 +155,11 @@ export default function Deployment() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
             <Card>
                 <div className="text-muted-foreground mb-2">Build Output</div>
-                <pre className="overflow-scroll max-h-[350px] font-mono" id="logs"><Ansi className="font-mono">{buildOutput}</Ansi></pre>
+                <pre className="overflow-scroll max-h-[350px] font-mono" id="logs">
+                    <div className="font-mono">
+                        <Ansi log={buildOutput} />
+                    </div>
+                </pre>
             </Card>
             <div className="grid grid-cols-1 gap-2">
                 <Card className=" h-fit p-0">

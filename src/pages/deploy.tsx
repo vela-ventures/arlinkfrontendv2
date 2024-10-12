@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import Arweave from "arweave";
 import { Loader } from "lucide-react";
 import axios from "axios";
-import Ansi from "ansi-to-react";
+import Ansi from "@agbishop/react-ansi-18";
 import { BUILDER_BACKEND } from "@/lib/utils";
 import useDeploymentManager from "@/hooks/useDeploymentManager";
 
@@ -47,9 +47,10 @@ function Logs({ name, deploying, repoUrl }: { name: string, deploying?: boolean,
         <div>
             <div className="pl-2 mb-1">Build Logs</div>
             <pre className="font-mono text-xs border p-2 rounded-lg px-4 bg-black/30 overflow-scroll max-h-[250px]" id="logs">
-                <Ansi className="!font-mono">{output}</Ansi>
+                <Ansi log={output} />
             </pre>
         </div>
+        
     );
 }
 

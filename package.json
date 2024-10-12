@@ -16,6 +16,7 @@
     "@radix-ui/react-slot": "^1.1.0",
     "@radix-ui/react-switch": "^1.1.0",
     "@tabler/icons-react": "^3.11.0",
+    "@tanstack/react-virtual": "^3.10.8",
     "arweave": "^1.15.1",
     "arweave-wallet-kit": "^1.0.5",
     "axios": "^1.7.3",
