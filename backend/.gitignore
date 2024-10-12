@@ -7,3 +7,4 @@ builds/*
 node_modules
 bun.lockb
 codebase.md
+package-lock.json
