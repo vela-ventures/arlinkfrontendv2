@@ -27,20 +27,43 @@ function extractOwnerName(url: string): string {
 function Logs({ name, deploying, repoUrl }: { name: string, deploying?: boolean, repoUrl: string }) {
     console.log(name);
     const [output, setOutput] = useState("");
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         if (!name || !repoUrl) return;
         const repo = extractRepoName(repoUrl);
         const owner = extractOwnerName(repoUrl);
+        let startTime = Date.now();
+        const waitTime = 60000; // 1 minute in milliseconds
+
         const interval: ReturnType<typeof setInterval> = setInterval(async () => {
             if (!deploying) return clearInterval(interval);
-            const logs = await axios.get(`${BUILDER_BACKEND}/logs/${owner}/${repo}`);
-            console.log(logs.data);
-            setOutput((logs.data as string).replaceAll(/\\|\||\-/g, ""));
-            setTimeout(() => {
-                const logsDiv = document.getElementById("logs");
-                logsDiv?.scrollTo({ top: logsDiv.scrollHeight, behavior: "smooth" });
-            }, 100);
+            
+            try {
+                const logs = await axios.get(`${BUILDER_BACKEND}/logs/${owner}/${repo}`);
+                console.log(logs.data);
+                setOutput((logs.data as string).replaceAll(/\\|\||\-/g, ""));
+                setError(null); // Clear any previous errors
+
+                setTimeout(() => {
+                    const logsDiv = document.getElementById("logs");
+                    logsDiv?.scrollTo({ top: logsDiv.scrollHeight, behavior: "smooth" });
+                }, 100);
+            } catch (err) {
+                if (axios.isAxiosError(err) && err.response?.status === 404) {
+                    const elapsedTime = Date.now() - startTime;
+                    if (elapsedTime < waitTime) {
+                        setError("Waiting for logs...");
+                    } else {
+                        setError("Failed to fetch logs after 1 minute. They may not be available yet.");
+                        clearInterval(interval);
+                    }
+                } else {
+                    setError("An error occurred while fetching logs.");
+                    console.error("Error fetching logs:", err);
+                    clearInterval(interval);
+                }
+            }
         }, 1000);
 
         return () => { clearInterval(interval); }
@@ -49,11 +72,13 @@ function Logs({ name, deploying, repoUrl }: { name: string, deploying?: boolean,
     return (
         <div>
             <div className="pl-2 mb-1">Build Logs</div>
+            {error ? (
+                <div className="text-yellow-500 pl-2 mb-2">{error}</div>
+            ) : null}
             <pre className="font-mono text-xs border p-2 rounded-lg px-4 bg-black/30 overflow-scroll max-h-[250px]" id="logs">
                 <Ansi log={output} />
             </pre>
         </div>
-        
     );
 }
 
