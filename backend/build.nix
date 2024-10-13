@@ -60,7 +60,11 @@ pkgs.mkShell {
         echo "Build Directory: $BUILD_DIR"
 
         echo "Cloning repository..."
-        GIT_ASKPASS=echo git clone -q "$GIT_REPO" -b "$BRANCH" "$TMP_DIR/repo"
+        if [[ "$GIT_REPO" == *"x-access-token:"* ]]; then
+          GIT_ASKPASS=echo git clone -q "$GIT_REPO" -b "$BRANCH" "$TMP_DIR/repo"
+        else
+          git clone -q "$GIT_REPO" -b "$BRANCH" "$TMP_DIR/repo"
+        fi
         cd "$TMP_DIR/repo"
 
         if [ -n "$SUBDIRECTORY" ]; then
