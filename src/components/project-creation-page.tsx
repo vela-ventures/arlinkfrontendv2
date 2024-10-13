@@ -4,7 +4,6 @@ import { useGlobalState } from '@/hooks/useGlobalState';
 import { initiateGitHubAuth, handleGitHubCallback } from '@/lib/github-auth-file';
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { Token } from 'graphql';
 
 export function GitHubLoginButton() {
     const { githubToken, setGithubToken } = useGlobalState();

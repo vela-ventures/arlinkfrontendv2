@@ -14,6 +14,8 @@ import { BUILDER_BACKEND } from "@/lib/utils";
 import useDeploymentManager from "@/hooks/useDeploymentManager";
 import { GitHubLoginButton } from '@/components/project-creation-page';
 
+
+
 function extractRepoName(url: string): string {
     return url.replace(/\.git|\/$/, '').split('/').pop() as string;
 }
@@ -72,6 +74,8 @@ export default function Deploy() {
     const [branchError, setBranchError] = useState("");
     const { githubToken, setGithubToken } = useGlobalState();
     const [repositories, setRepositories] = useState([]);
+   
+
 
     const arweave = Arweave.init({
         host: "arweave.net",
@@ -146,7 +150,7 @@ export default function Deploy() {
         if (!installCommand) return toast.error("Install Command is required");
         if (!buildCommand) return toast.error("Build Command is required");
         if (!outputDir) return toast.error("Output Directory is required");
-        if (!arnsProcess) return toast.error("ArNS Process ID is required");
+        
 
         if (deploying) return;
 
