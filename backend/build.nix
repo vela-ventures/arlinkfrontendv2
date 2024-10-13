@@ -60,7 +60,7 @@ pkgs.mkShell {
         echo "Build Directory: $BUILD_DIR"
 
         echo "Cloning repository..."
-        git clone -q "$GIT_REPO" -b "$BRANCH" "$TMP_DIR/repo"
+        GIT_ASKPASS=echo git clone -q "$GIT_REPO" -b "$BRANCH" "$TMP_DIR/repo"
         cd "$TMP_DIR/repo"
 
         if [ -n "$SUBDIRECTORY" ]; then
