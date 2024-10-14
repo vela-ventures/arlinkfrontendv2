@@ -98,24 +98,28 @@ export default function DeployThirdParty() {
     const [arnsProcess, setArnsProcess] = useState("");
     const [protocolLandRepos, setProtocolLandRepos] = useState<ProtocolLandRepo[]>([]);
     const [selectedRepo, setSelectedRepo] = useState<ProtocolLandRepo | null>(null);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
 
-    const handleFetchRepos = async () => {
-        if (!address) {
-            toast.error("Please connect your wallet first");
-            return;
+    useEffect(() => {
+        async function fetchRepos() {
+            if (!address) {
+                toast.error("Please connect your wallet first");
+                setLoading(false);
+                return;
+            }
+            try {
+                const repos = await fetchUserRepos(address);
+                setProtocolLandRepos(repos);
+            } catch (error) {
+                console.error('Error fetching repositories:', error);
+                toast.error('Failed to fetch repositories');
+            } finally {
+                setLoading(false);
+            }
         }
-        setLoading(true);
-        try {
-            const repos = await fetchUserRepos(address);
-            setProtocolLandRepos(repos);
-        } catch (error) {
-            console.error('Error fetching repositories:', error);
-            toast.error('Failed to fetch repositories');
-        } finally {
-            setLoading(false);
-        }
-    };
+
+        fetchRepos();
+    }, [address]);
 
     const handleRepoSelection = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const selectedRepoUrl = e.target.value;
@@ -191,16 +195,12 @@ export default function DeployThirdParty() {
             <div className="text-xl my-5 mb-10">Deploy from Protocol Land</div>
 
             <div className="md:min-w-[60%] w-full max-w-lg mx-auto flex flex-col gap-2">
-                <Button 
-                    className="w-full" 
-                    variant="secondary" 
-                    onClick={handleFetchRepos}
-                    disabled={loading}
-                >
-                    {loading ? <Loader className="animate-spin mr-2" /> : "Fetch Protocol Land Repositories"}
-                </Button>
-
-                {protocolLandRepos.length > 0 && (
+                {loading ? (
+                    <div className="text-center">
+                        <Loader className="animate-spin inline-block mr-2" />
+                        Loading repositories...
+                    </div>
+                ) : protocolLandRepos.length > 0 ? (
                     <>
                         <label className="text-muted-foreground pl-2 pt-2 -mb-1" htmlFor="repo-url">Repository</label>
                         <select
@@ -237,6 +237,8 @@ export default function DeployThirdParty() {
 
                         {deploying && <Logs name={projName} deploying={deploying} repoUrl={repoUrl} />}
                     </>
+                ) : (
+                    <div className="text-center">No repositories found. Please make sure your wallet is connected and you have repositories on Protocol Land.</div>
                 )}
             </div>
         </Layout>
