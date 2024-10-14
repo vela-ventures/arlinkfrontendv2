@@ -4,11 +4,12 @@ import { Input } from "@/components/ui/input";
 import { useGlobalState } from "@/hooks";
 import { runLua } from "@/lib/ao-vars";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { SetStateAction, useEffect, useState } from "react";
 import { toast } from "sonner";
 import Arweave from "arweave";
 import { Loader } from "lucide-react";
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
+
 import Ansi from "@agbishop/react-ansi-18";
 import { BUILDER_BACKEND } from "@/lib/utils";
 import useDeploymentManager from "@/hooks/useDeploymentManager";
@@ -22,6 +23,19 @@ function extractRepoName(url: string): string {
 
 function extractOwnerName(url: string): string {
     return url.split("/").reverse()[1];
+}
+
+// Define a custom type for Axios errors
+type AxiosErrorType = {
+  isAxiosError: boolean;
+  response?: {
+    status: number;
+  };
+};
+
+// Update the type guard function
+function isAxiosError(error: any): error is AxiosErrorType {
+  return error && error.isAxiosError === true;
 }
 
 function Logs({ name, deploying, repoUrl }: { name: string, deploying?: boolean, repoUrl: string }) {
@@ -49,8 +63,8 @@ function Logs({ name, deploying, repoUrl }: { name: string, deploying?: boolean,
                     const logsDiv = document.getElementById("logs");
                     logsDiv?.scrollTo({ top: logsDiv.scrollHeight, behavior: "smooth" });
                 }, 100);
-            } catch (err) {
-                if (axios.isAxiosError(err) && err.response?.status === 404) {
+            } catch (error: unknown) {
+                if (isAxiosError(error) && error.response?.status === 404) {
                     const elapsedTime = Date.now() - startTime;
                     if (elapsedTime < waitTime) {
                         setError("Waiting for logs...");
@@ -60,7 +74,7 @@ function Logs({ name, deploying, repoUrl }: { name: string, deploying?: boolean,
                     }
                 } else {
                     setError("An error occurred while fetching logs.");
-                    console.error("Error fetching logs:", err);
+                    console.error("Error fetching logs:", error);
                     clearInterval(interval);
                 }
             }
@@ -130,7 +144,7 @@ export default function Deploy() {
                     Accept: 'application/vnd.github.v3+json',
                 },
             });
-            setRepositories(response.data);
+            setRepositories(response.data as SetStateAction<never[]>);
         } catch (error) {
             console.error('Error fetching repositories:', error);
             toast.error('Failed to fetch repositories');
@@ -153,11 +167,11 @@ export default function Deploy() {
                     },
                 }
             );
-            setBranches(response.data.map((branch: any) => branch.name));
+            setBranches((response.data as any[]).map((branch: any) => branch.name));
         } catch (error) {
             console.error('Error fetching branches:', error);
             // If the error is 404, assume it's a single-branch repository
-            if (axios.isAxiosError(error) && error.response?.status === 404) {
+            if (isAxiosError(error) && error.response?.status === 404) {
                 setBranches(['main']); // Assume 'main' as the default branch
                 setSelectedBranch('main');
             } else {

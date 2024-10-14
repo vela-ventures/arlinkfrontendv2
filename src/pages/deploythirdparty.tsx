@@ -27,6 +27,19 @@ function extractOwnerName(url: string): string {
     return url.split("/").reverse()[1];
 }
 
+// Define a custom type for Axios errors
+type AxiosErrorType = {
+    isAxiosError: boolean;
+    response?: {
+      status: number;
+    };
+};
+
+// Update the type guard function
+function isAxiosError(error: any): error is AxiosErrorType {
+  return error && error.isAxiosError === true;
+}
+
 function Logs({ name, deploying, repoUrl }: { name: string, deploying?: boolean, repoUrl: string }) {
     const [output, setOutput] = useState("");
     const [error, setError] = useState<string | null>(null);
@@ -51,8 +64,8 @@ function Logs({ name, deploying, repoUrl }: { name: string, deploying?: boolean,
                     const logsDiv = document.getElementById("logs");
                     logsDiv?.scrollTo({ top: logsDiv.scrollHeight, behavior: "smooth" });
                 }, 100);
-            } catch (err) {
-                if (axios.isAxiosError(err) && err.response?.status === 404) {
+            } catch (error: unknown) {
+                if (isAxiosError(error) && error.response?.status === 404) {
                     const elapsedTime = Date.now() - startTime;
                     if (elapsedTime < waitTime) {
                         setError("Waiting for logs...");
@@ -62,7 +75,7 @@ function Logs({ name, deploying, repoUrl }: { name: string, deploying?: boolean,
                     }
                 } else {
                     setError("An error occurred while fetching logs.");
-                    console.error("Error fetching logs:", err);
+                    console.error("Error fetching logs:", error);
                     clearInterval(interval);
                 }
             }
