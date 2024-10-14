@@ -4,17 +4,20 @@ import { Input } from "@/components/ui/input";
 import { useGlobalState } from "@/hooks";
 import { runLua } from "@/lib/ao-vars";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import Arweave from "arweave";
 import { Loader } from "lucide-react";
-import axios, { AxiosError } from 'axios';
-import Ansi from "@agbishop/react-ansi-18";
+import axios from 'axios';
 import { BUILDER_BACKEND } from "@/lib/utils";
 import useDeploymentManager from "@/hooks/useDeploymentManager";
-import { GitHubLoginButton } from '@/components/project-creation-page';
+import { useActiveAddress } from "arweave-wallet-kit";
+import fetchUserRepos from '@/pages/api/Pl/fetchrepo';
+import Ansi from "@agbishop/react-ansi-18";
 
-
+type ProtocolLandRepo = {
+    name: string;
+    cloneUrl: string;
+};
 
 function extractRepoName(url: string): string {
     return url.replace(/\.git|\/$/, '').split('/').pop() as string;
@@ -25,7 +28,6 @@ function extractOwnerName(url: string): string {
 }
 
 function Logs({ name, deploying, repoUrl }: { name: string, deploying?: boolean, repoUrl: string }) {
-    console.log(name);
     const [output, setOutput] = useState("");
     const [error, setError] = useState<string | null>(null);
 
@@ -82,10 +84,11 @@ function Logs({ name, deploying, repoUrl }: { name: string, deploying?: boolean,
     );
 }
 
-export default function Deploy() {
+export default function DeployThirdParty() {
     const globalState = useGlobalState();
     const router = useRouter();
     const { managerProcess, refresh } = useDeploymentManager();
+    const address = useActiveAddress();
     const [projName, setProjName] = useState("");
     const [repoUrl, setRepoUrl] = useState("");
     const [installCommand, setInstallCommand] = useState("npm ci");
@@ -93,99 +96,54 @@ export default function Deploy() {
     const [outputDir, setOutputDir] = useState("./dist");
     const [deploying, setDeploying] = useState(false);
     const [arnsProcess, setArnsProcess] = useState("");
-    const [selectedBranch, setSelectedBranch] = useState("");
-    const [branches, setBranches] = useState([""]);
-    const [loadingBranches, setLoadingBranches] = useState(false);
-    const [branchError, setBranchError] = useState("");
-    const { githubToken, setGithubToken } = useGlobalState();
-    const [repositories, setRepositories] = useState([]);
-   
+    const [protocolLandRepos, setProtocolLandRepos] = useState<ProtocolLandRepo[]>([]);
+    const [selectedRepo, setSelectedRepo] = useState<ProtocolLandRepo | null>(null);
+    const [loading, setLoading] = useState(false);
 
-
-    const arweave = Arweave.init({
-        host: "arweave.net",
-        port: 443,
-        protocol: "https",
-    });
-
-    // Add useEffect to fetch repositories when token changes
-    useEffect(() => {
-        if (githubToken) {
-            fetchRepositories();
+    const handleFetchRepos = async () => {
+        if (!address) {
+            toast.error("Please connect your wallet first");
+            return;
         }
-    }, [githubToken]);
-
-    useEffect(() => {
-        if (repoUrl && githubToken) {
-            fetchBranches();
-        }
-    }, [repoUrl, githubToken]);
-
-    async function fetchRepositories() {
-        if (!githubToken) return;
+        setLoading(true);
         try {
-            const response = await axios.get('https://api.github.com/user/repos', {
-                headers: {
-                    Authorization: `token ${githubToken}`,
-                    Accept: 'application/vnd.github.v3+json',
-                },
-            });
-            setRepositories(response.data);
+            const repos = await fetchUserRepos(address);
+            setProtocolLandRepos(repos);
         } catch (error) {
             console.error('Error fetching repositories:', error);
             toast.error('Failed to fetch repositories');
-        }
-    }
-
-    async function fetchBranches() {
-        if (!repoUrl) return;
-        const [owner, repo] = repoUrl.replace("https://github.com/", "").split("/");
-        setLoadingBranches(true);
-        setBranchError("");
-
-        try {
-            const response = await axios.get(
-                `https://api.github.com/repos/${owner}/${repo}/branches`,
-                {
-                    headers: {
-                        Authorization: `token ${githubToken}`,
-                        Accept: 'application/vnd.github.v3+json',
-                    },
-                }
-            );
-            setBranches(response.data.map((branch: any) => branch.name));
-        } catch (error) {
-            console.error('Error fetching branches:', error);
-            // If the error is 404, assume it's a single-branch repository
-            if (axios.isAxiosError(error) && error.response?.status === 404) {
-                setBranches(['main']); // Assume 'main' as the default branch
-                setSelectedBranch('main');
-            } else {
-                setBranchError("Failed to fetch branches. Please check your repository access.");
-            }
         } finally {
-            setLoadingBranches(false);
+            setLoading(false);
         }
-    }
+    };
+
+    const handleRepoSelection = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const selectedRepoUrl = e.target.value;
+        const repo = protocolLandRepos.find(repo => repo.cloneUrl === selectedRepoUrl);
+        if (repo) {
+            setSelectedRepo(repo);
+            setRepoUrl(repo.cloneUrl);
+            setProjName(repo.name);
+        }
+    };
 
     async function deploy() {
         if (!projName) return toast.error("Project Name is required");
-        if (!repoUrl) return toast.error("Repository Url is required");
-        if (!selectedBranch) return toast.error("Branch is required");
+        if (!repoUrl) return toast.error("Repository URL is required");
         if (!installCommand) return toast.error("Install Command is required");
         if (!buildCommand) return toast.error("Build Command is required");
         if (!outputDir) return toast.error("Output Directory is required");
-        
+        if (!address) return toast.error("Wallet address is required");
 
         if (deploying) return;
-
         if (!globalState.managerProcess) return toast.error("Manager process not found");
 
         setDeploying(true);
+
         const query = `local res = db:exec[[
-            INSERT INTO Deployments (Name, RepoUrl, Branch, InstallCMD, BuildCMD, OutputDIR, ArnsProcess)
+            INSERT INTO Deployments (Name, RepoUrl, InstallCMD, BuildCMD, OutputDIR, ArnsProcess)
                 VALUES
-            ('${projName}', '${repoUrl}', '${selectedBranch}', '${installCommand}', '${buildCommand}', '${outputDir}', '${arnsProcess}')
+            ('${projName}', '${repoUrl}', '${installCommand}', '${buildCommand}', '${outputDir}', '${arnsProcess}')
         ]]`;
         console.log(query);
 
@@ -197,29 +155,25 @@ export default function Deploy() {
         try {
             const txid = await axios.post(`${BUILDER_BACKEND}/deploy`, {
                 repository: repoUrl,
-                branch: selectedBranch, 
                 installCommand,
                 buildCommand,
                 outputDir,
+                branch: "main", // Assuming main branch for Protocol Land repos
+                subDirectory: selectedRepo?.name,
+                protocolLand: true,
+                walletAddress: address,
+                repoName: projName,
+                arnsProcess, // Add this line to include arnsProcess
             }, { timeout: 60 * 60 * 1000, headers: { "Content-Type": "application/json" } });
 
             if (txid.status === 200) {
                 console.log("https://arweave.net/" + txid.data);
                 toast.success("Deployment successful");
 
-                // const mres = await runLua("", arnsProcess, [
-                //     { name: "Action", value: "Set-Record" },
-                //     { name: "Sub-Domain", value: "@" },
-                //     { name: "Transaction-Id", value: txid.data },
-                //     { name: "TTL-Seconds", value: "3600" },
-                // ]);
-                // console.log("set arns name", mres);
-
                 const updres = await runLua(`db:exec[[UPDATE Deployments SET DeploymentId='${txid.data}' WHERE Name='${projName}']]`, globalState.managerProcess);
 
                 router.push("/deployments/" + projName);
                 window.open("https://arweave.net/" + txid.data, "_blank");
-
             } else {
                 toast.error("Deployment failed");
                 console.log(txid);
@@ -232,79 +186,52 @@ export default function Deploy() {
         setDeploying(false);
     }
 
-    const handleProtocolLandImport = () => {
-        router.push("/deploythirdparty");
-    };
-
     return (
         <Layout>
-            <div className="text-xl my-5 mb-10">Create New Deployment</div>
+            <div className="text-xl my-5 mb-10">Deploy from Protocol Land</div>
 
             <div className="md:min-w-[60%] w-full max-w-lg mx-auto flex flex-col gap-2">
-                {!githubToken ? (
-                    <>
-                        <GitHubLoginButton />
-                        <Button 
-                            className="w-full" 
-                            variant="secondary" 
-                            onClick={handleProtocolLandImport}
-                        >
-                            Import from Protocol Land
-                        </Button>
-                    </>
-                ) : (
-                    <>
-                        <label className="text-muted-foreground pl-2 pt-2 -mb-1" htmlFor="project-name">Project Name</label>
-                        <Input placeholder="e.g. Coolest AO App" id="project-name" required onChange={(e) => setProjName(e.target.value)} />
+                <Button 
+                    className="w-full" 
+                    variant="secondary" 
+                    onClick={handleFetchRepos}
+                    disabled={loading}
+                >
+                    {loading ? <Loader className="animate-spin mr-2" /> : "Fetch Protocol Land Repositories"}
+                </Button>
 
+                {protocolLandRepos.length > 0 && (
+                    <>
                         <label className="text-muted-foreground pl-2 pt-2 -mb-1" htmlFor="repo-url">Repository</label>
                         <select
                             className="border rounded-md p-2"
                             value={repoUrl}
-                            onChange={(e) => {
-                                setRepoUrl(e.target.value);
-                                // Reset branch selection when repo changes
-                                setSelectedBranch('');
-                                setBranches([]);
-                            }}
+                            onChange={handleRepoSelection}
                         >
                             <option value="" disabled>Select a repository</option>
-                            {repositories.map((repo: any) => (
-                                <option key={repo.id} value={repo.html_url}>
-                                    {repo.full_name}
+                            {protocolLandRepos.map((repo) => (
+                                <option key={repo.cloneUrl} value={repo.cloneUrl}>
+                                    {repo.name}
                                 </option>
                             ))}
                         </select>
 
-                        <label className="text-muted-foreground pl-2 pt-2 -mb-1" htmlFor="branch">Branch</label>
-                        <select
-                            className="border rounded-md p-2"
-                            value={selectedBranch}
-                            onChange={(e) => setSelectedBranch(e.target.value)}
-                            disabled={!repoUrl || loadingBranches}
-                        >
-                            <option value="" disabled>Select a branch</option>
-                            {branches.map((branch: any) => (
-                                <option key={branch} value={branch}>
-                                    {branch}
-                                </option>
-                            ))}
-                        </select>
-                        {branchError && <div className="text-red-500">{branchError}</div>}
+                        <label className="text-muted-foreground pl-2 pt-2 -mb-1" htmlFor="project-name">Project Name</label>
+                        <Input placeholder="e.g. Coolest AO App" id="project-name" value={projName} required onChange={(e) => setProjName(e.target.value)} />
 
                         <label className="text-muted-foreground pl-2 pt-10 -mb-1" htmlFor="install-command">Install Command</label>
-                        <Input placeholder="e.g. npm ci" id="install-command" onChange={(e) => setInstallCommand(e.target.value || "npm ci")} />
+                        <Input placeholder="e.g. npm ci" id="install-command" value={installCommand} onChange={(e) => setInstallCommand(e.target.value)} />
 
                         <label className="text-muted-foreground pl-2 pt-2 -mb-1" htmlFor="build-command">Build Command</label>
-                        <Input placeholder="e.g. npm run build" id="build-command" onChange={(e) => setBuildCommand(e.target.value || "npm run build")} />
+                        <Input placeholder="e.g. npm run build" id="build-command" value={buildCommand} onChange={(e) => setBuildCommand(e.target.value)} />
 
                         <label className="text-muted-foreground pl-2 pt-2 -mb-1" htmlFor="output-dir">Output Directory</label>
-                        <Input placeholder="e.g. ./dist" id="output-dir" onChange={(e) => setOutputDir(e.target.value || "./dist")} />
+                        <Input placeholder="e.g. ./dist" id="output-dir" value={outputDir} onChange={(e) => setOutputDir(e.target.value)} />
 
                         <label className="text-muted-foreground pl-2 pt-2 -mb-1" htmlFor="arns-process">ArNS Process ID</label>
                         <Input placeholder="e.g. arns.id" id="arns-process" onChange={(e) => setArnsProcess(e.target.value)} />
 
-                        <Button className="w-full mt-10" variant="secondary" onClick={deploy}>
+                        <Button className="w-full mt-10" variant="secondary" onClick={deploy} disabled={!selectedRepo}>
                             {deploying ? <Loader className="animate-spin mr-2" /> : "Deploy"}
                         </Button>
 
