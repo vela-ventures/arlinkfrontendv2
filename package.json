@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@agbishop/react-ansi-18": "^4.0.6",
+    "@ar.io/sdk": "^2.3.1",
     "@irys/arweave": "0.0.2",
     "@octokit/auth-oauth-app": "^8.1.1",
     "@octokit/core": "^6.1.2",
@@ -26,6 +27,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "framer-motion": "^11.3.17",
+    "fs": "^0.0.1-security",
     "graphql-request": "^7.1.0",
     "lucide-react": "^0.416.0",
     "next": "14.2.10",

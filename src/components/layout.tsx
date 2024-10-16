@@ -32,8 +32,7 @@ const links = [
 
 export default function Layout({ children }: { children?: React.ReactNode }) {
     const { connected } = useConnection()
-    const [arBalance, setArBalance] = useState(0)
-    const [open, setOpen] = useState(false);
+    const [arBalance, setArBalance] = useState(0);
 
     useEffect(() => {
         axios.get(`https://arweave.net/wallet/${DEPLOYMENT_WALLET}/balance`).then(res => setArBalance((res.data as number) / 1000000000000))
@@ -41,14 +40,14 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
     return (
         <div
             className={cn(
-                "flex flex-col md:flex-row bg-gray-100 dark:bg-neutral-800 w-full flex-1 mx-auto border border-neutral-200 dark:border-neutral-700 overflow-hidden",
-                "min-h-screen" // for your use case, use `h-screen` instead of `h-[60vh]`
+                "flex flex-row bg-gray-100 dark:bg-neutral-800 w-full flex-1 mx-auto border border-neutral-200 dark:border-neutral-700 overflow-hidden",
+                "min-h-screen"
             )}
         >
-            <Sidebar open={open} setOpen={setOpen}>
+            <Sidebar open={true} setOpen={() => {}}>
                 <SidebarBody className="justify-between gap-10 min-h-screen overflow-clip">
                     <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
-                        <Link href="/" className="text-2xl whitespace-nowrap">{open ? "⚡️ ARlink" : "⚡️"}</Link>
+                        <Link href="/" className="text-2xl whitespace-nowrap">⚡️ ARlink</Link>
                         <div className="mt-8 flex flex-col gap-2">
                             {links.map((link, idx) => (
                                 <SidebarLink key={idx} link={link} />
@@ -56,23 +55,25 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
                         </div>
                     </div>
                     <div className="flex flex-col items-center">
-                        {open && <div className="py-5 text-muted-foreground text-center">
+                        <div className="py-5 text-muted-foreground text-center">
                             <div className="mb-2">Deployment Fund</div>
                             <div>{`${arBalance}`.substring(0, 4)} $AR | ? turbo credits</div>
                             <div className="text-xs mt-2 -mx-2 leading-relaxed text-justify">
                                 The service uses a central wallet topped up with $AR and turbo credits to ease your deployment process.
                                 To contribute to deployment fund,
                                 gift turbo credits or send $AR at<br />
-                                <span className="font-mono bg-black/30 p-1 rounded text-[10.5px]">{DEPLOYMENT_WALLET}</span></div>
-                        </div>}
-                        {open ? <ConnectButton /> : <UserCircle2 size={30} className="bg-black rounded-full p-1 mb-3" />}
+                                <span className="font-mono bg-black/30 p-1 rounded text-[10.5px]">{DEPLOYMENT_WALLET}</span>
+                            </div>
+                        </div>
+                        <ConnectButton />
                     </div>
                 </SidebarBody>
             </Sidebar>
             <div className="flex flex-1">
-                <div className="p-2 md:p-10 rounded-t-2xl md:rounded-r-none md:rounded-l-2xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 flex flex-col gap-2 flex-1 w-full h-full max-h-screen overflow-scroll">
+                <div className="p-2 md:p-10 rounded-t-2xl md:rounded-r-2xl md:rounded-l-none border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 flex flex-col gap-2 flex-1 w-full h-full max-h-screen overflow-scroll">
                     {connected ? children : "Connect Wallet to continue :)"}
-                </div></div>
+                </div>
+            </div>
         </div>
     );
 }

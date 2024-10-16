@@ -9,11 +9,13 @@ import { toast } from "sonner";
 import Arweave from "arweave";
 import { Loader } from "lucide-react";
 import axios from 'axios';
+import { useActiveAddress } from 'arweave-wallet-kit'; // Add this import
 
 import Ansi from "@agbishop/react-ansi-18";
 import { BUILDER_BACKEND } from "@/lib/utils";
 import useDeploymentManager from "@/hooks/useDeploymentManager";
 import { GitHubLoginButton } from '@/components/project-creation-page';
+import { getWalletOwnedNames } from '@/pages/api/ario/getarns';
 
 
 
@@ -27,11 +29,11 @@ function extractOwnerName(url: string): string {
 
 // Define a custom type for Axios errors
 type AxiosErrorType = {
-  isAxiosError: boolean;
-  response?: {
-    status: number;
+    isAxiosError: boolean;
+    response?: {
+      status: number;
+    };
   };
-};
 
 // Update the type guard function
 function isAxiosError(error: any): error is AxiosErrorType {
@@ -113,8 +115,9 @@ export default function Deploy() {
     const [branchError, setBranchError] = useState("");
     const { githubToken, setGithubToken } = useGlobalState();
     const [repositories, setRepositories] = useState([]);
-   
-
+    const [arnsNames, setArnsNames] = useState<{ name: string; processId: string }[]>([]);
+    const [loadingArnsNames, setLoadingArnsNames] = useState(false);
+    const activeAddress = useActiveAddress(); // Add this line to get the active address
 
     const arweave = Arweave.init({
         host: "arweave.net",
@@ -250,6 +253,32 @@ export default function Deploy() {
         router.push("/deploythirdparty");
     };
 
+    async function fetchArnsNames() {
+        if (!activeAddress) {
+            toast.error("Wallet address not found");
+            return;
+        }
+        setLoadingArnsNames(true);
+        try {
+            const names = await getWalletOwnedNames(activeAddress);
+            setArnsNames(names);
+        } catch (error) {
+            console.error("Error fetching ArNS names:", error);
+            toast.error("Failed to fetch ArNS names");
+        } finally {
+            setLoadingArnsNames(false);
+        }
+    }
+
+    function handleArnsSelection(event: React.ChangeEvent<HTMLSelectElement>) {
+        const selectedValue = event.target.value;
+        if (selectedValue === "none") {
+            setArnsProcess("");
+        } else {
+            setArnsProcess(selectedValue);
+        }
+    }
+
     return (
         <Layout>
             <div className="text-xl my-5 mb-10">Create New Deployment</div>
@@ -316,7 +345,33 @@ export default function Deploy() {
                         <Input placeholder="e.g. ./dist" id="output-dir" onChange={(e) => setOutputDir(e.target.value || "./dist")} />
 
                         <label className="text-muted-foreground pl-2 pt-2 -mb-1" htmlFor="arns-process">ArNS Process ID</label>
-                        <Input placeholder="e.g. arns.id" id="arns-process" onChange={(e) => setArnsProcess(e.target.value)} />
+                        <div className="flex gap-2">
+                            <select
+                                className="border rounded-md p-2 flex-grow"
+                                value={arnsProcess}
+                                onChange={handleArnsSelection}
+                                onClick={() => {
+                                    if (arnsNames.length === 0) {
+                                        fetchArnsNames();
+                                    }
+                                }}
+                            >
+                                <option value="">Select an ArNS name</option>
+                                <option value="none">None</option>
+                                {arnsNames.map((arns) => (
+                                    <option key={arns.processId} value={arns.processId}>
+                                        {arns.name}
+                                    </option>
+                                ))}
+                            </select>
+                            {loadingArnsNames && <Loader className="animate-spin" />}
+                        </div>
+                        <Input 
+                            placeholder="e.g. arns.id" 
+                            id="arns-process" 
+                            value={arnsProcess}
+                            onChange={(e) => setArnsProcess(e.target.value)}
+                        />
 
                         <Button className="w-full mt-10" variant="secondary" onClick={deploy}>
                             {deploying ? <Loader className="animate-spin mr-2" /> : "Deploy"}
