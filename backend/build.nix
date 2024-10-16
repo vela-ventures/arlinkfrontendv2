@@ -106,9 +106,12 @@ pkgs.mkShell {
           echo "Warning: $DIST_FOLDER not found. No artifacts copied."
         fi
 
+        echo "Cleaning up temporary directory..."
+        cd "$PROJECT_ROOT"
         rm -rf "$TMP_DIR"
 
         echo "Build completed at $(date)"
+      
       } 2>&1 | tee "$LOG_FILE"
 
       echo "Build finished. Log file: $LOG_FILE"
