@@ -8,6 +8,9 @@ import fsPromises from "fs/promises";
 import mime from "mime";
 import { TurboFactory } from "@ardrive/turbo-sdk";
 import { runBuild } from "./buildManager.js";
+import { scheduleBuildJobs } from './scheduleBuildJobs.js';
+import { getLatestCommitHash } from './gitUtils.js';
+import { initRegistry, addToRegistry, updateRegistry, removeFromRegistry, getGlobalRegistry, getIndividualConfig } from './buildRegistry.js';
 
 const PORT = 3050;
 
@@ -223,7 +226,56 @@ app.post("/deploy", async (req, res) => {
     }
   }
 
-  await handleBuild(req, res, outputDist);
+
+  try {
+    
+    const buildConfig = {
+      owner,
+      repoName: folderName,
+      repository,
+      branch,
+      installCommand,
+      buildCommand,
+      outputDir: outputDist,
+      subDirectory,
+      protocolLand,
+      walletAddress,
+      lastBuiltCommit: ''
+    }
+    
+    const latestCommit = await getLatestCommitHash(repository, branch);
+    
+    // Check if this is a new deployment or an update
+    const existingConfigs = await getGlobalRegistry();
+    const existingConfig = existingConfigs.find(config => config.owner === owner && config.repoName === folderName);
+
+    if (!existingConfig) {
+      // New deployment
+      buildConfig.lastBuiltCommit = latestCommit;
+      await addToRegistry(buildConfig);
+      await handleBuild(req, res, outputDist);
+      res.status(200).send("Deployment successful");
+    } else {
+      // Existing deployment, check for updates
+      const individualConfig = await getIndividualConfig(owner, folderName);
+      if (latestCommit !== individualConfig.lastBuiltCommit) {
+        console.log(`New commit detected for ${owner}/${folderName}. Building...`);
+        
+        const buildResult = await handleBuild(req, res, outputDist);
+        
+        // Update registry with new commit hash
+        await updateRegistry(owner, folderName, { lastBuiltCommit: latestCommit });
+        
+        res.status(200).send(buildResult);
+      } else {
+        console.log(`No new commits for ${owner}/${folderName}. Skipping build.`);
+        res.status(204).send("No new commits");
+      }
+    }
+  } catch (error) {
+    console.error("Build failed:", error);
+    res.status(500).send(error.message);
+  }
 });
 
 async function handleBuild(req, res, outputDist) {
@@ -278,5 +330,9 @@ app.get("/logs/:owner/:repo", (req, res) => {
 const server = app.listen(PORT, () => {
   console.log("Server is running on port " + PORT);
 });
+
+initRegistry().catch(console.error);
+scheduleBuildJobs().catch(console.error);
+
 server.setTimeout(60 * 60 * 1000);
 server.keepAliveTimeout = 60 * 60 * 1000;

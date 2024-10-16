@@ -9,3 +9,4 @@ bun.lockb
 codebase.md
 package-lock.json
 Wallet.json
+buildRegistry.json
