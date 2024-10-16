@@ -228,12 +228,9 @@ app.post("/deploy", async (req, res) => {
 
 
   try {
-    const deployCount = await getDeployCount(owner, folderName);
+
+    const latestCommit = await getLatestCommitHash(repository, branch);
     
-    if (deployCount >= MAX_DEPLOYS_PER_DAY) {
-      console.log(`Deployment limit reached for ${owner}/${folderName}`);
-      return res.status(429).send("Daily deployment limit reached");
-    }
     const buildConfig = {
       owner,
       repoName: folderName,
@@ -245,18 +242,24 @@ app.post("/deploy", async (req, res) => {
       subDirectory,
       protocolLand,
       walletAddress,
-      lastBuiltCommit: ''
+      lastBuiltCommit: latestCommit,
+      maxDailyDeploys: 2, // Default value
+      deployCount: 0 // Initialize deploy count
     }
     
-    const latestCommit = await getLatestCommitHash(repository, branch);
+    const deployCount = await getDeployCount(owner, folderName);
+    const maxDailyDeploys = buildConfig.maxDailyDeploys;
+    
+    if (deployCount >= maxDailyDeploys) {
+      console.log(`Deployment limit reached for ${owner}/${folderName}`);
+      return res.status(429).send("Daily deployment limit reached");
+    }
     
     // Check if this is a new deployment or an update
     const existingConfigs = await getGlobalRegistry();
     const existingConfig = existingConfigs.find(config => config.owner === owner && config.repoName === folderName);
 
     if (!existingConfig) {
-      // New deployment
-      buildConfig.lastBuiltCommit = latestCommit;
       await addToRegistry(buildConfig);
       await handleBuild(req, res, outputDist);
       res.status(200).send("Deployment successful");
@@ -331,6 +334,22 @@ app.get("/logs/:owner/:repo", (req, res) => {
     }
   });
 });
+
+// app.post("/update-max-deploys", async (req, res) => {
+//   const { owner, repoName, maxDailyDeploys } = req.body;
+
+//   if (!owner || !repoName || !maxDailyDeploys) {
+//     return res.status(400).send("Missing required parameters");
+//   }
+
+//   try {
+//     await updateMaxDailyDeploys(owner, repoName, maxDailyDeploys);
+//     res.status(200).send("Max daily deploys updated successfully");
+//   } catch (error) {
+//     console.error("Error updating max daily deploys:", error);
+//     res.status(500).send(error.message);
+//   }
+// });
 
 const server = app.listen(PORT, () => {
   console.log("Server is running on port " + PORT);

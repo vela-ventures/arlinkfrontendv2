@@ -25,6 +25,12 @@ export async function getIndividualConfig(owner, repoName) {
 }
 
 export async function addToRegistry(buildConfig) {
+  // Add maxDailyDeploys if not present
+  if (!buildConfig.maxDailyDeploys) {
+    buildConfig.maxDailyDeploys = 2; // Default value
+  }
+  buildConfig.deployCount = 0; // Initialize deployCount
+
   // Add to global registry
   const registry = await getGlobalRegistry();
   registry.push(buildConfig);
@@ -90,6 +96,20 @@ export async function resetDeployCounts() {
     individualConfig.deployCount = 0;
     await fs.writeFile(configPath, JSON.stringify(individualConfig, null, 2));
   }
+}
+
+export async function updateMaxDailyDeploys(owner, repoName, maxDailyDeploys) {
+  const registry = await getGlobalRegistry();
+  const index = registry.findIndex(config => config.owner === owner && config.repoName === repoName);
+  if (index !== -1) {
+    registry[index].maxDailyDeploys = maxDailyDeploys;
+    await fs.writeFile(REGISTRY_FILE, JSON.stringify(registry, null, 2));
+  }
+
+  const configPath = path.join(BUILDS_DIR, owner, repoName, 'config.json');
+  const config = await getIndividualConfig(owner, repoName);
+  config.maxDailyDeploys = maxDailyDeploys;
+  await fs.writeFile(configPath, JSON.stringify(config, null, 2));
 }
 
 export async function getDeployCount(owner, repoName) {
