@@ -5,9 +5,10 @@ import path from 'path';
 function runBuild(buildParams) {
   const { repository, branch, installCommand, buildCommand, outputDist, subDirectory, protocolLand, walletAddress, repoName, projectRoot } = buildParams;
 
-  const nixShellCommand = `nix-shell build.nix --run 'build "${repository}" "${branch}" "${installCommand}" "${buildCommand}" "${outputDist}" "${projectRoot}" "${subDirectory || ''}" "${protocolLand}" "${walletAddress || ''}" "${repoName || ''}"'`;
+  const nixShellCommand = `nix-shell build.nix --run 'build "${repository}" "${branch}" "${installCommand}" "${buildCommand}" "${outputDist}" "${projectRoot}" "${subDirectory || ''}" "${protocolLand || false}" "${walletAddress || ''}" "${repoName || ''}"'`;
 
   console.log("Executing command:", nixShellCommand);
+  console.table(buildParams);
 
   const buildProcess = spawn('sh', ['-c', nixShellCommand], {
     cwd: projectRoot
