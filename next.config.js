@@ -10,4 +10,12 @@ module.exports = {
     }
     return config;
   },
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: 'https://vmi1968527.contaboserver.net/api/:path*',
+      },
+    ]
+  },
 };

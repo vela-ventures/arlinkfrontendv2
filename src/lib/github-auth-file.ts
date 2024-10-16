@@ -3,10 +3,10 @@ import { createOAuthAppAuth } from "@octokit/auth-oauth-app";
 
 const GITHUB_CLIENT_ID = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID as string;
 const GITHUB_CLIENT_SECRET = process.env.NEXT_PUBLIC_GITHUB_CLIENT_SECRET as string;
-//console.log("git clid is",GITHUB_CLIENT_ID)
+const BUILDER_BACKEND = process.env.NEXT_PUBLIC_BUILDER_BACKEND as string;
 
 export async function initiateGitHubAuth() {
-    const redirectUri = encodeURIComponent('http://localhost:3000/deploy'); // Your redirect URI
+    const redirectUri = encodeURIComponent(`${BUILDER_BACKEND}/deployhere`);
     const authUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${redirectUri}&scope=repo`;
     window.location.href = authUrl;
 }
