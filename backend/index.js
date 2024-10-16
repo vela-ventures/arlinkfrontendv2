@@ -10,7 +10,7 @@ import { TurboFactory } from "@ardrive/turbo-sdk";
 import { runBuild } from "./buildManager.js";
 import { scheduleBuildJobs } from './scheduleBuildJobs.js';
 import { getLatestCommitHash } from './gitUtils.js';
-import { initRegistry, addToRegistry, updateRegistry, incrementDeployCount, getDeployCount, getGlobalRegistry, getIndividualConfig } from './buildRegistry.js';
+import { initRegistry, addToRegistry, updateRegistry, getIndividualConfig, getDeployCount, getGlobalRegistry } from './buildRegistry.js';
 
 const PORT = 3050;
 
@@ -333,6 +333,22 @@ app.get("/logs/:owner/:repo", (req, res) => {
       res.status(200).send(data);
     }
   });
+});
+
+app.get("/config/:owner/:repo", async (req, res) => {
+  const { owner, repo } = req.params;
+
+  try {
+    const config = await getIndividualConfig(owner, repo);
+    if (config) {
+      res.status(200).json(config);
+    } else {
+      res.status(404).send("Configuration not found");
+    }
+  } catch (error) {
+    console.error(`Error fetching config for ${owner}/${repo}:`, error);
+    res.status(500).send("Internal server error");
+  }
 });
 
 // app.post("/update-max-deploys", async (req, res) => {
