@@ -6,7 +6,7 @@ const GITHUB_CLIENT_SECRET = process.env.NEXT_PUBLIC_GITHUB_CLIENT_SECRET as str
 //console.log("git clid is",GITHUB_CLIENT_ID)
 
 export async function initiateGitHubAuth() {
-    const redirectUri = encodeURIComponent('http://localhost:3000/deploy'); // Your redirect URI
+    const redirectUri = encodeURIComponent('https://vmi1968527.contaboserver.net/api/deploy'); // Your redirect URI
     const authUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${redirectUri}&scope=repo`;
     window.location.href = authUrl;
 }
