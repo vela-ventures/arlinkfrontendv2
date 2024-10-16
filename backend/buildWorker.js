@@ -1,12 +1,17 @@
 import { parentPort, workerData } from 'worker_threads';
 import { spawn } from 'child_process';
+import path from 'path';
 
 function runBuild(buildParams) {
-  const { repository, branch, installCommand, buildCommand, outputDist, subDirectory } = buildParams;
+  const { repository, branch, installCommand, buildCommand, outputDist, subDirectory, protocolLand, walletAddress, repoName, projectRoot } = buildParams;
 
-  const nixShellCommand = `nix-shell build.nix --run 'build ${repository} ${branch} "${installCommand}" "${buildCommand}" ${outputDist}${subDirectory ? ` ${subDirectory}` : ''}'`;
+  const nixShellCommand = `nix-shell build.nix --run 'build "${repository}" "${branch}" "${installCommand}" "${buildCommand}" "${outputDist}" "${projectRoot}" "${subDirectory || ''}" "${protocolLand}" "${walletAddress || ''}" "${repoName || ''}"'`;
 
-  const buildProcess = spawn('sh', ['-c', nixShellCommand]);
+  console.log("Executing command:", nixShellCommand);
+
+  const buildProcess = spawn('sh', ['-c', nixShellCommand], {
+    cwd: projectRoot
+  });
 
   buildProcess.stdout.on('data', (data) => {
     console.log(`${data}`);

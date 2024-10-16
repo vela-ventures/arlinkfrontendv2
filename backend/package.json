@@ -16,6 +16,7 @@
     "@ardrive/turbo-sdk": "^1.13.0",
     "@irys/sdk": "^0.2.9",
     "@liteseed/sdk": "^0.2.0",
+    "@protocol.land/git-remote-helper": "^0.4.0",
     "arbundles": "^0.11.2",
     "ardrive-cli": "^2.0.1",
     "arlocal": "^1.1.66",

@@ -168,9 +168,10 @@ app.post("/deploy", async (req, res) => {
     outputDir,
     branch,
     subDirectory,
+    protocolLand,
+    walletAddress,
+    repoName
   } = req.body;
-
-
 
   if (!repository) {
     console.error("Repository is required");
@@ -188,22 +189,24 @@ app.post("/deploy", async (req, res) => {
     console.error("Output Directory is required");
     return res.status(400).send("Output Directory is required");
   }
-  //const outputDist =  a function which checks if outputDir is prefixed with ./ if it is removes it
   const outputDist = outputDir.startsWith("./") ? outputDir.slice(2) : outputDir;
-
 
   if (!branch) {
     console.error("Branch is required");
     return res.status(400).send("Branch is required");
   }
 
-  //owner will be the github username, extracted from the repository url, index it from reverse so it's compatible with all git urls
-  const owner = `${repository}`.split("/").reverse()[1];
-
-  const folderName = `${repository}`
-    .replace(/\.git|\/$/, "")
-    .split("/")
-    .pop();
+  let owner, folderName;
+  if (protocolLand) {
+    owner = walletAddress;
+    folderName = repoName;
+  } else {
+    owner = `${repository}`.split("/").reverse()[1];
+    folderName = `${repository}`
+      .replace(/\.git|\/$/, "")
+      .split("/")
+      .pop();
+  }
   console.log("Folder name:", folderName);
 
   // Check if the owner already has a repository deployed
@@ -220,20 +223,22 @@ app.post("/deploy", async (req, res) => {
     }
   }
 
-await handleBuild(req, res, outputDist);
-
+  await handleBuild(req, res, outputDist);
 });
 
 async function handleBuild(req, res, outputDist) {
-  const { repository, branch, installCommand, buildCommand, subDirectory } = req.body;
+  const { repository, branch, installCommand, buildCommand, subDirectory, protocolLand, walletAddress, repoName } = req.body;
 
   const buildParams = {
     repository,
     branch,
     installCommand,
     buildCommand,
-    outputDist,  // Use outputDist instead of outputDir
-    subDirectory
+    outputDist,
+    subDirectory,
+    protocolLand,
+    walletAddress,
+    repoName
   };
 
   try {

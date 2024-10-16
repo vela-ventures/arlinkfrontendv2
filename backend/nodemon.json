@@ -1,3 +1,12 @@
 {
-  "ignore": ["builds/**", "*.log", "*.txt"]
+  "ignore": [
+    "builds/**",
+    "/tmp/arlink_builds/**",
+    "*.log",
+    "*.txt",
+    "tmp/**",
+    "node_modules/**"
+  ],
+  "ext": "js,mjs,json",
+  "delay": "2500"
 }

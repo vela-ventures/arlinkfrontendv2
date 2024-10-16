@@ -43,17 +43,26 @@ export async function runBuild(buildParams) {
     const build = {
       params: buildParams,
       start: () => {
-        createBuildWorker(buildParams)
+        const projectRoot = process.cwd();
+        const paramsWithRoot = { ...buildParams, projectRoot };
+        createBuildWorker(paramsWithRoot)
           .then(result => {
-            const { repository, outputDist } = buildParams;
-            const owner = repository.split('/').reverse()[1];
-            const folderName = repository.replace(/\.git|\/$/, "").split("/").pop();
-            const buildPath = `./builds/${owner}/${folderName}/${outputDist}`;
+            const { repository, outputDist, protocolLand, walletAddress, repoName } = buildParams;
+            let owner, folderName;
+            if (protocolLand) {
+              owner = walletAddress;
+              folderName = repoName;
+            } else {
+              owner = repository.split('/').reverse()[1];
+              folderName = repository.replace(/\.git|\/$/, "").split("/").pop();
+            }
+            const buildPath = path.join(projectRoot, 'builds', owner, folderName, 'output');
             
-            if (fs.existsSync(`${buildPath}/index.html`)) {
+            console.log("Checking build output at:", buildPath);
+            if (fs.existsSync(buildPath)) {
               resolve({ result, buildPath });
             } else {
-              reject(new Error("index.html does not exist in build"));
+              reject(new Error(`Build output not found at ${buildPath}`));
             }
           })
           .catch(reject);
