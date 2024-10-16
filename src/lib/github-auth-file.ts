@@ -6,7 +6,7 @@ const GITHUB_CLIENT_SECRET = process.env.NEXT_PUBLIC_GITHUB_CLIENT_SECRET as str
 const BUILDER_BACKEND = process.env.NEXT_PUBLIC_BUILDER_BACKEND as string;
 
 export async function initiateGitHubAuth() {
-    const redirectUri = encodeURIComponent(`${BUILDER_BACKEND}/deployhere`);
+    const redirectUri = encodeURIComponent(`${BUILDER_BACKEND}/deploy`);
     const authUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${redirectUri}&scope=repo`;
     window.location.href = authUrl;
 }
