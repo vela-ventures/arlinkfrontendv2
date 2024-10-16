@@ -10,7 +10,7 @@ import { TurboFactory } from "@ardrive/turbo-sdk";
 import { runBuild } from "./buildManager.js";
 import { scheduleBuildJobs } from './scheduleBuildJobs.js';
 import { getLatestCommitHash } from './gitUtils.js';
-import { initRegistry, addToRegistry, updateRegistry, removeFromRegistry, getGlobalRegistry, getIndividualConfig } from './buildRegistry.js';
+import { initRegistry, addToRegistry, updateRegistry, incrementDeployCount, getDeployCount, getGlobalRegistry, getIndividualConfig } from './buildRegistry.js';
 
 const PORT = 3050;
 
@@ -228,7 +228,12 @@ app.post("/deploy", async (req, res) => {
 
 
   try {
+    const deployCount = await getDeployCount(owner, folderName);
     
+    if (deployCount >= MAX_DEPLOYS_PER_DAY) {
+      console.log(`Deployment limit reached for ${owner}/${folderName}`);
+      return res.status(429).send("Daily deployment limit reached");
+    }
     const buildConfig = {
       owner,
       repoName: folderName,

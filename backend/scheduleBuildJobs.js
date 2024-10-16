@@ -1,10 +1,11 @@
 import os from 'os';
 import { CronJob } from 'cron';
 import axios from 'axios';
-import { getGlobalRegistry } from './buildRegistry.js';
-import { cp } from 'fs';
+import { getGlobalRegistry, getDeployCount, resetDeployCounts, incrementDeployCount } from './buildRegistry.js';
+
 
 const MAX_CONCURRENT_BUILDS = os.cpus().length;
+const MAX_DEPLOYS_PER_DAY = 2;
 
 const TESTING_MODE = false; // Set to false for production
 
@@ -40,23 +41,30 @@ function createBuildJobs(configs) {
     console.log('Scheduled for:', cronTime, 'UTC ', minutes, hours);
     jobs.push(new CronJob(cronTime, () => processBatch(batchConfigs), null, true, 'UTC'));
   }
-  
+  const resetJob = new CronJob('0 0 * * *', resetDeployCounts, null, true, 'UTC');
+  jobs.push(resetJob);
+
   return jobs;
 }
 
 async function processBatch(configs) {
-  console.log('Processing batch at:', new Date().toISOString());
-  console.log('Number of configs in this batch:', configs.length);
-
   for (const config of configs) {
     try {
       console.log(`Checking for updates: ${config.owner}/${config.repoName}`);
       
+      const deployCount = await getDeployCount(config.owner, config.repoName);
+      
+      if (deployCount >= MAX_DEPLOYS_PER_DAY) {
+        console.log(`Skipping ${config.owner}/${config.repoName}: Daily deployment limit reached`);
+        continue;
+      }
+
       // Use the existing /deploy endpoint to trigger a build
       const response = await axios.post('http://localhost:3050/deploy', config);
       
       if (response.status === 200) {
         console.log(`Build triggered successfully for ${config.owner}/${config.repoName}`);
+        await incrementDeployCount(config.owner, config.repoName);
       } else {
         console.log(`No update needed for ${config.owner}/${config.repoName}`);
       }
@@ -68,10 +76,8 @@ async function processBatch(configs) {
 
 export async function scheduleBuildJobs() {
   const configs = await getGlobalRegistry();
-  console.log('Total configs loaded:', configs.length);
   const jobs = createBuildJobs(configs);
-  console.log(`Scheduled ${jobs.length} build job${jobs.length === 1 ? '' : 's'}`);
-  
+  console.log(`Scheduled ${jobs.length} build job batches`); 
   if (TESTING_MODE) {
     console.log('Test mode active. First job will run in 30 seconds.');
   }

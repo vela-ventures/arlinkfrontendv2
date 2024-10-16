@@ -62,3 +62,38 @@ export async function removeFromRegistry(owner, repoName) {
   const configPath = path.join(BUILDS_DIR, owner, repoName, 'config.json');
   await fs.unlink(configPath);
 }
+
+export async function incrementDeployCount(owner, repoName) {
+  const registry = await getGlobalRegistry();
+  const index = registry.findIndex(config => config.owner === owner && config.repoName === repoName);
+  if (index !== -1) {
+    registry[index].deployCount = (registry[index].deployCount || 0) + 1;
+    await fs.writeFile(REGISTRY_FILE, JSON.stringify(registry, null, 2));
+  }
+
+  const configPath = path.join(BUILDS_DIR, owner, repoName, 'config.json');
+  const config = await getIndividualConfig(owner, repoName);
+  config.deployCount = (config.deployCount || 0) + 1;
+  await fs.writeFile(configPath, JSON.stringify(config, null, 2));
+}
+
+export async function resetDeployCounts() {
+  const registry = await getGlobalRegistry();
+  registry.forEach(config => {
+    config.deployCount = 0;
+  });
+  await fs.writeFile(REGISTRY_FILE, JSON.stringify(registry, null, 2));
+
+  for (const config of registry) {
+    const configPath = path.join(BUILDS_DIR, config.owner, config.repoName, 'config.json');
+    const individualConfig = await getIndividualConfig(config.owner, config.repoName);
+    individualConfig.deployCount = 0;
+    await fs.writeFile(configPath, JSON.stringify(individualConfig, null, 2));
+  }
+}
+
+export async function getDeployCount(owner, repoName) {
+  const config = await getIndividualConfig(owner, repoName);
+  return config.deployCount || 0;
+}
+
