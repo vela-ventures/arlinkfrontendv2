@@ -287,7 +287,7 @@ app.post("/deploy", async (req, res) => {
     }
   } catch (error) {
     console.error("Build failed:", error);
-    const logPathFolder = `./builds/${owner}/${repo}/build.log`;
+    const logPathFolder = `./builds/${owner}/${folderName}/build.log`;
 
     fs.readFile(logPathFolder, "utf-8", (err, data) => {
       if (err) {
