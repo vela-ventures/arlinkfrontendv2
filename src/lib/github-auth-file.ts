@@ -1,9 +1,9 @@
 import { Octokit } from '@octokit/rest';
 import { createOAuthAppAuth } from "@octokit/auth-oauth-app";
-
+import { BUILDER_BACKEND } from './utils';
 const GITHUB_CLIENT_ID = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID as string;
 const GITHUB_CLIENT_SECRET = process.env.NEXT_PUBLIC_GITHUB_CLIENT_SECRET as string;
-const BUILDER_BACKEND = process.env.NEXT_PUBLIC_BUILDER_BACKEND as string;
+
 
 export async function initiateGitHubAuth() {
     const redirectUri = encodeURIComponent(`${BUILDER_BACKEND}/deploy`);
@@ -12,7 +12,7 @@ export async function initiateGitHubAuth() {
 }
 
 export async function handleGitHubCallback(code: string): Promise<string> {
-    const tokenUrl = '/ssr/github/callback'; // Use the API route to exchange the code for a token
+    const tokenUrl = '/api/github/callback'; // Use the API route to exchange the code for a token
     const response = await fetch(tokenUrl, {
         method: 'POST',
         headers: {
