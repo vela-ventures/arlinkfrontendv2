@@ -338,7 +338,6 @@ async function handleBuild(req, outputDist) {
     }
   } catch (buildError) {
     console.error("Build failed:", buildError);
-    fs.rmSync(buildPath, { recursive: true, force: true });
     return false ;
   }
 }
