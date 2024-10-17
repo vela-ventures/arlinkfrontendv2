@@ -1,8 +1,6 @@
 import { Octokit } from '@octokit/rest';
-import { createOAuthAppAuth } from "@octokit/auth-oauth-app";
 import { BUILDER_BACKEND } from './utils';
 const GITHUB_CLIENT_ID = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID as string;
-const GITHUB_CLIENT_SECRET = process.env.NEXT_PUBLIC_GITHUB_CLIENT_SECRET as string;
 
 
 export async function initiateGitHubAuth() {
