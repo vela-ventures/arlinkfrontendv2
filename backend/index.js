@@ -258,9 +258,13 @@ app.post("/deploy", async (req, res) => {
 
     if (!existingConfig) {
       
-      await addToRegistry(buildConfig);
-      await handleBuild(req, res, outputDist);
-      return res.status(200).send("Deployment successful");
+      const result = await handleBuild(req, outputDist);
+      if (result === false) {
+        return res.status(500).send(`Deployment failed:`);
+      }else {
+        await addToRegistry(buildConfig);
+        return res.status(200).send(`Deployment successful`);
+      }
     } else {
       const deployCount = await getDeployCount(owner, folderName);
       const maxDailyDeploys = buildConfig.maxDailyDeploys;
@@ -274,7 +278,7 @@ app.post("/deploy", async (req, res) => {
       if (latestCommit !== individualConfig.lastBuiltCommit) {
         console.log(`New commit detected for ${owner}/${folderName}. Building...`);
         
-        const buildResult = await handleBuild(req, res, outputDist);
+        const buildResult = await handleBuild(req, outputDist);
         
         // Update registry with new commit hash
         await updateRegistry(owner, folderName, { lastBuiltCommit: latestCommit });
@@ -303,7 +307,7 @@ app.post("/deploy", async (req, res) => {
   }
 });
 
-async function handleBuild(req, res, outputDist) {
+async function handleBuild(req, outputDist) {
   const { repository, branch, installCommand, buildCommand, subDirectory, protocolLand, walletAddress, repoName } = req.body;
 
   const buildParams = {
@@ -325,9 +329,9 @@ async function handleBuild(req, res, outputDist) {
 
     try {
       const deployResult = await deployFolder(buildPath);
-      res.send(deployResult);
+      console.log(deployResult)
     } catch (deployError) {
-      return res.status(400).send(deployError.message);
+      return false;
     } finally {
       // Clean up the build folder
       fs.rmSync(buildPath, { recursive: true, force: true });
@@ -335,7 +339,7 @@ async function handleBuild(req, res, outputDist) {
   } catch (buildError) {
     console.error("Build failed:", buildError);
     fs.rmSync(buildPath, { recursive: true, force: true });
-    return res.status(500).send(buildError.message);
+    return false ;
   }
 }
 
