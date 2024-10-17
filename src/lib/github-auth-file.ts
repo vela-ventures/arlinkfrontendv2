@@ -12,7 +12,7 @@ export async function initiateGitHubAuth() {
 }
 
 export async function handleGitHubCallback(code: string): Promise<string> {
-    const tokenUrl = '/api/github/callback'; // Use the API route to exchange the code for a token
+    const tokenUrl = '/ssr/github/callback'; // Use the API route to exchange the code for a token
     const response = await fetch(tokenUrl, {
         method: 'POST',
         headers: {
