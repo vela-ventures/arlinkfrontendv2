@@ -264,7 +264,7 @@ app.post("/deploy", async (req, res) => {
         return res.status(500).send(`Deployment failed:`);
       }else {
         await addToRegistry(buildConfig);
-        return res.status(200).send(`Deployment successful`);
+        return res.status(200).send(result);
       }
     } else {
       const deployCount = await getDeployCount(owner, folderName);
@@ -331,6 +331,7 @@ async function handleBuild(req, outputDist) {
     try {
       const deployResult = await deployFolder(buildPath);
       console.log(deployResult)
+      return deployResult;
     } catch (deployError) {
       return false;
     } finally {
