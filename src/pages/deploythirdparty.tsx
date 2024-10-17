@@ -115,6 +115,7 @@ export default function DeployThirdParty() {
     const [loading, setLoading] = useState(true);
     const [arnsNames, setArnsNames] = useState<{ name: string; processId: string }[]>([]);
     const [loadingArnsNames, setLoadingArnsNames] = useState(false);
+    const [showArnsDropdown, setShowArnsDropdown] = useState(false);
 
     useEffect(() => {
         async function fetchRepos() {
@@ -164,13 +165,13 @@ export default function DeployThirdParty() {
         }
     }
 
-    function handleArnsSelection(event: React.ChangeEvent<HTMLSelectElement>) {
-        const selectedValue = event.target.value;
-        if (selectedValue === "none") {
-            setArnsProcess("");
+    function handleArnsSelection(selectedArns: { name: string; processId: string } | null) {
+        if (selectedArns) {
+            setArnsProcess(selectedArns.processId);
         } else {
-            setArnsProcess(selectedValue);
+            setArnsProcess("");
         }
+        setShowArnsDropdown(false);
     }
 
     async function deploy() {
@@ -270,34 +271,47 @@ export default function DeployThirdParty() {
                         <label className="text-muted-foreground pl-2 pt-2 -mb-1" htmlFor="output-dir">Output Directory</label>
                         <Input placeholder="e.g. ./dist" id="output-dir" value={outputDir} onChange={(e) => setOutputDir(e.target.value)} />
 
-                        <label className="text-muted-foreground pl-2 pt-2 -mb-1" htmlFor="arns-process">ArNS Process ID</label>
-                        <div className="flex gap-2">
-                            <select
-                                className="border rounded-md p-2 flex-grow"
+                        <label className="text-muted-foreground pl-2 pt-2 -mb-1" htmlFor="arns-process">ArNS Name</label>
+                        <div className="relative">
+                            <Input 
+                                placeholder="Select an ArNS name or enter Process ID" 
+                                id="arns-process" 
                                 value={arnsProcess}
-                                onChange={handleArnsSelection}
-                                onClick={() => {
+                                onChange={(e) => setArnsProcess(e.target.value)}
+                                onFocus={() => {
+                                    setShowArnsDropdown(true);
                                     if (arnsNames.length === 0) {
                                         fetchArnsNames();
                                     }
                                 }}
-                            >
-                                <option value="">Select an ArNS name</option>
-                                <option value="none">None</option>
-                                {arnsNames.map((arns) => (
-                                    <option key={arns.processId} value={arns.processId}>
-                                        {arns.name}
-                                    </option>
-                                ))}
-                            </select>
-                            {loadingArnsNames && <Loader className="animate-spin" />}
+                            />
+                            {showArnsDropdown && (
+                                <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-700 rounded-md shadow-lg">
+                                    <ul className="py-1">
+                                        <li 
+                                            className="px-3 py-2 hover:bg-gray-700 cursor-pointer text-gray-200"
+                                            onClick={() => handleArnsSelection(null)}
+                                        >
+                                            None
+                                        </li>
+                                        {arnsNames.map((arns) => (
+                                            <li 
+                                                key={arns.processId} 
+                                                className="px-3 py-2 hover:bg-gray-700 cursor-pointer text-gray-200"
+                                                onClick={() => handleArnsSelection(arns)}
+                                            >
+                                                {arns.name}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                    {loadingArnsNames && (
+                                        <div className="flex justify-center py-2">
+                                            <Loader className="animate-spin text-gray-200" />
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
-                        <Input 
-                            placeholder="e.g. arns.id" 
-                            id="arns-process" 
-                            value={arnsProcess}
-                            onChange={(e) => setArnsProcess(e.target.value)}
-                        />
 
                         <Button className="w-full mt-10" variant="secondary" onClick={deploy} disabled={!selectedRepo}>
                             {deploying ? <Loader className="animate-spin mr-2" /> : "Deploy"}
