@@ -338,7 +338,7 @@ export default function Deploy() {
                         {branchError && <div className="text-red-500">{branchError}</div>}
 
                         <label className="text-muted-foreground pl-2 pt-10 -mb-1" htmlFor="install-command">Install Command</label>
-                        <Input placeholder="e.g. npm ci" id="install-command" onChange={(e) => setInstallCommand(e.target.value || "npm ci")} />
+                        <Input placeholder="e.g. npm i" id="install-command" onChange={(e) => setInstallCommand(e.target.value || "npm ci")} />
 
                         <label className="text-muted-foreground pl-2 pt-2 -mb-1" htmlFor="build-command">Build Command</label>
                         <Input placeholder="e.g. npm run build" id="build-command" onChange={(e) => setBuildCommand(e.target.value || "npm run build")} />
