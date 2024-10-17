@@ -63,7 +63,7 @@ pkgs.mkShell {
 
       BUILD_DIR="$PROJECT_ROOT/builds/$OWNER_NAME/$REPO_NAME"
       LOG_FILE="$BUILD_DIR/build.log"
-      ROOT_DIR="$/tmp/arlink"
+      ROOT_DIR="/tmp/arlink"
       TMP_DIR="$ROOT_DIR/tmp_''${OWNER_NAME}_''${REPO_NAME}"
       
       if [ -n "$TMP_DIR" ]; then
