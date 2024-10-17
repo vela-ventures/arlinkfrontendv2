@@ -7,7 +7,9 @@ import { useEffect } from "react";
 export default function Home() {
   const { connected, connect } = useConnection()
 
+
   useEffect(() => {
+    
     connect()
   }, [])
 
