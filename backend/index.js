@@ -258,7 +258,7 @@ app.post("/deploy", async (req, res) => {
       
       await addToRegistry(buildConfig);
       await handleBuild(req, res, outputDist);
-      res.status(200).send("Deployment successful");
+      return res.status(200).send("Deployment successful");
     } else {
       const deployCount = await getDeployCount(owner, folderName);
       const maxDailyDeploys = buildConfig.maxDailyDeploys;
@@ -277,15 +277,15 @@ app.post("/deploy", async (req, res) => {
         // Update registry with new commit hash
         await updateRegistry(owner, folderName, { lastBuiltCommit: latestCommit });
         
-        res.status(200).send(buildResult);
+        return res.status(200).send(buildResult);
       } else {
         console.log(`No new commits for ${owner}/${folderName}. Skipping build.`);
-        res.status(204).send("No new commits");
+        return res.status(204).send("No new commits");
       }
     }
   } catch (error) {
     console.error("Build failed:", error);
-    res.status(500).send(error.message);
+    return res.status(500).send(error.message);
   }
 });
 
