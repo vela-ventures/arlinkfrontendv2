@@ -1,6 +1,5 @@
 import { parentPort, workerData } from 'worker_threads';
 import { spawn } from 'child_process';
-import path from 'path';
 
 function runBuild(buildParams) {
   const { repository, branch, installCommand, buildCommand, outputDist, subDirectory, protocolLand, walletAddress, repoName, projectRoot } = buildParams;

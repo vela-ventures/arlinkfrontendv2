@@ -219,7 +219,9 @@ app.post("/deploy", async (req, res) => {
     const deployedRepos = fs.readdirSync(ownerPath);
     if (deployedRepos.length > 0) {
       if (deployedRepos.includes(folderName)) {
-        console.log("Repo Already Deployed, proceeding with rebuild");
+        console.log("Repo Already Deployed, proceeding with update");
+        await updateRegistry(owner, folderName, { installCommand: installCommand, buildCommand: buildCommand, outputDir: outputDist, subDirectory: subDirectory });
+        
       } else {
         console.error("User already has a different repository deployed");
         return res.status(400).send("You can only have one repository deployed at a time. Please remove the existing repository before deploying a new one.");
