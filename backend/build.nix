@@ -66,8 +66,8 @@ pkgs.mkShell {
       ROOT_DIR="$/tmp/arlink"
       TMP_DIR="$ROOT_DIR/tmp_''${OWNER_NAME}_''${REPO_NAME}"
 
-      if [ -n "$TMP_DIR" ]; then
-        rm -rf "$TMP_DIR"
+      if [ -n "$ROOT_DIR" ]; then
+        rm -rf "$ROOT_DIR"
       fi
 
       mkdir -p "$BUILD_DIR"
@@ -116,7 +116,7 @@ pkgs.mkShell {
         cd "$PROJECT_ROOT"
         rm -rf "$TMP_DIR"
         rm -rf "$ROOT_DIR"
-        
+
         echo "Build completed at $(date)"
       
       } 2>&1 | tee "$LOG_FILE"
