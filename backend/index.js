@@ -331,9 +331,9 @@ app.get("/logs/:owner/:repo", (req, res) => {
   fs.readFile(logPath, "utf-8", (err, data) => {
     if (err) {
       console.error(`Error reading log: ${err.message}`);
-      res.status(404).send("Log not found");
+      return res.status(404).send("Log not found");
     } else {
-      res.status(200).send(data);
+      return res.status(200).send(data);
     }
   });
 });
@@ -344,13 +344,13 @@ app.get("/config/:owner/:repo", async (req, res) => {
   try {
     const config = await getIndividualConfig(owner, repo);
     if (config) {
-      res.status(200).json(config);
+      return res.status(200).json(config);
     } else {
-      res.status(404).send("Configuration not found");
+      return res.status(404).send("Configuration not found");
     }
   } catch (error) {
     console.error(`Error fetching config for ${owner}/${repo}:`, error);
-    res.status(500).send("Internal server error");
+    return res.status(500).send("Internal server error");
   }
 });
 
@@ -363,10 +363,10 @@ app.get("/config/:owner/:repo", async (req, res) => {
 
 //   try {
 //     await updateMaxDailyDeploys(owner, repoName, maxDailyDeploys);
-//     res.status(200).send("Max daily deploys updated successfully");
+//     return res.status(200).send("Max daily deploys updated successfully");
 //   } catch (error) {
 //     console.error("Error updating max daily deploys:", error);
-//     res.status(500).send(error.message);
+//     return res.status(500).send(error.message);
 //   }
 // });
 
