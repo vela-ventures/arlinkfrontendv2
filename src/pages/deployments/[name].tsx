@@ -22,8 +22,25 @@ export default function Deployment() {
     const [buildOutput, setBuildOutput] = useState("");
     const [antName, setAntName] = useState("");
     const [redeploying, setRedeploying] = useState(false);
+    const [deploymentUrl, setDeploymentUrl] = useState("");
 
     const deployment = globalState.deployments.find((dep) => dep.Name == name);
+
+    useEffect(() => {
+        if (!deployment?.RepoUrl) return;
+        const fetchDeploymentUrl = async () => {
+            const owner = deployment.RepoUrl.split("/").reverse()[1];
+            const repoName = deployment.RepoUrl.split("/").reverse()[0].replace(".git", "");
+            try {
+                const response = await axios.get(`${BUILDER_BACKEND}/config/${owner}/${repoName}`);
+                setDeploymentUrl(response.data.url);
+            } catch (error) {
+                console.error("Error fetching deployment URL:", error);
+                toast.error("Failed to fetch deployment URL");
+            }
+        };
+        fetchDeploymentUrl();
+    }, [deployment]);
 
     useEffect(() => {
         if (!deployment?.RepoUrl) return
@@ -149,8 +166,8 @@ export default function Deployment() {
         <Button className="w-fit absolute right-10" onClick={redeploy} disabled={redeploying}>
             Deploy Latest <Loader className={redeploying ? "animate-spin" : "hidden"} />
         </Button>
-        <Link href={deployment.RepoUrl} target="_blank" className="w-fit flex items-center gap-1 my-2 hover:underline underline-offset-4"><Github size={24} />{deployment.RepoUrl}</Link>
-        <Link href={`https://arweave.net/${deployment.DeploymentId}`} target="_blank" className="w-fit flex items-center gap-1 my-2 hover:underline underline-offset-4"><LinkIcon size={24} />DeploymentID : {deployment.DeploymentId || "..."}</Link>
+        <Link href={deployment?.RepoUrl || ""} target="_blank" className="w-fit flex items-center gap-1 my-2 hover:underline underline-offset-4"><Github size={24} />{deployment?.RepoUrl}</Link>
+        <Link href={`https://arweave.net/${deploymentUrl}`} target="_blank" className="w-fit flex items-center gap-1 my-2 hover:underline underline-offset-4"><LinkIcon size={24} />Deployment URL: {deploymentUrl ? `https://arweave.net/${deploymentUrl}` : "Loading..."}</Link>
         <Link href={`https://${antName}.arweave.net`} target="_blank" className="w-fit flex items-center gap-1 my-2 hover:underline underline-offset-4"><LinkIcon size={24} />ArNS : {(antName || "[fetching]") + ".arweave.net"}</Link>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
             <Card>
