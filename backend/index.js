@@ -14,6 +14,7 @@ import { initRegistry, addToRegistry, updateRegistry, getIndividualConfig, getDe
 
 const PORT = 3050;
 
+
 const app = express();
 app.use(express.json());
 app.use(cors());
