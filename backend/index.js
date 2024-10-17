@@ -287,6 +287,18 @@ app.post("/deploy", async (req, res) => {
     }
   } catch (error) {
     console.error("Build failed:", error);
+    const logPathFolder = `./builds/${owner}/${repo}/build.log`;
+
+    fs.readFile(logPathFolder, "utf-8", (err, data) => {
+      if (err) {
+        console.error(`Error reading log: ${err.message}`);
+        return res.status(404).send("Log not found");
+      } else {
+        fs.rmSync(`./builds/${owner}/${folderName}`, { recursive: true, force: true });
+        return res.status(500).send(data);
+      }
+    });
+    
     return res.status(500).send(error.message);
   }
 });
