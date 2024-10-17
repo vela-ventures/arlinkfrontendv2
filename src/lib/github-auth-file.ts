@@ -1,10 +1,13 @@
 import { Octokit } from '@octokit/rest';
-import { BUILDER_BACKEND } from './utils';
+import { BASE_URL } from './utils';
 const GITHUB_CLIENT_ID = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID as string;
 
 
 export async function initiateGitHubAuth() {
-    const redirectUri = encodeURIComponent(`${BUILDER_BACKEND}/deploy`);
+    const BASE_URL = process.env.NODE_ENV === 'test' ? 'http://localhost:3000' : "https://vmi1968527.contaboserver.net";
+
+
+    const redirectUri = encodeURIComponent(`${BASE_URL}/deploy`);
     const authUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${redirectUri}&scope=repo`;
     window.location.href = authUrl;
 }

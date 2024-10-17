@@ -5,8 +5,11 @@ import { gql, GraphQLClient } from "graphql-request";
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
+// keep it as local host if NODE_ENV is test
+export const BASE_URL = process.env.NODE_ENV === 'test' ? 'http://localhost:3050' : "https://vmi1968527.contaboserver.net";
 
-export const BUILDER_BACKEND = "https://vmi1968527.contaboserver.net/backend";
+
+export const BUILDER_BACKEND = `${BASE_URL}/backend`;
 export const DEPLOYMENT_WALLET = "CUO_Jtx-J9Ph4NVKY_Bgii4HSUwK3NbdaIlPDSiy8Cs";
 
 export async function getManagerProcessFromAddress(address: string) {
