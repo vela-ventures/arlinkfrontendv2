@@ -248,23 +248,25 @@ app.post("/deploy", async (req, res) => {
       deployCount: 0 // Initialize deploy count
     }
     
-    const deployCount = await getDeployCount(owner, folderName);
-    const maxDailyDeploys = buildConfig.maxDailyDeploys;
-    
-    if (deployCount >= maxDailyDeploys) {
-      console.log(`Deployment limit reached for ${owner}/${folderName}`);
-      return res.status(429).send("Daily deployment limit reached");
-    }
+
     
     // Check if this is a new deployment or an update
     const existingConfigs = await getGlobalRegistry();
     const existingConfig = existingConfigs.find(config => config.owner === owner && config.repoName === folderName);
 
     if (!existingConfig) {
+      
       await addToRegistry(buildConfig);
       await handleBuild(req, res, outputDist);
       res.status(200).send("Deployment successful");
     } else {
+      const deployCount = await getDeployCount(owner, folderName);
+      const maxDailyDeploys = buildConfig.maxDailyDeploys;
+      
+      if (deployCount >= maxDailyDeploys) {
+        console.log(`Deployment limit reached for ${owner}/${folderName}`);
+        return res.status(429).send("Daily deployment limit reached");
+      }
       // Existing deployment, check for updates
       const individualConfig = await getIndividualConfig(owner, folderName);
       if (latestCommit !== individualConfig.lastBuiltCommit) {
