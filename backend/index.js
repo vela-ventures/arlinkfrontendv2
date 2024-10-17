@@ -244,7 +244,7 @@ app.post("/deploy", async (req, res) => {
       protocolLand,
       walletAddress,
       lastBuiltCommit: latestCommit,
-      maxDailyDeploys: 2, // Default value
+      maxDailyDeploys: 10000000, // Default value
       deployCount: 0 // Initialize deploy count
     }
     
