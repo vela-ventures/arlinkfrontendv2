@@ -11,6 +11,7 @@ import { runBuild } from "./buildManager.js";
 import { scheduleBuildJobs } from './scheduleBuildJobs.js';
 import { getLatestCommitHash } from './gitUtils.js';
 import { initRegistry, addToRegistry, updateRegistry, getIndividualConfig, getDeployCount, getGlobalRegistry } from './buildRegistry.js';
+import { url } from "inspector";
 
 const PORT = 3050;
 
@@ -247,7 +248,8 @@ app.post("/deploy", async (req, res) => {
       walletAddress,
       lastBuiltCommit: latestCommit,
       maxDailyDeploys: 10000000, // Default value
-      deployCount: 0 // Initialize deploy count
+      deployCount: 0, // Initialize deploy count
+      url: ""
     }
     
 
@@ -264,6 +266,7 @@ app.post("/deploy", async (req, res) => {
         return res.status(500).send(`Deployment failed:`);
       }else {
         await addToRegistry(buildConfig);
+        buildConfig.url = result;
         return res.status(200).send(result);
       }
     } else {
