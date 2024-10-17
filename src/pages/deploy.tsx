@@ -212,6 +212,7 @@ export default function Deploy() {
         await refresh();
 
         try {
+            console.log("repourlis",repoUrl)
             const txid = await axios.post(`${BUILDER_BACKEND}/deploy`, {
                 repository: repoUrl,
                 branch: selectedBranch, 
