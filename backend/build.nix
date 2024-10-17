@@ -63,9 +63,15 @@ pkgs.mkShell {
 
       BUILD_DIR="$PROJECT_ROOT/builds/$OWNER_NAME/$REPO_NAME"
       LOG_FILE="$BUILD_DIR/build.log"
-      TMP_DIR="/tmp/arlink_tmp_''${OWNER_NAME}_''${REPO_NAME}"
+      ROOT_DIR="$/tmp/arlink"
+      TMP_DIR="$ROOT_DIR/tmp_''${OWNER_NAME}_''${REPO_NAME}"
+
+      if [ -n "$TMP_DIR" ]; then
+        rm -rf "$TMP_DIR"
+      fi
 
       mkdir -p "$BUILD_DIR"
+      mkdir -p "$ROOT_DIR"
       mkdir -p "$TMP_DIR"
       
       {
@@ -109,7 +115,8 @@ pkgs.mkShell {
         echo "Cleaning up temporary directory..."
         cd "$PROJECT_ROOT"
         rm -rf "$TMP_DIR"
-
+        rm -rf "$ROOT_DIR"
+        
         echo "Build completed at $(date)"
       
       } 2>&1 | tee "$LOG_FILE"

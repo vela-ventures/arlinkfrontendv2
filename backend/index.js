@@ -334,6 +334,7 @@ async function handleBuild(req, res, outputDist) {
     }
   } catch (buildError) {
     console.error("Build failed:", buildError);
+    fs.rmSync(buildPath, { recursive: true, force: true });
     return res.status(500).send(buildError.message);
   }
 }
