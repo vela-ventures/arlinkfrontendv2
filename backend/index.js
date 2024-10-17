@@ -265,8 +265,8 @@ app.post("/deploy", async (req, res) => {
         fs.rmSync(`./builds/${owner}/${folderName}`, { recursive: true, force: true });
         return res.status(500).send(`Deployment failed:`);
       }else {
-        await addToRegistry(buildConfig);
         buildConfig.url = result;
+        await addToRegistry(buildConfig);
         return res.status(200).send(result);
       }
     } else {
@@ -285,7 +285,7 @@ app.post("/deploy", async (req, res) => {
         const buildResult = await handleBuild(req, outputDist);
         
         // Update registry with new commit hash
-        await updateRegistry(owner, folderName, { lastBuiltCommit: latestCommit });
+        await updateRegistry(owner, folderName, { lastBuiltCommit: latestCommit, url: buildResult });
         
         return res.status(200).send(buildResult);
       } else {
