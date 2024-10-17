@@ -260,6 +260,7 @@ app.post("/deploy", async (req, res) => {
       
       const result = await handleBuild(req, outputDist);
       if (result === false) {
+        fs.rmSync(`./builds/${owner}/${folderName}`, { recursive: true, force: true });
         return res.status(500).send(`Deployment failed:`);
       }else {
         await addToRegistry(buildConfig);
