@@ -101,7 +101,7 @@ function Logs({ name, deploying, repoUrl }: { name: string, deploying?: boolean,
 export default function DeployThirdParty() {
     const globalState = useGlobalState();
     const router = useRouter();
-    const { managerProcess, refresh } = useDeploymentManager();
+    const { managerProcess, refresh , deployments} = useDeploymentManager();
     const address = useActiveAddress();
     const [projName, setProjName] = useState("");
     const [repoUrl, setRepoUrl] = useState("");
@@ -184,6 +184,8 @@ export default function DeployThirdParty() {
 
         if (deploying) return;
         if (!globalState.managerProcess) return toast.error("Manager process not found");
+        if (deployments.find(dep => dep.Name === projName)) return toast.error("Project name already exists");
+
 
         setDeploying(true);
 
