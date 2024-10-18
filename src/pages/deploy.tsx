@@ -9,8 +9,7 @@ import { toast } from "sonner";
 import Arweave from "arweave";
 import { Loader } from "lucide-react";
 import axios from 'axios';
-import { useActiveAddress } from 'arweave-wallet-kit'; // Add this import
-
+import { useActiveAddress } from 'arweave-wallet-kit'; 
 import Ansi from "@agbishop/react-ansi-18";
 import { BUILDER_BACKEND } from "@/lib/utils";
 import useDeploymentManager from "@/hooks/useDeploymentManager";
@@ -80,7 +79,7 @@ function Logs({ name, deploying, repoUrl }: { name: string, deploying?: boolean,
                     clearInterval(interval);
                 }
             }
-        }, 1000);
+        }, 2500);
 
         return () => { clearInterval(interval); }
     }, [name, deploying, repoUrl]);

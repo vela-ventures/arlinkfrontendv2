@@ -23,6 +23,7 @@ export default function Deployment() {
     const [antName, setAntName] = useState("");
     const [redeploying, setRedeploying] = useState(false);
     const [deploymentUrl, setDeploymentUrl] = useState("");
+    const [error, setError] = useState<string | null>(null);
 
     const deployment = globalState.deployments.find((dep) => dep.Name == name);
 
@@ -37,6 +38,7 @@ export default function Deployment() {
             } catch (error) {
                 console.error("Error fetching deployment URL:", error);
                 toast.error("Failed to fetch deployment URL");
+                setError("Failed to fetch deployment URL. Please try again later.");
             }
         };
         fetchDeploymentUrl();
@@ -48,14 +50,19 @@ export default function Deployment() {
             const folderName = deployment?.RepoUrl.replace(/\.git|\/$/, '').split('/').pop() as string;
             const owner = deployment?.RepoUrl.split("/").reverse()[1];
             if (!redeploying) return clearInterval(interval)
-            const logs = await axios.get(`${BUILDER_BACKEND}/logs/${owner}/${folderName}`)
-            console.log(logs.data)
-            setBuildOutput((logs.data as string).replaceAll(/\\|\||\-/g, ""))
-            //scroll logs to bottom
-            setTimeout(() => {
-                const logsDiv = document.getElementById("logs");
-                logsDiv?.scrollTo({ top: logsDiv.scrollHeight, behavior: "smooth" });
-            }, 100)
+            try {
+                const logs = await axios.get(`${BUILDER_BACKEND}/logs/${owner}/${folderName}`)
+                console.log(logs.data)
+                setBuildOutput((logs.data as string).replaceAll(/\\|\||\-/g, ""))
+                //scroll logs to bottom
+                setTimeout(() => {
+                    const logsDiv = document.getElementById("logs");
+                    logsDiv?.scrollTo({ top: logsDiv.scrollHeight, behavior: "smooth" });
+                }, 100)
+            } catch (error) {
+                console.error("Error fetching logs:", error);
+                setError("Failed to fetch build logs. Please try again later.");
+            }
         }, 1000)
 
         return () => { clearInterval(interval) }
@@ -72,6 +79,7 @@ export default function Deployment() {
         const branch = deployment.Branch || "main";
         setRedeploying(true);
         setBuildOutput("");
+        setError(null);
         try {
             const txid = await axios.post(`${BUILDER_BACKEND}/deploy`, {
                 repository: repoUrl,
@@ -102,11 +110,13 @@ export default function Deployment() {
                 toast.error("Deployment failed");
                 console.log(txid);
                 setRedeploying(false);
+                setError("Deployment failed. Please try again.");
             }
         } catch (error) {
             toast.error("Deployment failed");
             console.log(error);
             setRedeploying(false);
+            setError("An error occurred during deployment. Please try again later.");
         }
     };
 
@@ -115,27 +125,35 @@ export default function Deployment() {
     }, []);
 
     useEffect(() => {
-    if (!deployment) return;
-    const owner = deployment?.RepoUrl.split("/").reverse()[1];
-    const folderName = deployment?.RepoUrl.replace(/\.git|\/$/, '').split('/').pop() as string;
-    axios.get(`${BUILDER_BACKEND}/logs/${owner}/${folderName}`).then((res) => {
-        setBuildOutput((res.data as string).replaceAll(/\\|\||\-/g, ""));
-    });
-    connect().dryrun({
-        process: deployment?.ArnsProcess,
-        tags: [{ name: "Action", value: "Info" }]
-    }).then(r => {
-        if (r.Messages && r.Messages.length > 0) {
-            const d = JSON.parse(r.Messages[0].Data);
-            console.log(d);
-            setAntName(d.Name);
-        } else {
-            console.error("No messages received or messages array is empty");
-        }
-    }).catch(error => {
-        console.error("Error during dryrun:", error);
-    });
-}, [deployment]); 
+        if (!deployment) return;
+        const owner = deployment?.RepoUrl.split("/").reverse()[1];
+        const folderName = deployment?.RepoUrl.replace(/\.git|\/$/, '').split('/').pop() as string;
+        axios.get(`${BUILDER_BACKEND}/logs/${owner}/${folderName}`)
+            .then((res) => {
+                setBuildOutput((res.data as string).replaceAll(/\\|\||\-/g, ""));
+            })
+            .catch((error) => {
+                console.error("Error fetching logs:", error);
+                setError("Failed to fetch build logs. Please try again later.");
+            });
+
+        connect().dryrun({
+            process: deployment?.ArnsProcess,
+            tags: [{ name: "Action", value: "Info" }]
+        }).then(r => {
+            if (r.Messages && r.Messages.length > 0) {
+                const d = JSON.parse(r.Messages[0].Data);
+                console.log(d);
+                setAntName(d.Name);
+            } else {
+                console.error("No messages received or messages array is empty");
+                setError("Failed to fetch ArNS information. Please try again later.");
+            }
+        }).catch(error => {
+            console.error("Error during dryrun:", error);
+            setError("An error occurred while fetching ArNS information. Please try again later.");
+        });
+    }, [deployment]);
 
     async function deleteDeployment() {
         if (!deployment) return toast.error("Deployment not found");
@@ -148,13 +166,23 @@ export default function Deployment() {
         ]]`;
         console.log(query);
 
-        const res = await runLua(query, globalState.managerProcess);
-        if (res.Error) return toast.error(res.Error);
-        console.log(res);
-        await refresh();
+        try {
+            const res = await runLua(query, globalState.managerProcess);
+            if (res.Error) {
+                toast.error(res.Error);
+                setError("Failed to delete deployment. Please try again.");
+                return;
+            }
+            console.log(res);
+            await refresh();
 
-        toast.success("Deployment deleted successfully");
-        router.push("/dashboard");
+            toast.success("Deployment deleted successfully");
+            router.push("/dashboard");
+        } catch (error) {
+            console.error("Error deleting deployment:", error);
+            toast.error("An error occurred while deleting the deployment");
+            setError("Failed to delete deployment. Please try again later.");
+        }
     }
 
     if (!deployment) return <Layout>
@@ -163,6 +191,7 @@ export default function Deployment() {
 
     return <Layout>
         <div className="text-xl">{deployment?.Name}</div>
+        {error && <div className="text-red-500 mb-4">{error}</div>}
         <Button className="w-fit absolute right-10" onClick={redeploy} disabled={redeploying}>
             Deploy Latest <Loader className={redeploying ? "animate-spin" : "hidden"} />
         </Button>
@@ -174,7 +203,9 @@ export default function Deployment() {
                 <div className="text-muted-foreground mb-2">Build Output</div>
                 <pre className="overflow-scroll max-h-[350px] font-mono" id="logs">
                     <div className="font-mono">
-                        <Ansi log={buildOutput} />
+                        {buildOutput.split('\n').map((line, index) => (
+                            <Ansi key={index} log={line} />
+                        ))}
                     </div>
                 </pre>
             </Card>

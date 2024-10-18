@@ -56,14 +56,7 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
                     </div>
                     <div className="flex flex-col items-center">
                         <div className="py-5 text-muted-foreground text-center">
-                            <div className="mb-2">Deployment Fund</div>
-                            <div>{`${arBalance}`.substring(0, 4)} $AR | ? turbo credits</div>
-                            <div className="text-xs mt-2 -mx-2 leading-relaxed text-justify">
-                                The service uses a central wallet topped up with $AR and turbo credits to ease your deployment process.
-                                To contribute to deployment fund,
-                                gift turbo credits or send $AR at<br />
-                                <span className="font-mono bg-black/30 p-1 rounded text-[10.5px]">{DEPLOYMENT_WALLET}</span>
-                            </div>
+                          
                         </div>
                         <ConnectButton />
                     </div>
