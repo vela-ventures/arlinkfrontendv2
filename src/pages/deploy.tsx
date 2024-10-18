@@ -100,7 +100,7 @@ function Logs({ name, deploying, repoUrl }: { name: string, deploying?: boolean,
 export default function Deploy() {
     const globalState = useGlobalState();
     const router = useRouter();
-    const { managerProcess, refresh } = useDeploymentManager();
+    const { managerProcess, refresh , deployments } = useDeploymentManager();
     const [projName, setProjName] = useState("");
     const [repoUrl, setRepoUrl] = useState("");
     const [installCommand, setInstallCommand] = useState("npm ci");
@@ -118,12 +118,15 @@ export default function Deploy() {
     const [loadingArnsNames, setLoadingArnsNames] = useState(false);
     const activeAddress = useActiveAddress(); // Add this line to get the active address
     const [showArnsDropdown, setShowArnsDropdown] = useState(false);
+    
 
     const arweave = Arweave.init({
         host: "arweave.net",
         port: 443,
         protocol: "https",
     });
+
+    
 
     // Add useEffect to fetch repositories when token changes
     useEffect(() => {
@@ -192,11 +195,12 @@ export default function Deploy() {
         if (!installCommand) return toast.error("Install Command is required");
         if (!buildCommand) return toast.error("Build Command is required");
         if (!outputDir) return toast.error("Output Directory is required");
-        
+
 
         if (deploying) return;
 
         if (!globalState.managerProcess) return toast.error("Manager process not found");
+        if (deployments.find(dep => dep.Name === projName)) return toast.error("Project name already exists");
 
         setDeploying(true);
         const query = `local res = db:exec[[
@@ -243,7 +247,7 @@ export default function Deploy() {
                 console.log(txid);
             }
         } catch (error) {
-            toast.error("Deployment failed");
+            toast.error("Deployment failed check logs on dashboard");
             console.log(error);
         }
 
