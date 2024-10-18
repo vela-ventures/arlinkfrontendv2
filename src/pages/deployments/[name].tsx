@@ -203,9 +203,7 @@ export default function Deployment() {
                 <div className="text-muted-foreground mb-2">Build Output</div>
                 <pre className="overflow-scroll max-h-[350px] font-mono" id="logs">
                     <div className="font-mono">
-                        {buildOutput.split('\n').map((line, index) => (
-                            <Ansi key={index} log={line} />
-                        ))}
+                        <Ansi log={buildOutput} />
                     </div>
                 </pre>
             </Card>
