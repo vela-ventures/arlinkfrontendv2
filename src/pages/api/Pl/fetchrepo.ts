@@ -42,7 +42,7 @@ export default async function fetchUserRepos(walletAddress: string): Promise<Rep
   // Extract the name and create a custom clone URL for each repository
   const repos: Repo[] = reposData.map((repo: any) => ({
     name: repo.name,
-    cloneUrl: `proland://${repo.id} ${repo.name}`
+    cloneUrl: `proland://${repo.id}`
   }));
   
   return repos;
