@@ -11,7 +11,7 @@ import axios from 'axios';
 import { BUILDER_BACKEND } from "@/lib/utils";
 import useDeploymentManager from "@/hooks/useDeploymentManager";
 import { useActiveAddress } from "arweave-wallet-kit";
-import fetchUserRepos from '@/pages/api/Pl/fetchrepo';
+import fetchUserRepos from '@/lib/fetchrepo';
 import Ansi from "@agbishop/react-ansi-18";
 import { getWalletOwnedNames } from '@/lib/get-arns';
 
