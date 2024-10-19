@@ -1,5 +1,5 @@
 import { Octokit } from '@octokit/rest';
-import { BASE_URL } from './utils';
+import { BUILDER_BACKEND } from './utils';
 const GITHUB_CLIENT_ID = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID as string;
 
 
@@ -13,7 +13,7 @@ export async function initiateGitHubAuth() {
 }
 
 export async function handleGitHubCallback(code: string): Promise<string> {
-    const tokenUrl = '/api/github/callback'; // Use the API route to exchange the code for a token
+    const tokenUrl = `${BUILDER_BACKEND}/github/callback`; // Use the API route to exchange the code for a token
     const response = await fetch(tokenUrl, {
         method: 'POST',
         headers: {

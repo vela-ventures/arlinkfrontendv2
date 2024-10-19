@@ -11,7 +11,9 @@ import { runBuild } from "./buildManager.js";
 import { scheduleBuildJobs } from './scheduleBuildJobs.js';
 import { getLatestCommitHash } from './gitUtils.js';
 import { initRegistry, addToRegistry, updateRegistry, getIndividualConfig, getDeployCount, getGlobalRegistry } from './buildRegistry.js';
-import { url } from "inspector";
+import axios from 'axios';
+import { config } from "dotenv";
+config();
 
 const PORT = 3050;
 
@@ -374,6 +376,29 @@ app.get("/config/:owner/:repo", async (req, res) => {
   } catch (error) {
     console.error(`Error fetching config for ${owner}/${repo}:`, error);
     return res.status(500).send("Internal server error");
+  }
+});
+
+app.post("/github/callback", async (req, res) => {
+  const { code } = req.body;
+
+  if (!code) {
+    return res.status(400).json({ error: 'Code is required' });
+  }
+
+  try {
+    const response = await axios.post('https://github.com/login/oauth/access_token', {
+      client_id: process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID,
+      client_secret: process.env.NEXT_PUBLIC_GITHUB_CLIENT_SECRET,
+      code,
+    }, {
+      headers: { Accept: 'application/json' }
+    });
+
+    res.status(200).json(response.data);
+  } catch (error) {
+    console.error('Error exchanging code for token:', error);
+    res.status(500).json({ error: 'Failed to exchange code for token' });
   }
 });
 
