@@ -13,7 +13,7 @@ import useDeploymentManager from "@/hooks/useDeploymentManager";
 import { useActiveAddress } from "arweave-wallet-kit";
 import fetchUserRepos from '@/pages/api/Pl/fetchrepo';
 import Ansi from "@agbishop/react-ansi-18";
-import { getWalletOwnedNames } from '@/pages/api/ario/getarns';
+import { getWalletOwnedNames } from '@/lib/get-arns';
 
 type ProtocolLandRepo = {
     name: string;

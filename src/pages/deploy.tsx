@@ -14,7 +14,7 @@ import Ansi from "@agbishop/react-ansi-18";
 import { BUILDER_BACKEND } from "@/lib/utils";
 import useDeploymentManager from "@/hooks/useDeploymentManager";
 import { GitHubLoginButton } from '@/components/project-creation-page';
-import { getWalletOwnedNames } from '@/pages/api/ario/getarns';
+import { getWalletOwnedNames } from '@/lib/get-arns';
 
 
 
