@@ -15,6 +15,8 @@ import { BUILDER_BACKEND } from "@/lib/utils";
 import useDeploymentManager from "@/hooks/useDeploymentManager";
 import { GitHubLoginButton } from '@/components/project-creation-page';
 import { getWalletOwnedNames } from '@/lib/get-arns';
+import { Label } from "@/components/ui/label";
+import { ArrowLeft, ArrowRight, Globe, Github } from "lucide-react";
 
 
 
@@ -118,6 +120,7 @@ export default function Deploy() {
     const [loadingArnsNames, setLoadingArnsNames] = useState(false);
     const activeAddress = useActiveAddress(); // Add this line to get the active address
     const [showArnsDropdown, setShowArnsDropdown] = useState(false);
+    const [step, setStep] = useState<"initial" | "repository" | "project" | "domain" | "deploy">("initial");
     
 
     const arweave = Arweave.init({
@@ -284,120 +287,214 @@ export default function Deploy() {
         setShowArnsDropdown(false);
     }
 
+    const handleBack = () => {
+        switch (step) {
+            case "repository":
+                setStep("initial");
+                break;
+            case "project":
+                setStep("repository");
+                break;
+            case "domain":
+                setStep("project");
+                break;
+            case "deploy":
+                if (!deploying) {
+                    setStep("domain");
+                }
+                break;
+        }
+    }
+
+    const handleNext = () => {
+        switch (step) {
+            case "repository":
+                setStep("project");
+                break;
+            case "project":
+                setStep("domain");
+                break;
+            case "domain":
+                deploy();
+                break;
+        }
+    }
+
     return (
         <Layout>
-            <div className="text-xl my-5 mb-10">Create New Deployment</div>
+            <div className="min-h-screen">
+                <header className="flex justify-between items-center p-6 border-b border-border bg-transparent">
+                    <div>
+                        <h1 className="text-2xl font-bold">Create New Deployment</h1>
+                    </div>
+                </header>
 
-            <div className="md:min-w-[60%] w-full max-w-lg mx-auto flex flex-col gap-2">
-                {!githubToken ? (
-                    <>
-                        <GitHubLoginButton />
-                        <Button 
-                            className="w-full" 
-                            variant="secondary" 
-                            onClick={handleProtocolLandImport}
-                        >
-                            Import from Protocol Land
-                        </Button>
-                    </>
-                ) : (
-                    <>
-                        <label className="text-muted-foreground pl-2 pt-2 -mb-1" htmlFor="project-name">Project Name</label>
-                        <Input placeholder="e.g. Coolest AO App" id="project-name" required onChange={(e) => setProjName(e.target.value)} />
-
-                        <label className="text-muted-foreground pl-2 pt-2 -mb-1" htmlFor="repo-url">Repository</label>
-                        <select
-                            className="border rounded-md p-2"
-                            value={repoUrl}
-                            onChange={(e) => {
-                                setRepoUrl(e.target.value);
-                                // Reset branch selection when repo changes
-                                setSelectedBranch('');
-                                setBranches([]);
-                            }}
-                        >
-                            <option value="" disabled>Select a repository</option>
-                            {repositories.map((repo: any) => (
-                                <option key={repo.id} value={repo.html_url}>
-                                    {repo.full_name}
-                                </option>
-                            ))}
-                        </select>
-
-                        <label className="text-muted-foreground pl-2 pt-2 -mb-1" htmlFor="branch">Branch</label>
-                        <select
-                            className="border rounded-md p-2"
-                            value={selectedBranch}
-                            onChange={(e) => setSelectedBranch(e.target.value)}
-                            disabled={!repoUrl || loadingBranches}
-                        >
-                            <option value="" disabled>Select a branch</option>
-                            {branches.map((branch: any) => (
-                                <option key={branch} value={branch}>
-                                    {branch}
-                                </option>
-                            ))}
-                        </select>
-                        {branchError && <div className="text-red-500">{branchError}</div>}
-
-                        <label className="text-muted-foreground pl-2 pt-10 -mb-1" htmlFor="install-command">Install Command</label>
-                        <Input placeholder="e.g. npm i" id="install-command" onChange={(e) => setInstallCommand(e.target.value || "npm ci")} />
-
-                        <label className="text-muted-foreground pl-2 pt-2 -mb-1" htmlFor="build-command">Build Command</label>
-                        <Input placeholder="e.g. npm run build" id="build-command" onChange={(e) => setBuildCommand(e.target.value || "npm run build")} />
-
-                        <label className="text-muted-foreground pl-2 pt-2 -mb-1" htmlFor="output-dir">Output Directory</label>
-                        <Input placeholder="e.g. ./dist" id="output-dir" onChange={(e) => setOutputDir(e.target.value || "./dist")} />
-
-                        <label className="text-muted-foreground pl-2 pt-2 -mb-1" htmlFor="arns-process">ArNS Name</label>
-                        <div className="relative">
-                            <Input 
-                                placeholder="Select an ArNS name or enter Process ID" 
-                                id="arns-process" 
-                                value={arnsProcess}
-                                onChange={(e) => setArnsProcess(e.target.value)}
-                                onFocus={() => {
-                                    setShowArnsDropdown(true);
-                                    if (arnsNames.length === 0) {
-                                        fetchArnsNames();
-                                    }
-                                }}
-                            />
-                            {showArnsDropdown && (
-                                <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-700 rounded-md shadow-lg">
-                                    <ul className="py-1">
-                                        <li 
-                                            className="px-3 py-2 hover:bg-gray-700 cursor-pointer text-gray-200"
-                                            onClick={() => handleArnsSelection(null)}
-                                        >
-                                            None
-                                        </li>
-                                        {arnsNames.map((arns) => (
-                                            <li 
-                                                key={arns.processId} 
-                                                className="px-3 py-2 hover:bg-gray-700 cursor-pointer text-gray-200"
-                                                onClick={() => handleArnsSelection(arns)}
-                                            >
-                                                {arns.name}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                    {loadingArnsNames && (
-                                        <div className="flex justify-center py-2">
-                                            <Loader className="animate-spin text-gray-200" />
-                                        </div>
-                                    )}
-                                </div>
-                            )}
+                <main className="p-6 max-w-4xl mx-auto">
+                    {step === "initial" && (
+                        <div className="space-y-6">
+                            <h2 className="text-xl font-semibold">Select a Git provider to import an existing project</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <GitHubLoginButton
+                                    onSuccess={() => setStep("repository")}
+                                    className="flex items-center justify-center space-x-2 h-16 bg-primary/80 hover:bg-primary/90 text-primary-foreground shadow-lg"
+                                >
+                                    <Github className="w-6 h-6" />
+                                    <span>Import from GitHub</span>
+                                </GitHubLoginButton>
+                                <Button 
+                                    className="flex items-center justify-center space-x-2 h-16 bg-primary/80 hover:bg-primary/90 text-primary-foreground shadow-lg"
+                                    onClick={handleProtocolLandImport}
+                                >
+                                    <Globe className="w-6 h-6" />
+                                    <span>Import from Protocol Land</span>
+                                </Button>
+                            </div>
                         </div>
+                    )}
 
-                        <Button className="w-full mt-10" variant="secondary" onClick={deploy}>
-                            {deploying ? <Loader className="animate-spin mr-2" /> : "Deploy"}
-                        </Button>
+                    {step === "repository" && (
+                        <div className="space-y-6">
+                            <label className="text-muted-foreground pl-2 pt-2 -mb-1" htmlFor="repo-url">Repository</label>
+                            <select
+                                className="border rounded-md p-2 w-full bg-card/50 shadow-md"
+                                value={repoUrl}
+                                onChange={(e) => {
+                                    setRepoUrl(e.target.value);
+                                    setSelectedBranch('');
+                                    setBranches([]);
+                                }}
+                            >
+                                <option value="" disabled>Select a repository</option>
+                                {repositories.map((repo: any) => (
+                                    <option key={repo.id} value={repo.html_url}>
+                                        {repo.full_name}
+                                    </option>
+                                ))}
+                            </select>
 
-                        {deploying && <Logs name={projName} deploying={deploying} repoUrl={repoUrl} />}
-                    </>
-                )}
+                            <label className="text-muted-foreground pl-2 pt-2 -mb-1" htmlFor="branch">Branch</label>
+                            <select
+                                className="border rounded-md p-2 w-full bg-card/50 shadow-md"
+                                value={selectedBranch}
+                                onChange={(e) => setSelectedBranch(e.target.value)}
+                                disabled={!repoUrl || loadingBranches}
+                            >
+                                <option value="" disabled>Select a branch</option>
+                                {branches.map((branch: any) => (
+                                    <option key={branch} value={branch}>
+                                        {branch}
+                                    </option>
+                                ))}
+                            </select>
+                            {branchError && <div className="text-red-500">{branchError}</div>}
+                        </div>
+                    )}
+
+                    {step === "project" && (
+                        <div className="space-y-6">
+                            <div>
+                                <Label htmlFor="project-name">Project Name</Label>
+                                <Input placeholder="e.g. Coolest AO App" id="project-name" required onChange={(e) => setProjName(e.target.value)} className="mt-1 bg-card/50 shadow-md" />
+                            </div>
+                            <div>
+                                <Label htmlFor="install-command">Install Command</Label>
+                                <Input placeholder="e.g. npm i" id="install-command" onChange={(e) => setInstallCommand(e.target.value || "npm ci")} className="mt-1 bg-card/50 shadow-md" />
+                            </div>
+                            <div>
+                                <Label htmlFor="build-command">Build Command</Label>
+                                <Input placeholder="e.g. npm run build" id="build-command" onChange={(e) => setBuildCommand(e.target.value || "npm run build")} className="mt-1 bg-card/50 shadow-md" />
+                            </div>
+                            <div>
+                                <Label htmlFor="output-dir">Output Directory</Label>
+                                <Input placeholder="e.g. ./dist" id="output-dir" onChange={(e) => setOutputDir(e.target.value || "./dist")} className="mt-1 bg-card/50 shadow-md" />
+                            </div>
+                        </div>
+                    )}
+
+                    {step === "domain" && (
+                        <div className="space-y-4">
+                            <Label htmlFor="arns-process">ArNS Name</Label>
+                            <div className="relative">
+                                <Input 
+                                    placeholder="Select an ArNS name or enter Process ID" 
+                                    id="arns-process" 
+                                    value={arnsProcess}
+                                    onChange={(e) => setArnsProcess(e.target.value)}
+                                    onFocus={() => {
+                                        setShowArnsDropdown(true);
+                                        if (arnsNames.length === 0) {
+                                            fetchArnsNames();
+                                        }
+                                    }}
+                                    className="bg-card/50 shadow-md"
+                                />
+                                {showArnsDropdown && (
+                                    <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-700 rounded-md shadow-lg">
+                                        <ul className="py-1">
+                                            <li 
+                                                className="px-3 py-2 hover:bg-gray-700 cursor-pointer text-gray-200"
+                                                onClick={() => handleArnsSelection(null)}
+                                            >
+                                                None
+                                            </li>
+                                            {arnsNames.map((arns) => (
+                                                <li 
+                                                    key={arns.processId} 
+                                                    className="px-3 py-2 hover:bg-gray-700 cursor-pointer text-gray-200"
+                                                    onClick={() => handleArnsSelection(arns)}
+                                                >
+                                                    {arns.name}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                        {loadingArnsNames && (
+                                            <div className="flex justify-center py-2">
+                                                <Loader className="animate-spin text-gray-200" />
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {step === "deploy" && (
+                        <div className="space-y-4">
+                            <h2 className="text-xl font-semibold">Deployment Logs</h2>
+                            <div className="bg-card/50 p-4 rounded-md h-64 overflow-y-auto shadow-lg">
+                                <Logs name={projName} deploying={deploying} repoUrl={repoUrl} />
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="mt-6 flex justify-between">
+                        {step !== "initial" && (
+                            <Button
+                                variant="outline"
+                                onClick={handleBack}
+                                disabled={step === "deploy" && deploying}
+                                className="bg-background/50 shadow-md"
+                            >
+                                <ArrowLeft className="mr-2 h-4 w-4" />
+                                Back
+                            </Button>
+                        )}
+                        {(step === "repository" || step === "project" || step === "domain") && (
+                            <Button
+                                className="ml-auto bg-primary/80 hover:bg-primary/90 shadow-lg"
+                                onClick={handleNext}
+                                disabled={step === "repository" && (!repoUrl || !selectedBranch)}
+                            >
+                                {step === "domain" ? "Deploy" : "Next"}
+                                <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        )}
+                    </div>
+                </main>
+
+                <footer className="mt-8 p-6 border-t border-border text-center text-muted-foreground bg-transparent">
+                    <a href="#" className="hover:text-foreground">Learn more about deploying projects →</a>
+                </footer>
             </div>
         </Layout>
     );

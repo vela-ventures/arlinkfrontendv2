@@ -1,18 +1,28 @@
-import Layout from "@/components/layout";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+"use client"
+
+import { useState, useEffect } from "react"
+import { Github, Globe, ArrowLeft, ArrowRight, Search, Loader } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import Ansi from '@agbishop/react-ansi-18';
+import Layout from '@/components/layout';
 import { useGlobalState } from "@/hooks";
 import { runLua } from "@/lib/ao-vars";
 import { useRouter } from "next/router";
-import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Loader } from "lucide-react";
 import axios from 'axios';
 import { BUILDER_BACKEND } from "@/lib/utils";
 import useDeploymentManager from "@/hooks/useDeploymentManager";
 import { useActiveAddress } from "arweave-wallet-kit";
 import fetchUserRepos from '@/lib/fetchrepo';
-import Ansi from "@agbishop/react-ansi-18";
 import { getWalletOwnedNames } from '@/lib/get-arns';
 
 type ProtocolLandRepo = {
@@ -116,6 +126,8 @@ export default function DeployThirdParty() {
     const [arnsNames, setArnsNames] = useState<{ name: string; processId: string }[]>([]);
     const [loadingArnsNames, setLoadingArnsNames] = useState(false);
     const [showArnsDropdown, setShowArnsDropdown] = useState(false);
+    const [step, setStep] = useState<"repositories" | "project" | "domain" | "deploy">("repositories")
+    const [searchQuery, setSearchQuery] = useState<string>("")
 
     useEffect(() => {
         async function fetchRepos() {
@@ -138,15 +150,46 @@ export default function DeployThirdParty() {
         fetchRepos();
     }, [address]);
 
-    const handleRepoSelection = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const selectedRepoUrl = e.target.value;
-        const repo = protocolLandRepos.find(repo => repo.cloneUrl === selectedRepoUrl);
-        if (repo) {
-            setSelectedRepo(repo);
-            setRepoUrl(repo.cloneUrl);
-            setProjName(repo.name);
+    const filteredRepositories = protocolLandRepos.filter(repo =>
+        repo.name.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+
+    const handleRepoSelect = (repo: ProtocolLandRepo) => {
+        setSelectedRepo(repo);
+        setRepoUrl(repo.cloneUrl);
+        setProjName(repo.name);
+        setStep("project");
+    }
+
+    const handleBack = () => {
+        switch (step) {
+            case "repositories":
+                // We'll keep it at "repositories" instead of setting to "initial"
+                break;
+            case "project":
+                setStep("repositories");
+                break;
+            case "domain":
+                setStep("project");
+                break;
+            case "deploy":
+                if (!deploying) {
+                    setStep("domain");
+                }
+                break;
         }
-    };
+    }
+
+    const handleNext = () => {
+        switch (step) {
+            case "project":
+                setStep("domain");
+                break;
+            case "domain":
+                deploy();
+                break;
+        }
+    }
 
     async function fetchArnsNames() {
         if (!address) {
@@ -188,6 +231,7 @@ export default function DeployThirdParty() {
 
 
         setDeploying(true);
+        setStep("deploy"); // Add this line to switch to the deploy step
 
         const query = `local res = db:exec[[
             INSERT INTO Deployments (Name, RepoUrl, InstallCMD, BuildCMD, OutputDIR, ArnsProcess)
@@ -237,93 +281,182 @@ export default function DeployThirdParty() {
 
     return (
         <Layout>
-            <div className="text-xl my-5 mb-10">Deploy from Protocol Land</div>
-
-            <div className="md:min-w-[60%] w-full max-w-lg mx-auto flex flex-col gap-2">
-                {loading ? (
-                    <div className="text-center">
-                        <Loader className="animate-spin inline-block mr-2" />
-                        Loading repositories...
+            <div className="min-h-screen">
+                <header className="flex justify-between items-center p-6 border-b border-border bg-transparent">
+                    <div>
+                        <h1 className="text-2xl font-bold">Deploy from Protocol Land</h1>
                     </div>
-                ) : protocolLandRepos.length > 0 ? (
-                    <>
-                        <label className="text-muted-foreground pl-2 pt-2 -mb-1" htmlFor="repo-url">Repository</label>
-                        <select
-                            className="border rounded-md p-2"
-                            value={repoUrl}
-                            onChange={handleRepoSelection}
-                        >
-                            <option value="" disabled>Select a repository</option>
-                            {protocolLandRepos.map((repo) => (
-                                <option key={repo.cloneUrl} value={repo.cloneUrl}>
-                                    {repo.name}
-                                </option>
-                            ))}
-                        </select>
+                </header>
 
-                        <label className="text-muted-foreground pl-2 pt-2 -mb-1" htmlFor="project-name">Project Name</label>
-                        <Input placeholder="e.g. Coolest AO App" id="project-name" value={projName} required onChange={(e) => setProjName(e.target.value)} />
-
-                        <label className="text-muted-foreground pl-2 pt-10 -mb-1" htmlFor="install-command">Install Command</label>
-                        <Input placeholder="e.g. npm ci" id="install-command" value={installCommand} onChange={(e) => setInstallCommand(e.target.value)} />
-
-                        <label className="text-muted-foreground pl-2 pt-2 -mb-1" htmlFor="build-command">Build Command</label>
-                        <Input placeholder="e.g. npm run build" id="build-command" value={buildCommand} onChange={(e) => setBuildCommand(e.target.value)} />
-
-                        <label className="text-muted-foreground pl-2 pt-2 -mb-1" htmlFor="output-dir">Output Directory</label>
-                        <Input placeholder="e.g. ./dist" id="output-dir" value={outputDir} onChange={(e) => setOutputDir(e.target.value)} />
-
-                        <label className="text-muted-foreground pl-2 pt-2 -mb-1" htmlFor="arns-process">ArNS Name</label>
-                        <div className="relative">
-                            <Input 
-                                placeholder="Select an ArNS name or enter Process ID" 
-                                id="arns-process" 
-                                value={arnsProcess}
-                                onChange={(e) => setArnsProcess(e.target.value)}
-                                onFocus={() => {
-                                    setShowArnsDropdown(true);
-                                    if (arnsNames.length === 0) {
-                                        fetchArnsNames();
-                                    }
-                                }}
-                            />
-                            {showArnsDropdown && (
-                                <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-700 rounded-md shadow-lg">
-                                    <ul className="py-1">
-                                        <li 
-                                            className="px-3 py-2 hover:bg-gray-700 cursor-pointer text-gray-200"
-                                            onClick={() => handleArnsSelection(null)}
-                                        >
-                                            None
-                                        </li>
-                                        {arnsNames.map((arns) => (
-                                            <li 
-                                                key={arns.processId} 
-                                                className="px-3 py-2 hover:bg-gray-700 cursor-pointer text-gray-200"
-                                                onClick={() => handleArnsSelection(arns)}
+                <main className="p-6 max-w-4xl mx-auto">
+                    {step === "repositories" && (
+                        <div className="space-y-6">
+                            <div className="relative flex-grow">
+                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+                                <Input
+                                    type="text"
+                                    placeholder="Search repositories..."
+                                    className="w-full pl-10 bg-card/50 shadow-md"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
+                            </div>
+                            <div className="space-y-4">
+                                {loading ? (
+                                    <div className="text-center">
+                                        <Loader className="animate-spin inline-block mr-2" />
+                                        Loading repositories...
+                                    </div>
+                                ) : filteredRepositories.length > 0 ? (
+                                    filteredRepositories.map((repo) => (
+                                        <div key={repo.cloneUrl} className="flex items-center justify-between bg-card/50 p-4 rounded-md shadow-lg">
+                                            <div className="flex items-center space-x-4">
+                                                <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-500 rounded-md"></div>
+                                                <div>
+                                                    <p className="font-medium">{repo.name}</p>
+                                                </div>
+                                            </div>
+                                            <Button 
+                                                variant="outline" 
+                                                onClick={() => handleRepoSelect(repo)}
+                                                className="bg-background/50 shadow-md"
                                             >
-                                                {arns.name}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                    {loadingArnsNames && (
-                                        <div className="flex justify-center py-2">
-                                            <Loader className="animate-spin text-gray-200" />
+                                                Import
+                                            </Button>
                                         </div>
-                                    )}
-                                </div>
-                            )}
+                                    ))
+                                ) : (
+                                    <div className="text-center">No repositories found. Please make sure your wallet is connected and you have repositories on Protocol Land.</div>
+                                )}
+                            </div>
                         </div>
+                    )}
 
-                        <Button className="w-full mt-10" variant="secondary" onClick={deploy} disabled={!selectedRepo}>
-                            {deploying ? <Loader className="animate-spin mr-2" /> : "Deploy"}
-                        </Button>
+                    {step === "project" && (
+                        <div className="space-y-6">
+                            <div>
+                                <Label htmlFor="project-name">Project Name</Label>
+                                <Input
+                                    id="project-name"
+                                    value={projName}
+                                    onChange={(e) => setProjName(e.target.value)}
+                                    className="mt-1 bg-card/50 shadow-md"
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="output-dir">Output Directory</Label>
+                                <Input
+                                    id="output-dir"
+                                    value={outputDir}
+                                    onChange={(e) => setOutputDir(e.target.value)}
+                                    className="mt-1 bg-card/50 shadow-md"
+                                    placeholder="./dist"
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="install-command">Install Command</Label>
+                                <Input
+                                    id="install-command"
+                                    value={installCommand}
+                                    onChange={(e) => setInstallCommand(e.target.value)}
+                                    className="mt-1 bg-card/50 shadow-md"
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="build-command">Build Command</Label>
+                                <Input
+                                    id="build-command"
+                                    value={buildCommand}
+                                    onChange={(e) => setBuildCommand(e.target.value)}
+                                    className="mt-1 bg-card/50 shadow-md"
+                                />
+                            </div>
+                        </div>
+                    )}
 
-                        {deploying && <Logs name={projName} deploying={deploying} repoUrl={repoUrl} />}
-                    </>
-                ) : (
-                    <div className="text-center">No repositories found. Please make sure your wallet is connected and you have repositories on Protocol Land.</div>
-                )}
+                    {step === "domain" && (
+                        <div className="space-y-4">
+                            <Label htmlFor="arns-process">ArNS Name</Label>
+                            <div className="relative">
+                                <Input 
+                                    placeholder="Select an ArNS name or enter Process ID" 
+                                    id="arns-process" 
+                                    value={arnsProcess}
+                                    onChange={(e) => setArnsProcess(e.target.value)}
+                                    onFocus={() => {
+                                        setShowArnsDropdown(true);
+                                        if (arnsNames.length === 0) {
+                                            fetchArnsNames();
+                                        }
+                                    }}
+                                    className="bg-card/50 shadow-md"
+                                />
+                                {showArnsDropdown && (
+                                    <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-700 rounded-md shadow-lg">
+                                        <ul className="py-1">
+                                            <li 
+                                                className="px-3 py-2 hover:bg-gray-700 cursor-pointer text-gray-200"
+                                                onClick={() => handleArnsSelection(null)}
+                                            >
+                                                None
+                                            </li>
+                                            {arnsNames.map((arns) => (
+                                                <li 
+                                                    key={arns.processId} 
+                                                    className="px-3 py-2 hover:bg-gray-700 cursor-pointer text-gray-200"
+                                                    onClick={() => handleArnsSelection(arns)}
+                                                >
+                                                    {arns.name}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                        {loadingArnsNames && (
+                                            <div className="flex justify-center py-2">
+                                                <Loader className="animate-spin text-gray-200" />
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {step === "deploy" && (
+                        <div className="space-y-4">
+                            <h2 className="text-xl font-semibold">Deployment Logs</h2>
+                            <div className="bg-card/50 p-4 rounded-md h-64 overflow-y-auto shadow-lg">
+                                <Logs name={projName} deploying={deploying} repoUrl={repoUrl} />
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="mt-6 flex justify-between">
+                        {step !== "repositories" && (
+                            <Button
+                                variant="outline"
+                                onClick={handleBack}
+                                disabled={step === "deploy" && deploying}
+                                className="bg-background/50 shadow-md"
+                            >
+                                <ArrowLeft className="mr-2 h-4 w-4" />
+                                Back
+                            </Button>
+                        )}
+                        {(step === "project" || step === "domain") && (
+                            <Button
+                                className="ml-auto bg-primary/80 hover:bg-primary/90 shadow-lg"
+                                onClick={handleNext}
+                            >
+                                {step === "domain" ? "Deploy" : "Next"}
+                                <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        )}
+                    </div>
+                </main>
+
+                <footer className="mt-8 p-6 border-t border-border text-center text-muted-foreground bg-transparent">
+                    <a href="#" className="hover:text-foreground">Learn more about deploying projects →</a>
+                </footer>
             </div>
         </Layout>
     );
