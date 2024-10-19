@@ -4,8 +4,16 @@ import { useGlobalState } from '@/hooks/useGlobalState';
 import { initiateGitHubAuth, handleGitHubCallback } from '@/lib/github-auth-file';
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
+import { Github } from 'lucide-react';
+import { ReactNode } from 'react';
 
-export function GitHubLoginButton() {
+interface GitHubLoginButtonProps {
+    onSuccess: () => void;
+    className?: string;
+    children?: ReactNode;
+}
+
+export function GitHubLoginButton({ onSuccess, className, children }: GitHubLoginButtonProps) {
     const { githubToken, setGithubToken } = useGlobalState();
     const router = useRouter();
 
@@ -14,26 +22,33 @@ export function GitHubLoginButton() {
         if (code && typeof code === 'string') {
             handleGitHubCallback(code).then(token => {
                 setGithubToken(token);
-                console.log("Token is:", token); // Print the token to the console
-                router.push('/deploy'); // Redirect to deploy page after successful login
+                console.log("Token is:", token);
+                onSuccess(); // Call the onSuccess callback instead of direct navigation
             }).catch(error => {
                 console.error('GitHub auth error:', error);
-                // Handle error (e.g., show error message to user)
             });
         }
-    }, [router.query]);
+    }, [router.query, onSuccess]);
 
     const handleLogin = () => {
         if (githubToken) {
-            setGithubToken(null); // Logout
+            setGithubToken(null);
         } else {
-            initiateGitHubAuth(); // Start the GitHub authentication process
+            initiateGitHubAuth();
         }
     };
 
     return (
-        <Button onClick={handleLogin}>
-            {githubToken ? 'Logout from GitHub' : 'Connect GitHub'}
+        <Button
+            className={className}
+            onClick={handleLogin} 
+        >
+            {children || (
+                <>
+                    <Github className="w-6 h-6" />
+                    <span>{githubToken ? 'Logout from GitHub' : 'Import from GitHub'}</span>
+                </>
+            )}
         </Button>
     );
 }

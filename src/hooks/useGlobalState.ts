@@ -2,7 +2,7 @@
 import { TDeployment } from '@/types';
 import { create } from 'zustand';
 
-type Store = {
+export type Store = {
     managerProcess: string;
     deployments: TDeployment[];
     githubToken: string | null; // Add githubToken state
