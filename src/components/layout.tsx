@@ -6,12 +6,9 @@ import Navbar from "@/components/navbar"; // Import the Navbar component
 
 export default function Layout({ children }: { children?: React.ReactNode }) {
     const { connected } = useConnection();
-    const [arBalance, setArBalance] = useState(0);
+   
 
-    useEffect(() => {
-        axios.get(`https://arweave.net/wallet/${DEPLOYMENT_WALLET}/balance`).then(res => setArBalance((res.data as number) / 1000000000000));
-    }, []);
-
+    
     return (
         <div className={cn(
             "flex flex-col bg-gray-100 dark:bg-neutral-800 w-full flex-1 mx-auto border border-neutral-200 dark:border-neutral-700 overflow-hidden",
