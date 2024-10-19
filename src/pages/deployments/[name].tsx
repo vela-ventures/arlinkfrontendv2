@@ -28,7 +28,6 @@ export default function Deployment() {
   const [deploymentUrl, setDeploymentUrl] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('buildLogs');
-  const [snapshotImage, setSnapshotImage] = useState<string | null>(null);
 
   const deployment = globalState.deployments.find((dep) => dep.Name == name);
 
@@ -40,14 +39,11 @@ export default function Deployment() {
       try {
         const response = await axios.get(`${BUILDER_BACKEND}/config/${owner}/${repoName}`);
         setDeploymentUrl(response.data.url);
-        if (response.data.url) {
-          fetchSnapshot(`https://arweave.net/${response.data.url}`);
-        }
       } catch (error) {
         console.error('Error fetching deployment URL:', error);
         toast.error('Failed to fetch deployment URL');
         setError('Failed to fetch deployment URL. Please try again later.');
-        setSnapshotImage(null);
+        setDeploymentUrl("");
       }
     };
     fetchDeploymentUrl();
@@ -191,27 +187,6 @@ export default function Deployment() {
     }
   }
 
-  const fetchSnapshot = async (url: string) => {
-    try {
-      const response = await axios.get(`https://api.apiflash.com/v1/urltoimage`, {
-        params: {
-          access_key: process.env.NEXT_PUBLIC_APIFLASH_KEY,
-          url: url,
-          format: 'jpeg',
-          quality: 80,
-          width: 1200,
-          height: 600,
-        },
-        responseType: 'arraybuffer',
-      });
-      const base64 = Buffer.from(response.data, 'binary').toString('base64');
-      setSnapshotImage(`data:image/jpeg;base64,${base64}`);
-    } catch (error) {
-      console.error('Error fetching snapshot:', error);
-      setSnapshotImage(null);
-    }
-  };
-
   if (!deployment) return <Layout>
     <div className="text-xl">Searching <span className="text-muted-foreground">{name} </span> ...</div>
   </Layout>;
@@ -238,12 +213,16 @@ export default function Deployment() {
 
           <div className="grid grid-cols-3 gap-6">
             <div className="col-span-2 bg-black rounded-lg overflow-hidden">
-              {snapshotImage ? (
-                <img src={snapshotImage} alt="Deployment Preview" className="w-full h-[300px] object-cover" />
+              {deploymentUrl ? (
+                <iframe
+                  src={`https://arweave.net/${deploymentUrl}`}
+                  className="w-full h-[300px] border-0"
+                  title="Deployment Preview"
+                />
               ) : (
                 <div className="w-full h-[300px] flex items-center justify-center bg-gray-800 text-white">
                   <p className="text-center">
-                    {deploymentUrl ? 'Something went wrong while fetching the snapshot.' : 'Deployment URL not available.'}
+                    Deployment URL not available.
                     <br />
                     Please check your deployment status.
                   </p>
