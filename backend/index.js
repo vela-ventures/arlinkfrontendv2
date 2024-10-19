@@ -285,7 +285,7 @@ app.post("/deploy", async (req, res) => {
         const buildResult = await handleBuild(req, outputDist);
         
         // Update registry with new commit hash
-        await updateRegistry(owner, folderName, { lastBuiltCommit: latestCommit, url: buildRest
+        await updateRegistry(owner, folderName, { lastBuiltCommit: latestCommit, url: buildResult });
         
         return res.status(200).send(buildResult);
       } else {
