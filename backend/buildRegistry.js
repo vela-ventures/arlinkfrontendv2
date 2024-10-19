@@ -19,9 +19,14 @@ export async function getGlobalRegistry() {
 }
 
 export async function getIndividualConfig(owner, repoName) {
+  try{
   const configPath = path.join(BUILDS_DIR, owner, repoName, 'config.json');
   const data = await fs.readFile(configPath, 'utf-8');
   return JSON.parse(data);
+  } catch (error) { 
+    console.error('Error reading individual config file:', error);
+    return false;
+  }
 }
 
 export async function addToRegistry(buildConfig) {

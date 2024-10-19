@@ -8,14 +8,20 @@ import fsPromises from "fs/promises";
 import mime from "mime";
 import { TurboFactory } from "@ardrive/turbo-sdk";
 import { runBuild } from "./buildManager.js";
-import { scheduleBuildJobs } from './scheduleBuildJobs.js';
 import { getLatestCommitHash } from './gitUtils.js';
-import { initRegistry, addToRegistry, updateRegistry, getIndividualConfig, getDeployCount, getGlobalRegistry } from './buildRegistry.js';
+import { initRegistry, addToRegistry, updateRegistry, getIndividualConfig, getDeployCount, getGlobalRegistry, incrementDeployCount } from './buildRegistry.js';
 import axios from 'axios';
 import { config } from "dotenv";
+import { Webhooks } from '@octokit/webhooks';
+
 config();
 
+
 const PORT = 3050;
+
+const webhookSecret = process.env.WEBHOOK_SECRET;
+
+const webhooks = new Webhooks({ secret: webhookSecret });
 
 
 const app = express();
@@ -161,6 +167,71 @@ export async function deployFolder(folderPath) {
     throw error;
   }
 }
+
+
+app.post('/github-webhook', async (req, res) => {
+  const signature = req.headers["x-hub-signature-256"];
+  const body = JSON.stringify(req.body);
+  
+
+  if (!(await webhooks.verify(body, signature))) {
+    console.log(`Received invalid webhook signature`);
+    res.status(401).send("Unauthorized");
+    return;
+  }
+  console.log(`Received valid webhook signature`);
+  const repository = `${req.body.repository.url}`;
+  const branch = req.body.ref.split("/").pop();
+  const owner = repository.split("/").reverse()[1];
+  const folderName = `${repository}`
+    .replace(/\.git|\/$/, "")
+    .split("/")
+    .pop();
+
+  console.log ("Repository:", repository, "Owner :", owner, "Folder Name: ", folderName, "Branch: ", branch);
+
+  const config = await getIndividualConfig(owner, folderName);
+
+  if (!config) {
+    console.log(`Configuration not found for ${owner}/${folderName}`);
+    res.status(404).send("Configuration not found");
+    return;
+  }
+  
+  if(config.branch != branch){
+    console.log("Branch mismatch");
+    res.status(200).send("Branch mismatch");
+    return;
+  }
+  
+  try {
+    console.log(`Checking for updates: ${config.owner}/${config.repoName}`);
+    
+    const deployCount = config.deployCount || 0;
+    const maxDailyDeploys = config.maxDailyDeploys || 1000; // Default to 2 if not set
+    
+    if (deployCount >= maxDailyDeploys) {
+      console.log(`Skipping ${config.owner}/${config.repoName}: Daily deployment limit reached`);
+      return res.status(200).send("Daily deployment limit reached");
+    }
+
+    // Use the existing /deploy endpoint to trigger a build
+    const response = await axios.post('http://localhost:3050/deploy', config);
+    
+    if (response.status === 200) {
+      console.log(`Build triggered successfully for ${config.owner}/${config.repoName}`);
+      await incrementDeployCount(config.owner, config.repoName);
+    } else {
+      console.log(`No update needed for ${config.owner}/${config.repoName}`);
+    }
+  } catch (error) {
+    console.error(`Error processing ${config.owner}/${config.repoName}:`, error.message);
+  }
+  // The rest of your logic here
+});
+
+
+
 
 app.get("/", (req, res) => {
   res.send("<pre>permaDeploy Builder Running!</pre>");
@@ -423,7 +494,6 @@ const server = app.listen(PORT, () => {
 });
 
 initRegistry().catch(console.error);
-scheduleBuildJobs().catch(console.error);
 
 server.setTimeout(60 * 60 * 1000);
 server.keepAliveTimeout = 60 * 60 * 1000;

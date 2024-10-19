@@ -14,8 +14,7 @@
   "dependencies": {
     "@ar.io/sdk": "^2.0.2",
     "@ardrive/turbo-sdk": "^1.13.0",
-    "@irys/sdk": "^0.2.9",
-    "@liteseed/sdk": "^0.2.0",
+    "@octokit/webhooks": "^13.3.0",
     "@protocol.land/git-remote-helper": "^0.4.0",
     "arbundles": "^0.11.2",
     "ardrive-cli": "^2.0.1",
