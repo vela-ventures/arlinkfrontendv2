@@ -8,7 +8,7 @@ export async function initiateGitHubAuth() {
 
 
     const redirectUri = encodeURIComponent(`${BASE_URL}/deploy`);
-    const authUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${redirectUri}&scope=repo`;
+    const authUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${redirectUri}&state=arlink`;
     window.location.href = authUrl;
 }
 
