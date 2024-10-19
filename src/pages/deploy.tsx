@@ -206,6 +206,7 @@ export default function Deploy() {
         if (deployments.find(dep => dep.Name === projName)) return toast.error("Project name already exists");
 
         setDeploying(true);
+        setStep("deploy"); // Add this line to change the step to "deploy"
         const query = `local res = db:exec[[
             INSERT INTO Deployments (Name, RepoUrl, Branch, InstallCMD, BuildCMD, OutputDIR, ArnsProcess)
                 VALUES
@@ -315,7 +316,7 @@ export default function Deploy() {
                 setStep("domain");
                 break;
             case "domain":
-                deploy();
+                deploy(); // This will now set the step to "deploy" and start the deployment process
                 break;
         }
     }
