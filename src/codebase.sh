@@ -1,7 +1,7 @@
 #!/bin/bash
 
 SCRIPT_NAME=$(basename "$0")
-OUTPUT_FILE="codebase.md"
+OUTPUT_FILE="frontend.md"
 rm -f "$OUTPUT_FILE"
 
 echo "# Codebase Contents" > "$OUTPUT_FILE"
