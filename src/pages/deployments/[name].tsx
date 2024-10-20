@@ -38,11 +38,12 @@ export default function Deployment() {
       const repoName = deployment.RepoUrl.split('/').reverse()[0].replace('.git', '');
       try {
         const response = await axios.get(`${BUILDER_BACKEND}/config/${owner}/${repoName}`);
-        setDeploymentUrl(response.data.url);
+        const newDeploymentUrl = response.data.url;
+        setDeploymentUrl(newDeploymentUrl);
         
         // Update the DeploymentId in the database
-        if (globalState.managerProcess && response.data.url) {
-          await runLua(`db:exec[[UPDATE Deployments SET DeploymentId='${response.data.url}' WHERE Name='${deployment.Name}']]`, globalState.managerProcess);
+        if (globalState.managerProcess && newDeploymentUrl) {
+          await runLua(`db:exec[[UPDATE Deployments SET DeploymentId='${newDeploymentUrl}' WHERE Name='${deployment.Name}']]`, globalState.managerProcess);
         }
       } catch (error) {
         console.error('Error fetching deployment URL:', error);
