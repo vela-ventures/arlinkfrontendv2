@@ -47,7 +47,7 @@ export function GitHubLoginButton({ onSuccess, className, children }: GitHubLogi
 
     const initiateAppInstallation = () => {
         const installUrl = `https://github.com/apps/arlinkapp/installations/new`;
-        window.location.href = installUrl;
+        window.location.assign(installUrl);
     };
 
     const handleLogin = () => {
