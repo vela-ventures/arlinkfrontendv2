@@ -129,6 +129,7 @@ export default function Deploy() {
     const [showArnsDropdown, setShowArnsDropdown] = useState(false);
     const [step, setStep] = useState<"initial" | "repository" | "project" | "domain" | "deploy">("initial");
     const [deploymentStarted, setDeploymentStarted] = useState(false);
+    const [deploymentFailed, setDeploymentFailed] = useState(false);
     
 
     const arweave = Arweave.init({
@@ -270,10 +271,12 @@ export default function Deploy() {
             } else {
                 toast.error("Deployment failed");
                 console.log(txid);
+                setDeploymentFailed(true);  // Set this to true when deployment fails
             }
         } catch (error) {
             toast.error("Deployment failed check logs on dashboard");
             console.log(error);
+            setDeploymentFailed(true);  // Set this to true when deployment fails
         }
 
         setDeploying(false);
@@ -310,6 +313,7 @@ export default function Deploy() {
     }
 
     const handleBack = () => {
+        setDeploymentFailed(false);  // Reset this when going back
         switch (step) {
             case "repository":
                 setStep("initial");
@@ -321,7 +325,7 @@ export default function Deploy() {
                 setStep("project");
                 break;
             case "deploy":
-                if (!deploying) {
+                if (!deploying || deploymentFailed) {
                     setStep("domain");
                 }
                 break;
@@ -494,7 +498,7 @@ export default function Deploy() {
                             <Button
                                 variant="outline"
                                 onClick={handleBack}
-                                disabled={step === "deploy" && deploying}
+                                disabled={step === "deploy" && deploying && !deploymentFailed}
                                 className="bg-background/50 shadow-md"
                             >
                                 <ArrowLeft className="mr-2 h-4 w-4" />
