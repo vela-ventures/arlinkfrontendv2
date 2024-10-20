@@ -243,22 +243,29 @@ app.get("/check-github-app", async (req, res) => {
   if (!token) {
     return res.status(401).json({ error: 'No token provided' });
   }
+
   try {
     const octokit = new Octokit({ auth: token });
+
+    // Fetch the authenticated user's information
+    const { data: user } = await octokit.rest.users.getAuthenticated();
+    const username = user.login;
+
+    // Fetch installations for the authenticated user
     const { data } = await octokit.rest.apps.listInstallationsForAuthenticatedUser();
     
-    
-
     const isInstalled = data.installations.some(installation => 
-      installation.app_id === parseInt(process.env.GITHUB_APP_ID)
+      installation.account.login.toLowerCase() === username.toLowerCase()
     );
     
-    console.log('Installations data: ', data);
+    console.log('Authenticated user:', username);
+    console.log('Is installed:', isInstalled);
+    console.log('Installations data:', data);
     data.installations.forEach((installation) => {
       console.log('Installation:', installation.account);
     });
 
-    res.status(200).json({ installed: isInstalled });
+    res.status(200).json({ installed: isInstalled, username });
   } catch (error) {
     console.error('Error checking GitHub App installation:', error);
     res.status(500).json({ error: 'Failed to check GitHub App installation', details: error.message });
