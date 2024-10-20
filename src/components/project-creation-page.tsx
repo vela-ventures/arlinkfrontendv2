@@ -1,11 +1,32 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useGlobalState } from '@/hooks/useGlobalState';
 import { initiateGitHubAuth, handleGitHubCallback } from '@/lib/github-auth-file';
 import { useRouter } from 'next/router';
 import { Github } from 'lucide-react';
-import axios from 'axios';
+import { ReactNode } from 'react';
 import { BUILDER_BACKEND } from '@/lib/utils';
+
+// Add this new function to check GitHub app installation
+async function checkAndInstallGitHubApp(token: string) {
+  try {
+    // TODO: Change this builder backend import to the new one
+    const response = await fetch(`${BUILDER_BACKEND}/check-github-app`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    const data = await response.json();
+   
+    if (!data.installed) {
+      // If the app is not installed, open the installation page
+      window.location.href = 'https://github.com/apps/arlinkapp/installations/new';
+    }
+  } catch (error) {
+    console.error('Error checking GitHub app installation:', error);
+  }
+}
+
 interface GitHubLoginButtonProps {
     onSuccess: () => void;
     className?: string;
@@ -22,42 +43,22 @@ export function GitHubLoginButton({ onSuccess, className, children }: GitHubLogi
         if (code && typeof code === 'string') {
             handleGitHubCallback(code).then(token => {
                 setGithubToken(token);
-                checkAppInstallation(token);
+                console.log("Token is:", token);
+                checkAndInstallGitHubApp(token); // Check and install GitHub app if necessary
+                onSuccess();
             }).catch(error => {
                 console.error('GitHub auth error:', error);
             });
         }
-    }, [router.query, setGithubToken]);
+    }, [router.query, onSuccess, setGithubToken]);
 
-    const checkAppInstallation = async (token: string) => {
-        try {
-            const response = await axios.get(`${BUILDER_BACKEND}/check-github-app`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            setIsAppInstalled(response.data.installed);
-            if (response.data.installed) {
-                onSuccess();
-            } else {
-                initiateAppInstallation();
-            }
-        } catch (error) {
-            console.error('Error checking app installation:', error);
-        }
-    };
-
-    const initiateAppInstallation = () => {
-        const installUrl = `https://github.com/apps/arlinkapp/installations/new`;
-        <iframe
-        src={installUrl}
-        className="w-full h-[500px] border-0"
-        title="Deployment Preview"
-      />
-    };
+    
 
     const handleLogin = () => {
         if (githubToken) {
             checkAppInstallation(githubToken);
         } else {
+            
             initiateGitHubAuth();
         }
     };
