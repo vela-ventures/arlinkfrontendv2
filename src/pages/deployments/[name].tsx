@@ -28,6 +28,7 @@ export default function Deployment() {
   const [deploymentUrl, setDeploymentUrl] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('buildLogs');
+  const [snapshotImage, setSnapshotImage] = useState<string | null>(null);
 
   const deployment = globalState.deployments.find((dep) => dep.Name == name);
 
@@ -39,20 +40,18 @@ export default function Deployment() {
       try {
         const response = await axios.get(`${BUILDER_BACKEND}/config/${owner}/${repoName}`);
         setDeploymentUrl(response.data.url);
-        
-        // Update the DeploymentId in the database
-        if (globalState.managerProcess && response.data.url) {
-          await runLua(`db:exec[[UPDATE Deployments SET DeploymentId='${response.data.url}' WHERE Name='${deployment.Name}']]`, globalState.managerProcess);
+        if (response.data.url) {
+          fetchSnapshot(`https://arweave.net/${response.data.url}`);
         }
       } catch (error) {
         console.error('Error fetching deployment URL:', error);
         toast.error('Failed to fetch deployment URL');
-        setError('Failed to fetch deployment URL. Using last known deployment ID.');
-        setDeploymentUrl(deployment.DeploymentId || "");
+        setError('Failed to fetch deployment URL. Please try again later.');
+        setSnapshotImage(null);
       }
     };
     fetchDeploymentUrl();
-  }, [deployment, globalState.managerProcess]);
+  }, [deployment]);
 
   useEffect(() => {
     if (!deployment?.RepoUrl) return;
@@ -62,25 +61,7 @@ export default function Deployment() {
       if (!redeploying) return clearInterval(interval);
       try {
         const logs = await axios.get(`${BUILDER_BACKEND}/logs/${owner}/${folderName}`);
-        const logsData = (logs.data).replaceAll(/\\|\||\-/g, '');
-        setBuildOutput(logsData);
-
-        // Create table if it doesn't exist and update logs
-        if (globalState.managerProcess) {
-          await runLua(`
-            db:exec[[
-              CREATE TABLE IF NOT EXISTS DeploymentLogs (
-                DeploymentName TEXT PRIMARY KEY,
-                Logs TEXT
-              )
-            ]]
-            db:exec([[
-              INSERT OR REPLACE INTO DeploymentLogs (DeploymentName, Logs)
-              VALUES ('${deployment.Name}', '${logsData.replace(/'/g, "''")}')
-            ]])
-          `, globalState.managerProcess);
-        }
-
+        setBuildOutput((logs.data).replaceAll(/\\|\||\-/g, ''));
         setTimeout(() => {
           const logsDiv = document.getElementById('logs');
           logsDiv?.scrollTo({ top: logsDiv.scrollHeight, behavior: 'smooth' });
@@ -92,7 +73,7 @@ export default function Deployment() {
     }, 1000);
 
     return () => { clearInterval(interval); };
-  }, [redeploying, deployment?.RepoUrl, globalState.managerProcess]);
+  }, [redeploying, deployment?.RepoUrl]);
 
   const redeploy = async () => {
     if (!deployment) return;
@@ -154,39 +135,9 @@ export default function Deployment() {
     if (!deployment) return;
     const owner = deployment?.RepoUrl.split('/').reverse()[1];
     const folderName = deployment?.RepoUrl.replace(/\.git|\/$/, '').split('/').pop();
-    
-    // Fetch logs from the database first
-    if (globalState.managerProcess) {
-      runLua(`
-        local res = db:exec([[
-          SELECT Logs FROM DeploymentLogs
-          WHERE DeploymentName = '${deployment.Name}'
-        ]])
-        return res[1] and res[1].Logs or ''
-      `, globalState.managerProcess).then(result => {
-        if (result && typeof result === 'string') {
-          setBuildOutput(result);
-        }
-      }).catch(error => {
-        console.error('Error fetching logs from database:', error);
-      });
-    }
-
-    // Then fetch the latest logs from the backend
     axios.get(`${BUILDER_BACKEND}/logs/${owner}/${folderName}`)
       .then((res) => {
-        const logsData = (res.data).replaceAll(/\\|\||\-/g, '');
-        setBuildOutput(logsData);
-        
-        // Update logs in the database
-        if (globalState.managerProcess) {
-          runLua(`
-            db:exec([[
-              INSERT OR REPLACE INTO DeploymentLogs (DeploymentName, Logs)
-              VALUES ('${deployment.Name}', '${logsData.replace(/'/g, "''")}')
-            ]])
-          `, globalState.managerProcess);
-        }
+        setBuildOutput((res.data).replaceAll(/\\|\||\-/g, ''));
       })
       .catch((error) => {
         console.error('Error fetching logs:', error);
@@ -209,7 +160,7 @@ export default function Deployment() {
       console.error('Error during dryrun:', error);
       setError('An error occurred while fetching ArNS information. Please try again later.');
     });
-  }, [deployment, globalState.managerProcess]);
+  }, [deployment]);
 
   async function deleteDeployment() {
     if (!deployment) return toast.error('Deployment not found');
@@ -240,6 +191,27 @@ export default function Deployment() {
     }
   }
 
+  const fetchSnapshot = async (url: string) => {
+    try {
+      const response = await axios.get(`https://api.apiflash.com/v1/urltoimage`, {
+        params: {
+          access_key: process.env.NEXT_PUBLIC_APIFLASH_KEY,
+          url: url,
+          format: 'jpeg',
+          quality: 80,
+          width: 1200,
+          height: 600,
+        },
+        responseType: 'arraybuffer',
+      });
+      const base64 = Buffer.from(response.data, 'binary').toString('base64');
+      setSnapshotImage(`data:image/jpeg;base64,${base64}`);
+    } catch (error) {
+      console.error('Error fetching snapshot:', error);
+      setSnapshotImage(null);
+    }
+  };
+
   if (!deployment) return <Layout>
     <div className="text-xl">Searching <span className="text-muted-foreground">{name} </span> ...</div>
   </Layout>;
@@ -266,16 +238,12 @@ export default function Deployment() {
 
           <div className="grid grid-cols-3 gap-6">
             <div className="col-span-2 bg-black rounded-lg overflow-hidden">
-              {deploymentUrl ? (
-                <iframe
-                  src={`https://arweave.net/${deploymentUrl}`}
-                  className="w-full h-[300px] border-0"
-                  title="Deployment Preview"
-                />
+              {snapshotImage ? (
+                <img src={snapshotImage} alt="Deployment Preview" className="w-full h-[300px] object-cover" />
               ) : (
                 <div className="w-full h-[300px] flex items-center justify-center bg-gray-800 text-white">
                   <p className="text-center">
-                    Deployment URL not available.
+                    {deploymentUrl ? 'Something went wrong while fetching the snapshot.' : 'Deployment URL not available.'}
                     <br />
                     Please check your deployment status.
                   </p>
@@ -285,8 +253,8 @@ export default function Deployment() {
             <div className="space-y-4">
               <div>
                 <Label>Deployment URL</Label>
-                <Link href={`https://arweave.net/${deploymentUrl || deployment?.DeploymentId}`} target="_blank" className="text-sm flex items-center">
-                  {deploymentUrl ? `https://arweave.net/${deploymentUrl}` : (deployment?.DeploymentId ? `https://arweave.net/${deployment.DeploymentId}` : 'Not available')}
+                <Link href={`https://arweave.net/${deploymentUrl}`} target="_blank" className="text-sm flex items-center">
+                  {deploymentUrl ? `https://arweave.net/${deploymentUrl}` : 'Loading...'}
                   <ExternalLink className="w-4 h-4 ml-2" />
                 </Link>
               </div>
@@ -374,7 +342,7 @@ export default function Deployment() {
 
         <div className="mt-6 border-t border-gray-800 pt-4">
           <p className="text-sm text-muted-foreground">
-            To update your Production Deployment, push to the {deployment.Branch} branch.
+            To update your Production Deployment, push to the '{deployment.Branch}' branch.
             <Button variant="link" className="ml-2">Learn More</Button>
           </p>
         </div>
