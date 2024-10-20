@@ -1,11 +1,31 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useGlobalState } from '@/hooks/useGlobalState';
 import { initiateGitHubAuth, handleGitHubCallback } from '@/lib/github-auth-file';
-import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { Github } from 'lucide-react';
 import { ReactNode } from 'react';
+import { BUILDER_BACKEND } from '@/lib/utils';
+
+// Add this new function to check GitHub app installation
+async function checkAndInstallGitHubApp(token: string) {
+  try {
+    // TODO: Change this builder backend import to the new one
+    const response = await fetch(`${BUILDER_BACKEND}/check-github-app`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    const data = await response.json();
+   
+    if (!data.installed) {
+      // If the app is not installed, open the installation page
+      window.location.href = 'https://github.com/apps/arlinkapp/installations/new';
+    }
+  } catch (error) {
+    console.error('Error checking GitHub app installation:', error);
+  }
+}
 
 interface GitHubLoginButtonProps {
     onSuccess: () => void;
@@ -23,17 +43,21 @@ export function GitHubLoginButton({ onSuccess, className, children }: GitHubLogi
             handleGitHubCallback(code).then(token => {
                 setGithubToken(token);
                 console.log("Token is:", token);
-                onSuccess(); // Call the onSuccess callback instead of direct navigation
+                checkAndInstallGitHubApp(token); // Check and install GitHub app if necessary
+                onSuccess();
             }).catch(error => {
                 console.error('GitHub auth error:', error);
             });
         }
-    }, [router.query, onSuccess]);
+    }, [router.query, onSuccess, setGithubToken]);
+
+    
 
     const handleLogin = () => {
         if (githubToken) {
             setGithubToken(null);
         } else {
+            
             initiateGitHubAuth();
         }
     };
