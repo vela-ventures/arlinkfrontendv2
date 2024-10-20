@@ -13,7 +13,7 @@ import { initRegistry, addToRegistry, updateRegistry, getIndividualConfig, getDe
 import axios from 'axios';
 import { config } from "dotenv";
 import { Webhooks } from '@octokit/webhooks';
-
+import { Octokit } from "@octokit/rest";
 config();
 
 
@@ -176,7 +176,8 @@ app.post('/github-webhook', async (req, res) => {
     const signature = req.headers["x-hub-signature-256"];
     const body = JSON.stringify(req.body);
     
-  
+    console.log(req.body)
+
     if (!(await webhooks.verify(body, signature))) {
       console.log(`Received invalid webhook signature`);
       res.status(401).send("Unauthorized");
@@ -232,7 +233,31 @@ app.post('/github-webhook', async (req, res) => {
   // The rest of your logic here
 });
 
+app.get("/check-github-app", async (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
 
+  if (!token) {
+    return res.status(401).json({ error: 'No token provided' });
+  }
+
+  try {
+    const octokit = new Octokit({ auth: token });
+    const { data } = await octokit.rest.apps.listInstallationsForAuthenticatedUser();
+    
+    
+
+    const isInstalled = data.installations.some(installation => 
+      installation.app_id === parseInt(process.env.GITHUB_APP_ID)
+    );
+    
+    console.log('Installations data: ', isInstalled);
+
+    res.status(200).json({ installed: isInstalled });
+  } catch (error) {
+    console.error('Error checking GitHub App installation:', error);
+    res.status(500).json({ error: 'Failed to check GitHub App installation', details: error.message });
+  }
+});
 
 
 app.get("/", (req, res) => {
