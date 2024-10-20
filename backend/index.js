@@ -176,7 +176,7 @@ app.post('/github-webhook', async (req, res) => {
     const signature = req.headers["x-hub-signature-256"];
     const body = JSON.stringify(req.body);
     
-    console.log(req.body)
+    console.log(req.headers);
 
     if (!(await webhooks.verify(body, signature))) {
       console.log(`Received invalid webhook signature`);
