@@ -4,9 +4,10 @@ const GITHUB_CLIENT_ID = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID as string;
 
 
 export async function initiateGitHubAuth() {
+    const BASE_URL = process.env.NODE_ENV === 'test' ? 'http://localhost:3050' : "https://vmi1968527.contaboserver.net";
 
 
-    const redirectUri = encodeURIComponent(`${BUILDER_BACKEND}/deploy`);
+    const redirectUri = encodeURIComponent(`${BASE_URL}/deploy`);
     const authUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${redirectUri}&scope=repo`;
     window.location.href = authUrl;
 }
