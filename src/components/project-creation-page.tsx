@@ -30,12 +30,11 @@ async function checkAndInstallGitHubApp(token: string) {
 interface GitHubLoginButtonProps {
     onSuccess: () => void;
     className?: string;
-    children?: React.ReactNode;
+    children?: ReactNode;
 }
 
 export function GitHubLoginButton({ onSuccess, className, children }: GitHubLoginButtonProps) {
     const { githubToken, setGithubToken } = useGlobalState();
-    const [isAppInstalled, setIsAppInstalled] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
@@ -56,7 +55,7 @@ export function GitHubLoginButton({ onSuccess, className, children }: GitHubLogi
 
     const handleLogin = () => {
         if (githubToken) {
-            checkAppInstallation(githubToken);
+            setGithubToken(null);
         } else {
             
             initiateGitHubAuth();
@@ -66,12 +65,12 @@ export function GitHubLoginButton({ onSuccess, className, children }: GitHubLogi
     return (
         <Button
             className={className}
-            onClick={handleLogin}
+            onClick={handleLogin} 
         >
             {children || (
                 <>
                     <Github className="w-6 h-6" />
-                    <span>{githubToken ? (isAppInstalled ? 'GitHub Connected' : 'Install GitHub App') : 'Connect GitHub'}</span>
+                    <span>{githubToken ? 'Logout from GitHub' : 'Import from GitHub'}</span>
                 </>
             )}
         </Button>
