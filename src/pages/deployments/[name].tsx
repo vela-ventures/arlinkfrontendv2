@@ -342,7 +342,7 @@ export default function Deployment() {
 
         <div className="mt-6 border-t border-gray-800 pt-4">
           <p className="text-sm text-muted-foreground">
-            To update your Production Deployment, push to the '{deployment.Branch}' branch.
+            To update your Production Deployment, push to the {deployment.Branch} branch.
             <Button variant="link" className="ml-2">Learn More</Button>
           </p>
         </div>
