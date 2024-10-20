@@ -5,7 +5,7 @@ import { initiateGitHubAuth, handleGitHubCallback } from '@/lib/github-auth-file
 import { useRouter } from 'next/router';
 import { Github } from 'lucide-react';
 import axios from 'axios';
-
+import { BUILDER_BACKEND } from '@/lib/utils';
 interface GitHubLoginButtonProps {
     onSuccess: () => void;
     className?: string;
@@ -31,7 +31,7 @@ export function GitHubLoginButton({ onSuccess, className, children }: GitHubLogi
 
     const checkAppInstallation = async (token: string) => {
         try {
-            const response = await axios.get(`${process.env.NEXT_PUBLIC_BUILDERBACKEND_URL}/check-github-app`, {
+            const response = await axios.get(`${BUILDER_BACKEND}/check-github-app`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             setIsAppInstalled(response.data.installed);
