@@ -243,7 +243,6 @@ app.get("/check-github-app", async (req, res) => {
   if (!token) {
     return res.status(401).json({ error: 'No token provided' });
   }
-
   try {
     const octokit = new Octokit({ auth: token });
     const { data } = await octokit.rest.apps.listInstallationsForAuthenticatedUser();
@@ -254,7 +253,7 @@ app.get("/check-github-app", async (req, res) => {
       installation.app_id === parseInt(process.env.GITHUB_APP_ID)
     );
     
-    console.log('Installations data: ', isInstalled);
+    console.log('Installations data: ', data);
 
     res.status(200).json({ installed: isInstalled });
   } catch (error) {
@@ -496,6 +495,8 @@ app.post("/github/callback", async (req, res) => {
     }, {
       headers: { Accept: 'application/json' }
     });
+
+    console.log ('Response:', response.data);
 
     res.status(200).json(response.data);
   } catch (error) {
