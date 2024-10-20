@@ -242,8 +242,8 @@ export default function Deploy() {
         await refresh();
 
         try {
-            console.log("repourlis",repoUrl)
-            const txid = await axios.post(`${BUILDER_BACKEND}/deploy`, {
+            console.log("repourlis", repoUrl)
+            const response = await axios.post(`${BUILDER_BACKEND}/deploy`, {
                 repository: repoUrl,
                 branch: selectedBranch, 
                 installCommand,
@@ -251,32 +251,21 @@ export default function Deploy() {
                 outputDir,
             }, { timeout: 60 * 60 * 1000, headers: { "Content-Type": "application/json" } });
 
-            if (txid.status === 200) {
-                console.log("https://arweave.net/" + txid.data);
+            if (response.status === 200 && response.data) {
+                console.log("https://arweave.net/" + response.data);
                 toast.success("Deployment successful");
 
-                // const mres = await runLua("", arnsProcess, [
-                //     { name: "Action", value: "Set-Record" },
-                //     { name: "Sub-Domain", value: "@" },
-                //     { name: "Transaction-Id", value: txid.data },
-                //     { name: "TTL-Seconds", value: "3600" },
-                // ]);
-                // console.log("set arns name", mres);
-
-                const updres = await runLua(`db:exec[[UPDATE Deployments SET DeploymentId='${txid.data}' WHERE Name='${projName}']]`, globalState.managerProcess);
+                const updres = await runLua(`db:exec[[UPDATE Deployments SET DeploymentId='${response.data}' WHERE Name='${projName}']]`, globalState.managerProcess);
 
                 router.push("/deployments/" + projName);
-                window.open("https://arweave.net/" + txid.data, "_blank");
-
+                window.open("https://arweave.net/" + response.data, "_blank");
             } else {
-                toast.error("Deployment failed");
-                console.log(txid);
-                setDeploymentFailed(true);  // Set this to true when deployment fails
+                throw new Error("Deployment failed: Unexpected response");
             }
         } catch (error) {
-            toast.error("Deployment failed check logs on dashboard");
-            console.log(error);
-            setDeploymentFailed(true);  // Set this to true when deployment fails
+            console.error("Deployment error:", error);
+            toast.error("Deployment failed. Please check logs on dashboard.");
+            setDeploymentFailed(true);
         }
 
         setDeploying(false);
