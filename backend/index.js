@@ -176,7 +176,11 @@ app.post('/github-webhook', async (req, res) => {
     const signature = req.headers["x-hub-signature-256"];
     const body = JSON.stringify(req.body);
     
-    console.log(req.headers);
+    if (req.headers["x-github-event"] !== "push") {
+      console.log(`Webhook is not pushed event`);
+      res.status(200).send("Invalid event");
+      return;
+    }
 
     if (!(await webhooks.verify(body, signature))) {
       console.log(`Received invalid webhook signature`);
