@@ -17,12 +17,13 @@ db:exec[[
         Name TEXT NOT NULL,
         RepoUrl TEXT NOT NULL,
         Branch TEXT DEFAULT 'main',
-        InstallCMD TEXT DEFAULT 'npm ci',
+        InstallCMD TEXT DEFAULT 'npm i',
         BuildCMD TEXT DEFAULT 'npm run build',
         OutputDIR TEXT DEFAULT './dist',
         ArnsProcess TEXT,
         DeploymentId TEXT,
-        DeploymentHash TEXT
+        DeploymentHash TEXT,
+        Logs TEXT
     )
 ]]
 
