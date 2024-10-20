@@ -17,8 +17,15 @@ import { GitHubLoginButton } from '@/components/project-creation-page';
 import { getWalletOwnedNames } from '@/lib/get-arns';
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, ArrowRight, Globe, Github } from "lucide-react";
+import { Octokit } from "@octokit/rest";
 
-
+// Add this interface near the top of the file, after the imports
+interface Repository {
+  id: number;
+  full_name: string;
+  html_url: string;
+  // Add other properties as needed
+}
 
 function extractRepoName(url: string): string {
     return url.replace(/\.git|\/$/, '').split('/').pop() as string;
@@ -115,7 +122,7 @@ export default function Deploy() {
     const [loadingBranches, setLoadingBranches] = useState(false);
     const [branchError, setBranchError] = useState("");
     const { githubToken, setGithubToken } = useGlobalState();
-    const [repositories, setRepositories] = useState([]);
+    const [repositories, setRepositories] = useState<Repository[]>([]);
     const [arnsNames, setArnsNames] = useState<{ name: string; processId: string }[]>([]);
     const [loadingArnsNames, setLoadingArnsNames] = useState(false);
     const activeAddress = useActiveAddress(); // Add this line to get the active address
@@ -147,14 +154,26 @@ export default function Deploy() {
 
     async function fetchRepositories() {
         if (!githubToken) return;
+        const octokit = new Octokit({ auth: githubToken });
+        let allRepos: Repository[] = [];
+        let page = 1;
+        
         try {
-            const response = await axios.get('https://api.github.com/user/repos', {
-                headers: {
-                    Authorization: `token ${githubToken}`,
-                    Accept: 'application/vnd.github.v3+json',
-                },
-            });
-            setRepositories(response.data as SetStateAction<never[]>);
+            while (true) {
+                const response = await octokit.repos.listForAuthenticatedUser({
+                    per_page: 100,
+                    page: page,
+                });
+                
+                if (response.data.length === 0) {
+                    break;
+                }
+                
+                allRepos = allRepos.concat(response.data as Repository[]);
+                page++;
+            }
+            
+            setRepositories(allRepos);
         } catch (error) {
             console.error('Error fetching repositories:', error);
             toast.error('Failed to fetch repositories');
@@ -368,7 +387,7 @@ export default function Deploy() {
                                 }}
                             >
                                 <option value="" disabled>Select a repository</option>
-                                {repositories.map((repo: any) => (
+                                {repositories.map((repo: Repository) => (
                                     <option key={repo.id} value={repo.html_url}>
                                         {repo.full_name}
                                     </option>
