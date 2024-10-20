@@ -254,7 +254,9 @@ app.get("/check-github-app", async (req, res) => {
     );
     
     console.log('Installations data: ', data);
-    console.log('Installations account data: ', data["account"]);
+    data.installations.forEach((installation) => {
+      console.log('Installation:', installation.account);
+    });
 
     res.status(200).json({ installed: isInstalled });
   } catch (error) {
