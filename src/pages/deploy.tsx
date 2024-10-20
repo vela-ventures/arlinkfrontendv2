@@ -121,6 +121,7 @@ export default function Deploy() {
     const activeAddress = useActiveAddress(); // Add this line to get the active address
     const [showArnsDropdown, setShowArnsDropdown] = useState(false);
     const [step, setStep] = useState<"initial" | "repository" | "project" | "domain" | "deploy">("initial");
+    const [deploymentStarted, setDeploymentStarted] = useState(false);
     
 
     const arweave = Arweave.init({
@@ -206,6 +207,8 @@ export default function Deploy() {
         if (deployments.find(dep => dep.Name === projName)) return toast.error("Project name already exists");
 
         setDeploying(true);
+        setDeploymentStarted(true);
+        setStep("deploy");  // Add this line to change the step to "deploy"
         const query = `local res = db:exec[[
             INSERT INTO Deployments (Name, RepoUrl, Branch, InstallCMD, BuildCMD, OutputDIR, ArnsProcess)
                 VALUES
@@ -458,7 +461,7 @@ export default function Deploy() {
                         </div>
                     )}
 
-                    {step === "deploy" && (
+                    {(step === "deploy" || deploymentStarted) && (
                         <div className="space-y-4">
                             <h2 className="text-xl font-semibold">Deployment Logs</h2>
                             <div className="bg-card/50 p-4 rounded-md h-64 overflow-y-auto shadow-lg">
