@@ -25,6 +25,7 @@
     "cron": "^3.1.7",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "kebab-case": "^2.0.1",
     "nodemon": "^3.1.4"
   },
   "devDependencies": {
