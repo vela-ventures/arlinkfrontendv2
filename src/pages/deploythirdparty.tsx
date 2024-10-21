@@ -24,6 +24,8 @@ import useDeploymentManager from "@/hooks/useDeploymentManager";
 import { useActiveAddress } from "arweave-wallet-kit";
 import fetchUserRepos from '@/lib/fetchrepo';
 import { getWalletOwnedNames } from '@/lib/get-arns';
+import { Switch } from "@/components/ui/switch"
+import { setArnsName } from "@/lib/set-arns";
 
 type ProtocolLandRepo = {
     name: string;
@@ -128,6 +130,8 @@ export default function DeployThirdParty() {
     const [showArnsDropdown, setShowArnsDropdown] = useState(false);
     const [step, setStep] = useState<"repositories" | "project" | "domain" | "deploy">("repositories")
     const [searchQuery, setSearchQuery] = useState<string>("")
+    const [useArns, setUseArns] = useState(false);
+    const [customArnsName, setCustomArnsName] = useState("");
 
     useEffect(() => {
         async function fetchRepos() {
@@ -211,8 +215,10 @@ export default function DeployThirdParty() {
     function handleArnsSelection(selectedArns: { name: string; processId: string } | null) {
         if (selectedArns) {
             setArnsProcess(selectedArns.processId);
+            setUseArns(true);
         } else {
             setArnsProcess("");
+            setUseArns(false);
         }
         setShowArnsDropdown(false);
     }
@@ -229,14 +235,20 @@ export default function DeployThirdParty() {
         if (!globalState.managerProcess) return toast.error("Manager process not found");
         if (deployments.find(dep => dep.Name === projName)) return toast.error("Project name already exists");
 
+        let finalArnsProcess = arnsProcess;
+        let customRepo = null;
+        if (!useArns && customArnsName) {
+            finalArnsProcess = `${customArnsName}.arlink.ar-io.dev`;
+            customRepo = customArnsName;
+        }
 
         setDeploying(true);
-        setStep("deploy"); // Add this line to switch to the deploy step
+        setStep("deploy");
 
         const query = `local res = db:exec[[
             INSERT INTO Deployments (Name, RepoUrl, InstallCMD, BuildCMD, OutputDIR, ArnsProcess)
                 VALUES
-            ('${projName}', '${repoUrl}', '${installCommand}', '${buildCommand}', '${outputDir}', '${arnsProcess}')
+            ('${projName}', '${repoUrl}', '${installCommand}', '${buildCommand}', '${outputDir}', '${finalArnsProcess}')
         ]]`;
         console.log(query);
 
@@ -255,8 +267,9 @@ export default function DeployThirdParty() {
                 subDirectory: selectedRepo?.name,
                 protocolLand: true,
                 walletAddress: address,
-                repoName: projName,
-                arnsProcess, // Add this line to include arnsProcess
+                repoName: customRepo,
+                
+               
             }, { timeout: 60 * 60 * 1000, headers: { "Content-Type": "application/json" } });
 
             if (txid.status === 200) {
@@ -265,7 +278,13 @@ export default function DeployThirdParty() {
 
                 const updres = await runLua(`db:exec[[UPDATE Deployments SET DeploymentId='${txid.data}' WHERE Name='${projName}']]`, globalState.managerProcess);
 
+                // Only set ArNS name if we're using ArNS (either existing or custom)
+                if (useArns || customArnsName) {
+                    await setArnsName(finalArnsProcess, txid.data);
+                }
+
                 router.push("/deployments/" + projName);
+
                 window.open("https://arweave.net/" + txid.data, "_blank");
             } else {
                 toast.error("Deployment failed");
@@ -376,48 +395,79 @@ export default function DeployThirdParty() {
 
                     {step === "domain" && (
                         <div className="space-y-4">
-                            <Label htmlFor="arns-process">ArNS Name</Label>
-                            <div className="relative">
-                                <Input 
-                                    placeholder="Select an ArNS name or enter Process ID" 
-                                    id="arns-process" 
-                                    value={arnsProcess}
-                                    onChange={(e) => setArnsProcess(e.target.value)}
-                                    onFocus={() => {
-                                        setShowArnsDropdown(true);
-                                        if (arnsNames.length === 0) {
-                                            fetchArnsNames();
+                            <div className="flex items-center space-x-2">
+                                <Switch
+                                    id="use-arns"
+                                    checked={useArns}
+                                    onCheckedChange={(checked) => {
+                                        setUseArns(checked);
+                                        if (!checked) {
+                                            setArnsProcess("");
                                         }
                                     }}
-                                    className="bg-card/50 shadow-md"
                                 />
-                                {showArnsDropdown && (
-                                    <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-700 rounded-md shadow-lg">
-                                        <ul className="py-1">
-                                            <li 
-                                                className="px-3 py-2 hover:bg-gray-700 cursor-pointer text-gray-200"
-                                                onClick={() => handleArnsSelection(null)}
-                                            >
-                                                None
-                                            </li>
-                                            {arnsNames.map((arns) => (
-                                                <li 
-                                                    key={arns.processId} 
-                                                    className="px-3 py-2 hover:bg-gray-700 cursor-pointer text-gray-200"
-                                                    onClick={() => handleArnsSelection(arns)}
-                                                >
-                                                    {arns.name}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                        {loadingArnsNames && (
-                                            <div className="flex justify-center py-2">
-                                                <Loader className="animate-spin text-gray-200" />
+                                <Label htmlFor="use-arns">Use existing ArNS</Label>
+                            </div>
+                            {useArns ? (
+                                <>
+                                    <Label htmlFor="arns-process">ArNS Name</Label>
+                                    <div className="relative">
+                                        <Input 
+                                            placeholder="Select an ArNS name or enter Process ID" 
+                                            id="arns-process" 
+                                            value={arnsProcess}
+                                            onChange={(e) => setArnsProcess(e.target.value)}
+                                            onFocus={() => {
+                                                setShowArnsDropdown(true);
+                                                if (arnsNames.length === 0) {
+                                                    fetchArnsNames();
+                                                }
+                                            }}
+                                            className="bg-card/50 shadow-md"
+                                        />
+                                        {showArnsDropdown && (
+                                            <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-700 rounded-md shadow-lg">
+                                                <ul className="py-1">
+                                                    <li 
+                                                        className="px-3 py-2 hover:bg-gray-700 cursor-pointer text-gray-200"
+                                                        onClick={() => handleArnsSelection(null)}
+                                                    >
+                                                        None
+                                                    </li>
+                                                    {arnsNames.map((arns) => (
+                                                        <li 
+                                                            key={arns.processId} 
+                                                            className="px-3 py-2 hover:bg-gray-700 cursor-pointer text-gray-200"
+                                                            onClick={() => handleArnsSelection(arns)}
+                                                        >
+                                                            {arns.name}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                                {loadingArnsNames && (
+                                                    <div className="flex justify-center py-2">
+                                                        <Loader className="animate-spin text-gray-200" />
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                     </div>
-                                )}
-                            </div>
+                                </>
+                            ) : (
+                                <div>
+                                    <Label htmlFor="custom-arns-name">Custom ArNS Undername</Label>
+                                    <Input 
+                                        placeholder="yournamechoice" 
+                                        id="custom-arns-name" 
+                                        value={customArnsName}
+                                        onChange={(e) => setCustomArnsName(e.target.value)}
+                                        className="mt-1 bg-card/50 shadow-md"
+                                    />
+                                    <p className="text-sm text-muted-foreground mt-1">
+                                        Your custom name will be: {customArnsName ? `${customArnsName}.arlink.ar-io.dev` : ""} (if available)
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     )}
 
