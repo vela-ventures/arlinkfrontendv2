@@ -22,12 +22,13 @@ try {
     console.log("Records: ",records, "\n");
     console.log(`Deploying TxId [${manifestId}] to ANT [${antProcess}] using undername [${undername}]`);
 
-    if (records.detailedRecords[undernamePre] && !doesUserOwnUnderName) {
+
+    if (records[undernamePre] && !doesUserOwnUnderName) {
         console.error(`Undername [${undernamePre}] is already in use`);
         undername = `${owner}-${undernamePre}`;
         console.log(`Using undername [${undername}]`);
     }
-    else if (records.detailedRecords[undername] && !doesUserOwnOwnerUnderName && !doesUserOwnUnderName) {
+    else if (records[undername] && !doesUserOwnOwnerUnderName && !doesUserOwnUnderName) {
         console.error(`Manifest [${undername}] is also already in use`);
         return { checkArns: false, finalUnderName: '' };
     }
