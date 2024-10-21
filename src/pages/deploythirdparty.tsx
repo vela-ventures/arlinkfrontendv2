@@ -25,7 +25,7 @@ import { useActiveAddress } from "arweave-wallet-kit";
 import fetchUserRepos from '@/lib/fetchrepo';
 import { getWalletOwnedNames } from '@/lib/get-arns';
 import { Switch } from "@/components/ui/switch"
-import { setArnsName } from "@/lib/set-arns";
+import { setArnsName } from "@/lib/ao-vars";
 
 type ProtocolLandRepo = {
     name: string;

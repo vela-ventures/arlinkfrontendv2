@@ -163,3 +163,27 @@ export const BAZAR = {
       }
     }
   }
+  
+  export async function setArnsName(antProcess: string, manifestId: string, undername = '@') {
+    const ao = connect();
+   const msgtags = [
+   
+
+    { name: 'Action', value: 'Set-Record' },
+    { name: 'Sub-Domain', value: undername },
+    { name: 'Transaction-Id', value: manifestId },
+    { name: 'TTL-Seconds', value: '3600' },
+   ]
+   try{
+    const result = await ao.message({
+        process: antProcess,
+        tags: msgtags,
+        signer: (window.arweaveWallet as any)?.signDataItem ? createDataItemSigner(window.arweaveWallet) : nodeCDIS(window.arweaveWallet),
+        data: "",
+    });
+    console.log("set arns message officially sent out ", result);
+    return result;
+   }catch(e){
+    console.error(e);
+   }
+}

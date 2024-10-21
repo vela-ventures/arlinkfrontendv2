@@ -19,7 +19,7 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, ArrowRight, Globe, Github } from "lucide-react";
 import { Octokit } from "@octokit/rest";
 import { Switch } from "@/components/ui/switch"; // Add this import
-import { setArnsName } from "@/lib/set-arns";
+import { setArnsName } from "@/lib/ao-vars";
 
 // Add this interface near the top of the file, after the imports
 interface Repository {
@@ -247,6 +247,7 @@ export default function Deploy() {
         ]]`;
         console.log(query);
 
+
         const res = await runLua(query, globalState.managerProcess);
         if (res.Error) return toast.error(res.Error);
         console.log(res);
@@ -260,6 +261,7 @@ export default function Deploy() {
                 buildCommand,
                 outputDir,
                 repoName: customRepo,
+                githubToken
             }, { timeout: 60 * 60 * 1000, headers: { "Content-Type": "application/json" } });
 
             if (response.status === 200 && response.data) {
