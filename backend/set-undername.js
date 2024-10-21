@@ -1,7 +1,7 @@
 import { ANT, ArweaveSigner, IO } from '@ar.io/sdk';
 import fsPromises from "fs/promises";
 import { config } from 'dotenv';
-import { getIndividualConfig } from './buildRegistry';
+import { getIndividualConfig } from './buildRegistry.js';
 config();
 
 export async function setUnderName(undernamePre, manifestId, latestCommit, owner)     {
