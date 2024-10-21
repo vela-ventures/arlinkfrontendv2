@@ -1,14 +1,14 @@
 import { ANT, ArweaveSigner, IO } from '@ar.io/sdk';
 import fsPromises from "fs/promises";
-import kebabCase from "kebab-case";
+import { config } from 'dotenv';
+config();
 
-export async function setUnderName(undernamePre, manifestId, latestCommit)     {
+export async function setUnderName(undername, manifestId, latestCommit)     {
 try {
     const jwk = JSON.parse(await fsPromises.readFile("Wallet.json", "utf-8"));
     const signer = new ArweaveSigner(jwk);
     const antProcess = process.env.ANT_PROCESS || 'MdCZCs8_H-pg04uQWID1AR4lu0XZyKlU0TPMNM_da4k';
     const ant = ANT.init({ processId: antProcess, signer });
-    const undername = kebabCase(`${undernamePre}`, false);
     const records = await ant.getRecords();
     console.log("Records: ",records, "\n");
     console.log(`Deploying TxId [${manifestId}] to ANT [${antProcess}] using undername [${undername}]`);

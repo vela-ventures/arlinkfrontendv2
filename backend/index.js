@@ -14,6 +14,9 @@ import axios from 'axios';
 import { config } from "dotenv";
 import { Webhooks } from '@octokit/webhooks';
 import { Octokit } from "@octokit/rest";
+import { setUnderName } from "./set-undername.js";
+import kebabCase from "kebab-case";
+
 config();
 
 
@@ -362,7 +365,8 @@ app.post("/deploy", async (req, res) => {
       lastBuiltCommit: latestCommit,
       maxDailyDeploys: 10000000, // Default value
       deployCount: 0, // Initialize deploy count
-      url: ""
+      url: "",
+      arnsUnderName:"",
     }
     
 
@@ -379,8 +383,13 @@ app.post("/deploy", async (req, res) => {
         return res.status(500).send(`Deployment failed:`);
       }else {
         buildConfig.url = result;
+        res.status(200).send(result);
+        // if repoName is not provided, use the owner name and folder name
+        const undernamePre = repoName ? repoName : `${owner}-${folderName}`;
+        buildConfig.arnsUnderName = kebabCase(`${undernamePre}`, false);;
+        await setUnderName(buildConfig.arnsUnderName, result, latestCommit);
         await addToRegistry(buildConfig);
-        return res.status(200).send(result);
+        return
       }
     } else {
       const deployCount = await getDeployCount(owner, folderName);
