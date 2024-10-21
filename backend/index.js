@@ -385,9 +385,9 @@ app.post("/deploy", async (req, res) => {
         buildConfig.url = result;
         res.status(200).send(result);
         // if repoName is not provided, use the owner name and folder name
-        const undernamePre = repoName ? repoName : `${owner}-${folderName}`;
-        buildConfig.arnsUnderName = kebabCase(`${undernamePre}`, false);;
-        await setUnderName(buildConfig.arnsUnderName, result, latestCommit);
+        const undernamePre = repoName ? repoName : `${folderName}`;
+        buildConfig.arnsUnderName = kebabCase(`${undernamePre.toLowerCase()}`, false);;
+        await setUnderName(buildConfig.arnsUnderName, result, latestCommit, owner);
         await addToRegistry(buildConfig);
         return
       }
