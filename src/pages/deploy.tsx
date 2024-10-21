@@ -260,7 +260,7 @@ export default function Deploy() {
                 installCommand,
                 buildCommand,
                 outputDir,
-                repoName: customRepo,
+                repoName: customArnsName,
                 githubToken
             }, { timeout: 60 * 60 * 1000, headers: { "Content-Type": "application/json" } });
 

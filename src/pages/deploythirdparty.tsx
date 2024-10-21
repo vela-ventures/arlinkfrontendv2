@@ -267,7 +267,7 @@ export default function DeployThirdParty() {
                 subDirectory: selectedRepo?.name,
                 protocolLand: true,
                 walletAddress: address,
-                repoName: customRepo,
+                repoName: customArnsName,
                 
                
             }, { timeout: 60 * 60 * 1000, headers: { "Content-Type": "application/json" } });
