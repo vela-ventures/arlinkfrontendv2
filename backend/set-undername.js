@@ -4,7 +4,7 @@ import { config } from 'dotenv';
 import { getIndividualConfig } from './buildRegistry.js';
 config();
 
-export async function setUnderName(undernamePre, manifestId, latestCommit, owner)     {
+export async function setUnderName(undernamePre, manifestId, latestCommit, owner, folder)     {
 try {
     
     const jwk = JSON.parse(await fsPromises.readFile("Wallet.json", "utf-8"));
@@ -12,12 +12,12 @@ try {
     const antProcess = process.env.ANT_PROCESS || 'MdCZCs8_H-pg04uQWID1AR4lu0XZyKlU0TPMNM_da4k';
     const ant = ANT.init({ processId: antProcess, signer });
     const records = await ant.getRecords();
-    const userConfig = await getIndividualConfig();
+    const userConfig = await getIndividualConfig(owner, folder);
     const userUnderName = userConfig["arnsUnderName"];
     const doesUserOwnUnderName = userUnderName == undernamePre && userUnderName !== "";
     const doesUserOwnOwnerUnderName = userUnderName == `${owner}-${undernamePre}` && userUnderName !== "";
 
-    let undername = undernamePre;
+    let undername = undernamePre ? undernamePre : folder;
    
     console.log("Records: ",records, "\n");
     console.log(`Deploying TxId [${manifestId}] to ANT [${antProcess}] using undername [${undername}]`);
