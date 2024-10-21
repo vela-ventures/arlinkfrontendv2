@@ -1,6 +1,7 @@
 import { ANT, ArweaveSigner, IO } from '@ar.io/sdk';
 import fsPromises from "fs/promises";
 import { config } from 'dotenv';
+import { getIndividualConfig } from './buildRegistry';
 config();
 
 export async function setUnderName(undernamePre, manifestId, latestCommit, owner)     {
@@ -11,20 +12,24 @@ try {
     const antProcess = process.env.ANT_PROCESS || 'MdCZCs8_H-pg04uQWID1AR4lu0XZyKlU0TPMNM_da4k';
     const ant = ANT.init({ processId: antProcess, signer });
     const records = await ant.getRecords();
-    
+    const userConfig = await getIndividualConfig();
+    const userUnderName = userConfig["arnsUnderName"];
+    const doesUserOwnUnderName = userUnderName == undernamePre && userUnderName !== "";
+    const doesUserOwnOwnerUnderName = userUnderName == `${owner}-${undernamePre}` && userUnderName !== "";
+
     let undername = undernamePre;
    
     console.log("Records: ",records, "\n");
     console.log(`Deploying TxId [${manifestId}] to ANT [${antProcess}] using undername [${undername}]`);
-    
-    if (records.detailedRecords[undernamePre]) {
+
+    if (records.detailedRecords[undernamePre] && !doesUserOwnUnderName) {
         console.error(`Undername [${undernamePre}] is already in use`);
         undername = `${owner}-${undernamePre}`;
         console.log(`Using undername [${undername}]`);
     }
-    else if (records.detailedRecords[undername]) {
+    else if (records.detailedRecords[undername] && !doesUserOwnOwnerUnderName && !doesUserOwnUnderName) {
         console.error(`Manifest [${undername}] is also already in use`);
-        return false;
+        return { checkArns: false, finalUnderName: '' };
     }
 
 
@@ -49,7 +54,7 @@ try {
     );
 
     console.log(`Deployed TxId [${manifestId}] to ANT [${antProcess}] using undername [${undername}]`);
-    return true;
+    return { checkArns: false, finalUnderName: undername };
 } catch (e) {
     console.error(e);
 }
