@@ -354,7 +354,7 @@ app.post("/deploy", async (req, res) => {
     
     const buildConfig = {
       owner,
-      repoName,
+      repoName : folderName,
       repository,
       branch,
       installCommand,
@@ -387,7 +387,7 @@ app.post("/deploy", async (req, res) => {
         res.status(200).send(result);
         // if repoName is not provided, use the owner name and folder name
         const undernamePre = buildConfig.repoName ? buildConfig.repoName : folderName;
-        const arnsUnderName = kebabCase(`${undernamePre.toLowerCase()}`, false);;
+        const arnsUnderName = kebabCase(`${undernamePre.toLowerCase()}`, false);
         const { checkArns, finalUnderName }= await setUnderName(arnsUnderName, result, latestCommit, owner, folderName);
         if (checkArns) {
           buildConfig.arnsUnderName = finalUnderName;
