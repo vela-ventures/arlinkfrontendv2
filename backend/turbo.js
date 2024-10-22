@@ -20,7 +20,7 @@ export default async function deployFolder(folderPath) {
     console.log('Attempting to load JWK...');
     const jwk = JSON.parse(await fsPromises.readFile("Wallet.json", "utf-8"));
     console.log("JWK loaded successfully");
-
+ 
     console.log('Initializing Turbo instance...');
     const turbo = TurboFactory.authenticated({ privateKey: jwk });
     console.log('Turbo instance created');
