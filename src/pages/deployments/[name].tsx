@@ -16,6 +16,7 @@ import { useGlobalState } from '@/hooks';
 import useDeploymentManager from '@/hooks/useDeploymentManager';
 import { BUILDER_BACKEND } from '@/lib/utils';
 import { runLua } from '@/lib/ao-vars';
+import { setArnsName } from '@/lib/ao-vars';
 
 export default function Deployment() {
   const globalState = useGlobalState();
@@ -28,6 +29,7 @@ export default function Deployment() {
   const [deploymentUrl, setDeploymentUrl] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('buildLogs');
+  const [updatingArns, setUpdatingArns] = useState(false);
 
   const deployment = globalState.deployments.find((dep) => dep.Name == name);
 
@@ -241,6 +243,24 @@ export default function Deployment() {
     }
   }
 
+  const updateArns = async () => {
+    if (!deployment || !deploymentUrl) {
+      toast.error('Deployment information is not available');
+      return;
+    }
+
+    setUpdatingArns(true);
+    try {
+      await setArnsName(deployment.ArnsProcess, deploymentUrl);
+      toast.success('ArNS update initiated successfully. This may take approximately 5 minutes to fully update.');
+    } catch (error) {
+      console.error('Error updating ArNS:', error);
+      toast.error('Failed to update ArNS. Please try again.');
+    } finally {
+      setUpdatingArns(false);
+    }
+  };
+
   if (!deployment) return <Layout>
     <div className="text-xl">Searching <span className="text-muted-foreground">{name} </span> ...</div>
   </Layout>;
@@ -250,9 +270,14 @@ export default function Deployment() {
       <div className="p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">{deployment?.Name}</h1>
-          <Button className="w-fit" onClick={redeploy} disabled={redeploying}>
-            Deploy Latest <Loader className={redeploying ? "animate-spin ml-2" : "hidden"} />
-          </Button>
+          <div className="space-x-2">
+            <Button className="w-fit" onClick={redeploy} disabled={redeploying}>
+              Deploy Latest <Loader className={redeploying ? "animate-spin ml-2" : "hidden"} />
+            </Button>
+            <Button className="w-fit" onClick={updateArns} disabled={updatingArns || !deploymentUrl}>
+              Update ArNS {updatingArns && <Loader className="animate-spin ml-2" />}
+            </Button>
+          </div>
         </div>
 
         {error && <div className="text-red-500 mb-4">{error}</div>}
@@ -293,10 +318,20 @@ export default function Deployment() {
               </div>
               <div>
                 <Label>ArNS</Label>
-                <Link href={`https://${antName}.arweave.net`} target="_blank" className="text-sm flex items-center">
-                  {(antName || '[fetching]') + '.arweave.net'}
-                  <ExternalLink className="w-4 h-4 ml-2" />
-                </Link>
+                <div className="flex items-center space-x-2">
+                  <Link href={`https://${antName}.arweave.net`} target="_blank" className="text-sm flex items-center">
+                    {(antName || '[fetching]') + '.arweave.net'}
+                    <ExternalLink className="w-4 h-4 ml-2" />
+                  </Link>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={updateArns}
+                    disabled={updatingArns || !deploymentUrl}
+                  >
+                    Update
+                  </Button>
+                </div>
               </div>
               <div className="flex items-center space-x-2">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
