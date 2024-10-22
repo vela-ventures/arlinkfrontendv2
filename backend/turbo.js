@@ -123,8 +123,10 @@ export default async function deployFolder(folderPath) {
                     ],
                 },
             });
+
             console.log('✅ Manifest uploaded successfully');
             return uploadResult.id;
+            
         } catch (error) {
             console.error('❌ Error uploading manifest:');
             console.error('Error details:', error);
