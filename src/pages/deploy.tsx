@@ -60,7 +60,7 @@ function Logs({ name, deploying, repoUrl }: { name: string, deploying?: boolean,
         const repo = extractRepoName(repoUrl);
         const owner = extractOwnerName(repoUrl);
         let startTime = Date.now();
-        const waitTime = 60000; // 1 minute in milliseconds
+        const waitTime = 600000; // 10 minute in milliseconds
 
         const interval: ReturnType<typeof setInterval> = setInterval(async () => {
             if (!deploying) return clearInterval(interval);
