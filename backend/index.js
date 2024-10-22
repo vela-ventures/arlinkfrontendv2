@@ -550,5 +550,4 @@ const server = app.listen(PORT, () => {
 
 initRegistry().catch(console.error);
 
-server.setTimeout(60 * 60 * 1000);
-server.keepAliveTimeout = 60 * 60 * 1000;
+server();
