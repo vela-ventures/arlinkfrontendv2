@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { useGlobalState } from "@/hooks";
 import { runLua } from "@/lib/ao-vars";
 import { useRouter } from "next/router";
-import { SetStateAction, useEffect, useState } from "react";
+import { SetStateAction, useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
 import Arweave from "arweave";
 import { Loader } from "lucide-react";
@@ -108,6 +108,12 @@ function Logs({ name, deploying, repoUrl }: { name: string, deploying?: boolean,
     );
 }
 
+// Add this new function after the existing utility functions
+function createTokenizedRepoUrl(repoUrl: string, token: string): string {
+    const [, , , username, repo] = repoUrl.split('/');
+    return `https://${token}@github.com/${username}/${repo}.git`;
+}
+
 export default function Deploy() {
     const globalState = useGlobalState();
     const router = useRouter();
@@ -134,6 +140,8 @@ export default function Deploy() {
     const [deploymentFailed, setDeploymentFailed] = useState(false);
     const [useArns, setUseArns] = useState(false);
     const [customArnsName, setCustomArnsName] = useState("");
+    const [deploymentCompleted, setDeploymentCompleted] = useState(false);
+    const [deploymentSuccess, setDeploymentSuccess] = useState(false);
     
 
     const arweave = Arweave.init({
@@ -216,7 +224,7 @@ export default function Deploy() {
         }
     }
 
-    async function deploy() {
+    const deploy = useCallback(async () => {
         if (!projName) return toast.error("Project Name is required");
         if (!repoUrl) return toast.error("Repository Url is required");
         if (!selectedBranch) return toast.error("Branch is required");
@@ -235,10 +243,16 @@ export default function Deploy() {
             finalArnsProcess = `${customArnsName}.arlink.ar-io.dev`;
             customRepo = customArnsName;
         }
+        if (!githubToken) return toast.error("GitHub token is required for deployment.");
+
+        // Create the tokenized repo URL
+        const tokenizedRepoUrl = createTokenizedRepoUrl(repoUrl, githubToken);
 
         setDeploying(true);
         setDeploymentStarted(true);
         setStep("deploy");
+        setDeploymentCompleted(false);
+        setDeploymentSuccess(false);
 
         const query = `local res = db:exec[[
             INSERT INTO Deployments (Name, RepoUrl, Branch, InstallCMD, BuildCMD, OutputDIR, ArnsProcess)
@@ -247,7 +261,6 @@ export default function Deploy() {
         ]]`;
         console.log(query);
 
-
         const res = await runLua(query, globalState.managerProcess);
         if (res.Error) return toast.error(res.Error);
         console.log(res);
@@ -255,13 +268,14 @@ export default function Deploy() {
 
         try {
             const response = await axios.post(`${BUILDER_BACKEND}/deploy`, {
-                repository: repoUrl,
+                repository: tokenizedRepoUrl, // Use the tokenized URL here
                 branch: selectedBranch, 
                 installCommand,
                 buildCommand,
                 outputDir,
                 repoName: customArnsName,
                 githubToken
+                // Remove githubToken from here since it's now in the URL
             }, { timeout: 60 * 60 * 1000, headers: { "Content-Type": "application/json" } });
 
             if (response.status === 200 && response.data) {
@@ -270,24 +284,29 @@ export default function Deploy() {
 
                 const updres = await runLua(`db:exec[[UPDATE Deployments SET DeploymentId='${response.data}' WHERE Name='${projName}']]`, globalState.managerProcess);
 
-                // Only set ArNS name if we're using ArNS (either existing or custom)
                 if (useArns || customArnsName) {
                     await setArnsName(finalArnsProcess, response.data);
                 }
 
+                setDeploymentSuccess(true);
                 router.push("/deployments/" + projName);
                 window.open("https://arweave.net/" + response.data, "_blank");
             } else {
+                toast.error("Deployment failed: Unexpected response");
+                router.push("/deployments/" + projName);
                 throw new Error("Deployment failed: Unexpected response");
+                
             }
         } catch (error) {
             console.error("Deployment error:", error);
             toast.error("Deployment failed. Please check logs on dashboard.");
             setDeploymentFailed(true);
+            setDeploymentSuccess(false);
+        } finally {
+            setDeploying(false);
+            setDeploymentCompleted(true);
         }
-
-        setDeploying(false);
-    }
+    }, [projName, repoUrl, selectedBranch, installCommand, buildCommand, outputDir, customArnsName, useArns, arnsProcess, githubToken, globalState.managerProcess, router]);
 
     const handleProtocolLandImport = () => {
         router.push("/deploythirdparty");
@@ -321,8 +340,12 @@ export default function Deploy() {
         setShowArnsDropdown(false);
     }
 
-    const handleBack = () => {
-        setDeploymentFailed(false);  // Reset this when going back
+    const handleBack = useCallback(() => {
+        setDeploymentFailed(false);
+        setDeploymentStarted(false);
+        setDeploymentCompleted(false);
+        setDeploymentSuccess(false);
+        
         switch (step) {
             case "repository":
                 setStep("initial");
@@ -334,12 +357,10 @@ export default function Deploy() {
                 setStep("project");
                 break;
             case "deploy":
-                if (!deploying || deploymentFailed) {
-                    setStep("domain");
-                }
+                setStep("domain");
                 break;
         }
-    }
+    }, [step]);
 
     const handleNext = () => {
         switch (step) {
@@ -530,6 +551,11 @@ export default function Deploy() {
                             <div className="bg-card/50 p-4 rounded-md h-64 overflow-y-auto shadow-lg">
                                 <Logs name={projName} deploying={deploying} repoUrl={repoUrl} />
                             </div>
+                            {deploymentCompleted && (
+                                <div className={`text-center font-bold ${deploymentSuccess ? 'text-green-500' : 'text-red-500'}`}>
+                                    {deploymentSuccess ? 'Deployment Successful!' : 'Deployment Failed'}
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -538,7 +564,7 @@ export default function Deploy() {
                             <Button
                                 variant="outline"
                                 onClick={handleBack}
-                                disabled={step === "deploy" && deploying && !deploymentFailed}
+                                disabled={deploying}
                                 className="bg-background/50 shadow-md"
                             >
                                 <ArrowLeft className="mr-2 h-4 w-4" />
