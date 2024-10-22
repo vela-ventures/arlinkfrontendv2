@@ -1,0 +1,16 @@
+{
+  "ignore": [
+    "builds",
+    "builds/*",
+    "builds/",
+    "buildRegistry.json",
+    "builds/**",
+    "/tmp/arlink_builds/**",
+    "*.log",
+    "*.txt",
+    "tmp/**",
+    "node_modules/**"
+  ],
+  "ext": "js,mjs",
+  "delay": "2500"
+}
