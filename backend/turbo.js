@@ -1,5 +1,6 @@
 import { TurboFactory } from '@ardrive/turbo-sdk';
 import fs from 'fs';
+import fsPromises from "fs/promises";
 import mime from 'mime-types';
 import path from 'path';
 import { Readable } from 'stream';
