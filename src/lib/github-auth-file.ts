@@ -12,6 +12,7 @@ export async function initiateGitHubAuth() {
     window.location.href = authUrl;
 }
 
+
 export async function handleGitHubCallback(code: string): Promise<string> {
     const tokenUrl = `${BUILDER_BACKEND}/github/callback`; // Use the API route to exchange the code for a token
     const response = await fetch(tokenUrl, {
