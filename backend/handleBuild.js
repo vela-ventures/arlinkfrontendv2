@@ -46,7 +46,7 @@ export default async function handleBuild(req, outputDist) {
         return false;
       } finally {
         // Clean up the build folder
-        await fs.rmSync(buildPath, { recursive: true, force: true });
+        await fs.rm(buildPath, { recursive: true, force: true });
       }
     } catch (buildError) {
       console.error("Build failed:", buildError);
