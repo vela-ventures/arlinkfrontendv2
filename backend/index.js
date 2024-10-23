@@ -193,7 +193,7 @@ app.post("/deploy", async (req, res) => {
     if (deployedRepos.length > 0) {
       if (deployedRepos.includes(folderName)) {
         console.log("Repo Already Deployed, proceeding with update");
-        await updateRegistry(owner, folderName, { installCommand: installCommand, buildCommand: buildCommand, outputDir: outputDist, subDirectory: subDirectory });
+        await updateRegistry(owner, folderName, { installCommand: installCommand, buildCommand: buildCommand, outputDir: outputDist, subDirectory: subDirectory, repository: repository });
         
       }
     }
