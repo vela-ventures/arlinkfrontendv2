@@ -220,6 +220,7 @@ app.post("/deploy", async (req, res) => {
       deployCount: 0, // Initialize deploy count
       url: "",
       arnsUnderName:"",
+      noSizeCheck: false
     }
     
 

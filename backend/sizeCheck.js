@@ -1,10 +1,19 @@
 import { promises as fs } from 'fs';
 import { join } from 'path';
+import { getIndividualConfig } from './buildRegistry';
 
 export default async function getFolderSizeInMB(folderPath) {
     let totalSize = 0;
     
     try {
+        const user = await getIndividualConfig('user');
+        const checkSize = user?.noSizeCheck;
+
+        if (checkSize) {
+            console.log('Skipping size check');
+            return 1;
+        }
+
         const files = await fs.readdir(folderPath);
         
         for (const file of files) {
