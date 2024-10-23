@@ -3,7 +3,6 @@
 import express from "express";
 import cors from "cors";
 import fs from "fs";
-import { runBuild } from "./buildManager.js";
 import { getLatestCommitHash } from './gitUtils.js';
 import { initRegistry, addToRegistry, updateRegistry, getIndividualConfig, getDeployCount, getGlobalRegistry, incrementDeployCount } from './buildRegistry.js';
 import axios from 'axios';
@@ -12,8 +11,7 @@ import { Webhooks } from '@octokit/webhooks';
 import { Octokit } from "@octokit/rest";
 import { setUnderName } from "./set-undername.js";
 import kebabCase from "kebab-case";
-import deployFolder from "./turbo.js";
-import getFolderSizeInMB from "./sizeCheck.js";
+
 config();
 
 
@@ -290,42 +288,6 @@ app.post("/deploy", async (req, res) => {
     return res.status(500).send(error.message);
   }
 });
-
-async function handleBuild(req, outputDist) {
-  const { repository, branch, installCommand, buildCommand, subDirectory, protocolLand, walletAddress, repoName } = req.body;
-
-  const buildParams = {
-    repository,
-    branch,
-    installCommand,
-    buildCommand,
-    outputDist,
-    subDirectory,
-    protocolLand,
-    walletAddress,
-    repoName
-  };
-
-  try {
-    const { result, buildPath } = await runBuild(buildParams);
-
-    console.log("Build completed:", result);
-
-    try {
-      const deployResult = await deployFolder(buildPath);
-      console.log(deployResult)
-      return deployResult;
-    } catch (deployError) {
-      return false;
-    } finally {
-      // Clean up the build folder
-      fs.rmSync(buildPath, { recursive: true, force: true });
-    }
-  } catch (buildError) {
-    console.error("Build failed:", buildError);
-    return false ;
-  }
-}
 
 app.get("/logs/:owner/:repo", (req, res) => {
   const { owner, repo } = req.params;
