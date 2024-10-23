@@ -1,6 +1,6 @@
 import { promises as fs } from 'fs';
 import { join } from 'path';
-import { getIndividualConfig } from './buildRegistry';
+import { getIndividualConfig } from './buildRegistry.js';
 
 export default async function getFolderSizeInMB(folderPath) {
     let totalSize = 0;
