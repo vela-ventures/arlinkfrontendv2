@@ -106,7 +106,11 @@ const Dashboardcomp = () => {
       {managerProcess && deployments.length > 0 && (
         <div className={`grid ${viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'} gap-4 ` }>
           {filteredAndSortedProjects.map((project) => (
-            <Link href={project.link} key={project.id} className="block">
+              <Link 
+              href={`/deployment?repo=${project.name}`} // Update this line
+              key={project.id} 
+              className="block"
+            >
               <div className="group relative p-4 rounded-lg border transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1 h-40 w-full flex flex-col justify-between">
                 <div>
                   <div className="flex items-center space-x-2 mb-2">

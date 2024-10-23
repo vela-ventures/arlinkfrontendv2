@@ -283,7 +283,7 @@ export default function DeployThirdParty() {
                     await setArnsName(finalArnsProcess, txid.data);
                 }
 
-                router.push("/deployments/" + projName);
+                router.push({ pathname: "/deployment", query: { repo: projName } });
 
                 window.open("https://arweave.net/" + txid.data, "_blank");
             } else {

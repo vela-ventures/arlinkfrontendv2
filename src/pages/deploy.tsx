@@ -289,11 +289,12 @@ export default function Deploy() {
                 }
 
                 setDeploymentSuccess(true);
-                router.push("/deployments/" + projName);
+                // In the deploy function within pages/deploy.tsx, update this line:
+                router.push(`/deployment?repo=${projName}`);
                 window.open("https://arweave.net/" + response.data, "_blank");
             } else {
                 toast.error("Deployment failed: Unexpected response");
-                router.push({ pathname: "/deployment", query: { name: projName } });
+                router.push({ pathname: "/deployment", query: { repo: projName } });
                 throw new Error("Deployment failed: Unexpected response");
                 
             }

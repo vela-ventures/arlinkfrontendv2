@@ -1,13 +1,37 @@
 import { useRouter } from 'next/router';
-import Deployment from './deployments/[name]';
+import { useEffect, useState } from 'react';
+import Layout from '@/components/layout';
+import { toast } from 'sonner';
+import { TDeployment } from '@/types';
+import { useGlobalState } from '@/hooks';
+import DeploymentComponent from '@/components/deployment-component';
 
 export default function DeploymentPage() {
   const router = useRouter();
-  const { name } = router.query;
+  const { repo } = router.query;
+  const { deployments } = useGlobalState();
+  const [deployment, setDeployment] = useState<TDeployment | null>(null);
 
-  if (!name || typeof name !== 'string') {
-    return <div>Loading...</div>;
+  useEffect(() => {
+    if (!repo || typeof repo !== 'string') {
+      return;
+    }
+
+    const foundDeployment = deployments.find(d => d.Name === repo);
+    if (!foundDeployment) {
+      toast.error('Deployment not found');
+      router.push('/dashboard');
+      return;
+    }
+
+    setDeployment(foundDeployment);
+  }, [repo, deployments, router]);
+
+  if (!deployment) {
+    return <Layout>
+      <div className="text-xl">Searching for deployment...</div>
+    </Layout>;
   }
 
-  return <Deployment />;
+  return <DeploymentComponent deployment={deployment} />;
 }

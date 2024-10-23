@@ -17,8 +17,15 @@ import useDeploymentManager from '@/hooks/useDeploymentManager';
 import { BUILDER_BACKEND } from '@/lib/utils';
 import { runLua } from '@/lib/ao-vars';
 import { setArnsName } from '@/lib/ao-vars';
+import { TDeployment } from '@/types';
 
-export default function Deployment() {
+
+interface DeploymentComponentProps {
+    deployment: TDeployment;
+  }
+
+  
+  export default function DeploymentComponent({ deployment }: DeploymentComponentProps) {
   const globalState = useGlobalState();
   const { managerProcess, deployments, refresh } = useDeploymentManager();
   const router = useRouter();
@@ -30,8 +37,6 @@ export default function Deployment() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('buildLogs');
   const [updatingArns, setUpdatingArns] = useState(false);
-
-  const deployment = globalState.deployments.find((dep) => dep.Name == name);
 
   useEffect(() => {
     if (!deployment?.RepoUrl) return;
@@ -130,7 +135,7 @@ export default function Deployment() {
 
         await runLua(`db:exec[[UPDATE Deployments SET DeploymentId='${txid.data}' WHERE Name='${projName}']]`, globalState.managerProcess);
 
-        router.push('/deployments/' + projName);
+        router.push({ pathname: "/deployment", query: { repo: projName } });
         await refresh();
         window.open('https://arweave.net/' + txid.data, '_blank');
 
