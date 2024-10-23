@@ -4,7 +4,7 @@ const GITHUB_CLIENT_ID = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID as string;
 
 
 export async function initiateGitHubAuth() {
-    const BASE_URL = process.env.NODE_ENV === 'test' ? 'http://localhost:3000' : "https://vmi1968527.contaboserver.net";
+    const BASE_URL = process.env.NODE_ENV === 'test' ? 'http://localhost:3000' : "https://arlink.ar-io.dev";
 
 
     const redirectUri = encodeURIComponent(`${BASE_URL}/deploy`);

@@ -33,6 +33,9 @@ export default function Home() {
       <div className="fixed bottom-5 left-0 right-0 text-center">
         Deploy to Permaweb | ArNS Integrated
       </div>
+      <div className="fixed bottom-1 left-0 right-0 text-right">
+        v1.0.0
+      </div>
     </WavyBackground>
   );
 }
