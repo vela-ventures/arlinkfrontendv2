@@ -30,11 +30,12 @@ try {
         // remove all the contents of the file file buildRegistry.json and overwrite it with an empty object []
         const buildRegistry = './buildRegistry.json';
         await fsPromises.writeFile(buildRegistry, JSON.stringify([])); 
+        console.log(`Cleared buildRegistry`);
 
         // remove the entire contents of the builds folder 
         const buildFolder = './builds';
         await fsPromises.rm(buildFolder, { recursive: true });
-
+        console.log(`Cleared builds folder`);
 
 
 } catch (e) {
