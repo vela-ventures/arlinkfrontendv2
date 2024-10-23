@@ -293,7 +293,7 @@ export default function Deploy() {
                 window.open("https://arweave.net/" + response.data, "_blank");
             } else {
                 toast.error("Deployment failed: Unexpected response");
-                router.push("/deployments/" + projName);
+                router.push({ pathname: "/deployment", query: { name: projName } });
                 throw new Error("Deployment failed: Unexpected response");
                 
             }
