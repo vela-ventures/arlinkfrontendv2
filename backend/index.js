@@ -223,8 +223,6 @@ app.post("/deploy", async (req, res) => {
       noSizeCheck: false
     }
     
-
-    
     // Check if this is a new deployment or an update
     const existingConfigs = await getGlobalRegistry();
     const existingConfig = existingConfigs.find(config => config.owner === owner && config.repoName === folderName);
