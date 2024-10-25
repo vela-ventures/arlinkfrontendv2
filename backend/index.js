@@ -223,7 +223,7 @@ app.post("/deploy", async (req, res) => {
 
     if (!existingConfig) {
       
-      const result = await handleBuild(req, outputDist);
+      const result = await handleBuild(req, outputDist, owner, folderName);
       if (result === false) {
         fs.rmSync(`./builds/${owner}/${folderName}`, { recursive: true, force: true });
         return res.status(500).send(`Deployment failed:`);
@@ -253,7 +253,7 @@ app.post("/deploy", async (req, res) => {
       if (latestCommit !== individualConfig.lastBuiltCommit) {
         console.log(`New commit detected for ${owner}/${folderName}. Building...`);
         
-        const buildResult = await handleBuild(req, outputDist);
+        const buildResult = await handleBuild(req, outputDist, owner, folderName);
         
         // Update registry with new commit hash
         await updateRegistry(owner, folderName, { lastBuiltCommit: latestCommit, url: buildResult });

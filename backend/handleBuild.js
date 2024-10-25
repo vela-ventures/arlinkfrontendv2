@@ -3,7 +3,7 @@ import { promises as fs } from 'fs';
 import deployFolder from "./turbo.js";
 import getFolderSizeInMB from "./sizeCheck.js";
 
-export default async function handleBuild(req, outputDist) {
+export default async function handleBuild(req, outputDist, owner, folderName) {
 
   
     try {
@@ -32,7 +32,7 @@ export default async function handleBuild(req, outputDist) {
         const maxSize = 10;
 
         // Check folder size before deploying
-        const folderSize = await getFolderSizeInMB(buildPath);
+        const folderSize = await getFolderSizeInMB(buildPath, owner, folderName);
         
         if (folderSize > maxSize) {
           console.error(`Build size (${folderSize}MB) exceeds ${maxSize}MB limit`);
