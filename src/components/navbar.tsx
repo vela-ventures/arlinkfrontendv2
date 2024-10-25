@@ -57,7 +57,9 @@ export default function Navbar() {
                 <Link href="/changelogs">
                     <Button variant="ghost">Changelog</Button>
                 </Link>
-                <Button variant="ghost">Docs</Button>
+                <Link href="https://arlink.gitbook.io/arlink-docs/getting-started/quickstart" target="_blank">
+                    <Button variant="ghost">Docs</Button>
+                </Link>
                 <ConnectButton />
                 <div className="w-8 h-8 bg-purple-500 rounded-full">
                     {avatar && (
