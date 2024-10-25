@@ -301,7 +301,7 @@ interface DeploymentComponentProps {
             <div className="col-span-2 bg-black rounded-lg overflow-hidden">
               {antName ? (
                 <iframe
-                  src={`https://${antName}_arlink.arweave.net/`}
+                  src={`https://${antName}_arlink.ar-io.dev/`}
                   className="w-full h-[300px] border-0"
                   title="Deployment Preview"
                 />
@@ -326,8 +326,8 @@ interface DeploymentComponentProps {
               <div>
                 <Label>ArNS UnderName</Label>
                 <div className="flex items-center space-x-2">
-                  <Link href={`https://${antName ? antName : ''}_arlink.arweave.net`} target="_blank" className="text-sm flex items-center">
-                    {(antName || '[fetching]') + '_arlink.arweave.net'}
+                  <Link href={`https://${antName ? antName : ''}_arlink.ar-io.dev`} target="_blank" className="text-sm flex items-center">
+                    {(antName || '[fetching]') + '_arlink.ar-io.dev'}
                     <ExternalLink className="w-4 h-4 ml-2" />
                   </Link>
                   <Button
