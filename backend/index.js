@@ -50,10 +50,7 @@ app.post('/github-webhook', async (req, res) => {
     const repository = `${req.body.repository.url}`;
     const branch = req.body.ref.split("/").pop();
     const owner = repository.split("/").reverse()[1];
-    const folderName = `${repository}`
-      .replace(/\.git|\/$/, "")
-      .split("/")
-      .pop();
+    const folderName = `${repository}`.split("/").reverse()[0].replace(/\.git$/, "");
   
     console.log ("Repository:", repository, "Owner :", owner, "Folder Name: ", folderName, "Branch: ", branch);
   
@@ -179,10 +176,7 @@ app.post("/deploy", async (req, res) => {
     folderName = repoName;
   } else {
     owner = `${repository}`.split("/").reverse()[1];
-    folderName = `${repository}`
-      .replace(/\.git|\/$/, "")
-      .split("/")
-      .pop();
+    folderName = `${repository}`.split("/").reverse()[0].replace(/\.git$/, "");
   }
   console.log("Folder name:", folderName);
 

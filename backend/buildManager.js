@@ -54,7 +54,7 @@ export async function runBuild(buildParams) {
               folderName = repoName;
             } else {
               owner = repository.split('/').reverse()[1];
-              folderName = repository.replace(/\.git|\/$/, "").split("/").pop();
+              folderName = `${repository}`.split("/").reverse()[0].replace(/\.git$/, "");
             }
             const buildPath = path.join(projectRoot, 'builds', owner, folderName, 'output');
             
