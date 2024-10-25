@@ -464,7 +464,7 @@ export default function DeployThirdParty() {
                                         className="mt-1 bg-card/50 shadow-md"
                                     />
                                     <p className="text-sm text-muted-foreground mt-1">
-                                        Your custom name will be: {customArnsName ? `${customArnsName}.arlink.ar-io.dev` : ""} (if available)
+                                        Your custom name will be: {customArnsName ? `${customArnsName}_arlink.ar-io.dev` : ""} (if available)
                                     </p>
                                 </div>
                             )}
