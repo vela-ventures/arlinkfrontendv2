@@ -254,10 +254,15 @@ app.post("/deploy", async (req, res) => {
         console.log(`New commit detected for ${owner}/${folderName}. Building...`);
         
         const buildResult = await handleBuild(req, outputDist, owner, folderName);
-        
-        // Update registry with new commit hash
+        const undernamePre = buildConfig.repoName ? buildConfig.repoName : folderName;
+        const arnsUnderName = _.kebabCase(`${undernamePre}`.toLowerCase());
+        const { checkArns, finalUnderName }= await setUnderName(arnsUnderName, buildResult, latestCommit, owner, folderName);
+        if (checkArns) {
+          await updateRegistry(owner, folderName, { lastBuiltCommit: latestCommit, url: buildResult, arnsUnderName: finalUnderName });
+        } else {
         await updateRegistry(owner, folderName, { lastBuiltCommit: latestCommit, url: buildResult });
-        
+        }
+
         return res.status(200).send(buildResult);
       } else {
         console.log(`No new commits for ${owner}/${folderName}. Skipping build.`);
