@@ -98,7 +98,6 @@ export default async function deployFolder(folderPath) {
             }
         }
     }
-
     
     async function uploadManifest(manifest) {
         console.log('\nPreparing to upload manifest...');
