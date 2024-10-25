@@ -31,10 +31,10 @@ export default function Home() {
         <Link href={connected ? "/dashboard" : "/deploy"}><Button className="rounded-full my-6">{connected ? "View Deployments" : "Deploy your first app"} <span className="text-2xl ml-1">⚡️</span></Button></Link>
       </div>
       <div className="fixed bottom-5 left-0 right-0 text-center">
-        Deploy to Permaweb | ArNS Integrated
+        Deploy to Permaweb | ArNS and CICD Integrated
       </div>
       <div className="fixed bottom-1 left-0 right-0 text-right">
-        v0.0.5 BETA
+        v0.0.6 BETA
       </div>
     </WavyBackground>
   );
