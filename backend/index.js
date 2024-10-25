@@ -227,9 +227,8 @@ app.post("/deploy", async (req, res) => {
       if (result === false) {
         fs.rmSync(`./builds/${owner}/${folderName}`, { recursive: true, force: true });
         return res.status(500).send(`Deployment failed:`);
-      }else {
+      }
         buildConfig.url = result;
-        res.status(200).send(result);
         // if repoName is not provided, use the owner name and folder name
         const undernamePre = buildConfig.repoName ? buildConfig.repoName : folderName;
         const arnsUnderName = _.kebabCase(`${undernamePre}`.toLowerCase());
@@ -238,8 +237,8 @@ app.post("/deploy", async (req, res) => {
           buildConfig.arnsUnderName = finalUnderName;
         }
         await addToRegistry(buildConfig);
-        return
-      }
+        return res.status(200).send(result);
+
     } else {
       const deployCount = await getDeployCount(owner, folderName);
       const maxDailyDeploys = buildConfig.maxDailyDeploys;
