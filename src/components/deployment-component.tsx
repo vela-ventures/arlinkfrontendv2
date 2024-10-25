@@ -46,7 +46,9 @@ interface DeploymentComponentProps {
       try {
         const response = await axios.get(`${BUILDER_BACKEND}/config/${owner}/${repoName}`);
         const newDeploymentUrl = response.data.url;
+        const arnsUnderName = response.data.arnsUnderName
         setDeploymentUrl(newDeploymentUrl);
+        setAntName(arnsUnderName);
         
         // Update the DeploymentId in the database
         if (globalState.managerProcess && newDeploymentUrl) {
@@ -297,9 +299,9 @@ interface DeploymentComponentProps {
 
           <div className="grid grid-cols-3 gap-6">
             <div className="col-span-2 bg-black rounded-lg overflow-hidden">
-              {deploymentUrl ? (
+              {antName ? (
                 <iframe
-                  src={`https://arweave.net/${deploymentUrl}`}
+                  src={`https://${antName}_arlink.arweave.net/`}
                   className="w-full h-[300px] border-0"
                   title="Deployment Preview"
                 />
@@ -322,10 +324,10 @@ interface DeploymentComponentProps {
                 </Link>
               </div>
               <div>
-                <Label>ArNS</Label>
+                <Label>ArNS UnderName</Label>
                 <div className="flex items-center space-x-2">
-                  <Link href={`https://${antName}.arweave.net`} target="_blank" className="text-sm flex items-center">
-                    {(antName || '[fetching]') + '.arweave.net'}
+                  <Link href={`https://${antName ? antName : ''}_arlink.arweave.net`} target="_blank" className="text-sm flex items-center">
+                    {(antName || '[fetching]') + '_arlink.arweave.net'}
                     <ExternalLink className="w-4 h-4 ml-2" />
                   </Link>
                   <Button
