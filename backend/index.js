@@ -10,7 +10,7 @@ import { config } from "dotenv";
 import { Webhooks } from '@octokit/webhooks';
 import { Octokit } from "@octokit/rest";
 import { setUnderName } from "./set-undername.js";
-import kebabCase from "kebab-case";
+import _ from 'lodash';
 import handleBuild from "./handleBuild.js";
 config();
 
@@ -232,7 +232,7 @@ app.post("/deploy", async (req, res) => {
         res.status(200).send(result);
         // if repoName is not provided, use the owner name and folder name
         const undernamePre = buildConfig.repoName ? buildConfig.repoName : folderName;
-        const arnsUnderName = kebabCase(`${undernamePre.toLowerCase()}`, false);
+        const arnsUnderName = _.kebabCase(`${undernamePre}`.toLowerCase());
         const { checkArns, finalUnderName }= await setUnderName(arnsUnderName, result, latestCommit, owner, folderName);
         if (checkArns) {
           buildConfig.arnsUnderName = finalUnderName;
