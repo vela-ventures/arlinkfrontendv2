@@ -55,7 +55,7 @@ try {
     );
 
     console.log(`Deployed TxId [${manifestId}] to ANT [${antProcess}] using undername [${undername}]`);
-    return { checkArns: false, finalUnderName: undername };
+    return { checkArns: true, finalUnderName: undername };
 } catch (e) {
     console.error(e);
 }
