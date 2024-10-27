@@ -23,6 +23,7 @@ export default function Home() {
     return null; // or a loading spinner
   }
 
+  
   return (
     <WavyBackground blur={10} waveWidth={100} colors={["#00ff00", "#32cd32", "#98fb98", "#00fa9a", "#00bfff", "#ffd700"]} backgroundFill="#111" className="w-full">
       <div className="flex flex-col items-center justify-center w-full">
