@@ -38,32 +38,5 @@ module.exports = {
         'tmp',
         'Wallet.json'
       ]
-    }, {
-      name: 'build-scheduler',
-      script: 'scheduleBuildJobs.js',
-      instances: 1,
-      autorestart: true,
-      watch: false,
-      
-      max_memory_restart: '5G',
-      // Removed --max-old-space-size here too
-      
-      // Same restart settings
-      max_restarts: 1000000,
-      min_uptime: "30s",
-      restart_delay: 1000,
-      exp_backoff_restart_delay: 100,
-      
-      kill_timeout: 10000,
-      force_kill: false,
-      wait_ready: true,
-      listen_timeout: 30000,
-      
-      env: {
-        NODE_ENV: 'production'
-      },
-      error_file: 'logs/scheduler-error.log',
-      out_file: 'logs/scheduler-out.log',
-      time: true
     }]
   };
