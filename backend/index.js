@@ -361,6 +361,14 @@ const server = app.listen(PORT, () => {
   console.log("Server is running on port " + PORT);
 });
 
+process.on('SIGINT', () => {
+  console.log('Received SIGINT. Performing graceful shutdown');
+  server.close(() => {
+    console.log('Server closed. Exiting process');
+    process.exit(0);
+  });
+});
+
 initRegistry().catch(console.error);
 
 server.setTimeout(60 * 60 * 10 * 1000);
