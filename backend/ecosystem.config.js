@@ -1,4 +1,4 @@
-module.exports = {
+export default {
     apps: [{
       name: 'arlink-api',
       script: 'index.js',
