@@ -253,6 +253,9 @@ app.post("/deploy", async (req, res) => {
         console.log(`New commit detected for ${owner}/${folderName}. Building...`);
         
         const buildResult = await handleBuild(req, outputDist, owner, folderName);
+        if (buildResult === false) {
+          return res.status(500).send(`Deployment failed: handle build failed`);
+        }
         const undernamePre = buildConfig.repoName ? buildConfig.repoName : folderName;
         const arnsUnderName = _.kebabCase(`${undernamePre}`.toLowerCase());
         const { checkArns, finalUnderName }= await setUnderName(arnsUnderName, buildResult, latestCommit, owner, folderName);
