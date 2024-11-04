@@ -18,6 +18,7 @@ export async function getGlobalRegistry() {
   return JSON.parse(data);
 }
 
+
 export async function getIndividualConfig(owner, repoName) {
   try{
   const configPath = path.join(BUILDS_DIR, owner, repoName, 'config.json');
