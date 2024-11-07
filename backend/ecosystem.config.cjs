@@ -2,6 +2,11 @@ module.exports = {
   apps: [{
     name: 'arlink-api',
     script: 'index.js',
+    env: {
+      NODE_ENV: 'production',
+      PORT: 3050,
+      PATH: process.env.PATH    // Add this to ensure npm commands work
+    },
     instances: 1,
     exec_mode: 'fork',
     watch: true,                  // Enable watch mode for auto-reload
