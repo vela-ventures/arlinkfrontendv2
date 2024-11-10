@@ -29,7 +29,7 @@ export default async function handleBuild(req, outputDist, owner, folderName) {
   
       try {
 
-        const maxSize = 10;
+        const maxSize = 60;
 
         // Check folder size before deploying
         const folderSize = await getFolderSizeInMB(buildPath, owner, folderName);
