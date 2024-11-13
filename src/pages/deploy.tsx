@@ -31,6 +31,15 @@ interface Repository {
   // Add other properties as needed
 }
 
+// Add this interface for the repository config
+interface RepoConfig {
+  Name: string;
+  InstallCMD: string;
+  BuildCMD: string;
+  OutputDIR: string;
+  RepoUrl: string;
+}
+
 function extractRepoName(url: string): string {
     return url.replace(/\.git|\/$/, '').split('/').pop() as string;
 }
@@ -379,6 +388,47 @@ export default function Deploy() {
         }
     }
 
+    // Update the repository selection handler
+    const handleRepositorySelection = async (selectedUrl: string) => {
+        setRepoUrl(selectedUrl);
+        setSelectedBranch('');
+        setBranches([]);
+
+        if (selectedUrl) {
+            const [, , , owner, repo] = selectedUrl.split('/');
+            
+            try {
+                // Fetch repository configuration
+                const config = await getRepoConfig(owner, repo);
+                // Find the matching repository configuration
+                const matchingConfig = Array.isArray(config) ? config.find((c: RepoConfig) => 
+                    c.RepoUrl.toLowerCase() === selectedUrl.toLowerCase()
+                ) : null;
+
+                if (matchingConfig) {
+                    // Auto-fill form fields with existing configuration
+                    setProjName(matchingConfig.Name || '');
+                    setInstallCommand(matchingConfig.InstallCMD || 'npm install');
+                    setBuildCommand(matchingConfig.BuildCMD || 'npm run build');
+                    setOutputDir(matchingConfig.OutputDIR || './dist');
+                } else {
+                    // Set default values if no matching configuration is found
+                    setProjName('');
+                    setInstallCommand('npm install');
+                    setBuildCommand('npm run build');
+                    setOutputDir('./dist');
+                }
+            } catch (error) {
+                console.error('Error fetching repo config:', error);
+                // Reset to defaults if there's an error
+                setProjName('');
+                setInstallCommand('npm install');
+                setBuildCommand('npm run build');
+                setOutputDir('./dist');
+            }
+        }
+    };
+
     return (
         <Layout>
             <div className="min-h-screen">
@@ -417,33 +467,7 @@ export default function Deploy() {
                             <select
                                 className="border rounded-md p-2 w-full bg-card/50 shadow-md"
                                 value={repoUrl}
-                                onChange={async (e) => {
-                                    const selectedUrl = e.target.value;
-                                    setRepoUrl(selectedUrl);
-                                    setSelectedBranch('');
-                                    setBranches([]);
-
-                                    if (selectedUrl) {
-                                        // Extract owner and repo from the GitHub URL
-                                        const [, , , owner, repo] = selectedUrl.split('/');
-                                        
-                                        try {
-                                            // Fetch repository configuration
-                                            const config = await getRepoConfig(owner, repo);
-                                            
-                                            // Pre-fill the form fields
-                                            setInstallCommand(config.installCommand);
-                                            setBuildCommand(config.buildCommand);
-                                            setOutputDir(config.outputDir);
-                                        } catch (error) {
-                                            console.error('Error fetching repo config:', error);
-                                            // Reset to defaults if there's an error
-                                            setInstallCommand('npm install');
-                                            setBuildCommand('npm run build');
-                                            setOutputDir('./dist');
-                                        }
-                                    }
-                                }}
+                                onChange={(e) => handleRepositorySelection(e.target.value)}
                             >
                                 <option value="" disabled>Select a repository</option>
                                 {repositories.map((repo: Repository) => (
@@ -475,19 +499,44 @@ export default function Deploy() {
                         <div className="space-y-6">
                             <div>
                                 <Label htmlFor="project-name">Project Name</Label>
-                                <Input placeholder="e.g. Coolest AO App" id="project-name" required onChange={(e) => setProjName(e.target.value)} className="mt-1 bg-card/50 shadow-md" />
+                                <Input 
+                                    placeholder="e.g. Coolest AO App" 
+                                    id="project-name" 
+                                    value={projName} 
+                                    required 
+                                    onChange={(e) => setProjName(e.target.value)} 
+                                    className="mt-1 bg-card/50 shadow-md" 
+                                />
                             </div>
                             <div>
                                 <Label htmlFor="install-command">Install Command</Label>
-                                <Input placeholder="e.g. npm i" id="install-command" onChange={(e) => setInstallCommand(e.target.value || "npm ci")} className="mt-1 bg-card/50 shadow-md" />
+                                <Input 
+                                    placeholder="e.g. npm i" 
+                                    id="install-command" 
+                                    value={installCommand} 
+                                    onChange={(e) => setInstallCommand(e.target.value)} 
+                                    className="mt-1 bg-card/50 shadow-md" 
+                                />
                             </div>
                             <div>
                                 <Label htmlFor="build-command">Build Command</Label>
-                                <Input placeholder="e.g. npm run build" id="build-command" onChange={(e) => setBuildCommand(e.target.value || "npm run build")} className="mt-1 bg-card/50 shadow-md" />
+                                <Input 
+                                    placeholder="e.g. npm run build" 
+                                    id="build-command" 
+                                    value={buildCommand} 
+                                    onChange={(e) => setBuildCommand(e.target.value)} 
+                                    className="mt-1 bg-card/50 shadow-md" 
+                                />
                             </div>
                             <div>
                                 <Label htmlFor="output-dir">Output Directory</Label>
-                                <Input placeholder="e.g. ./dist" id="output-dir" onChange={(e) => setOutputDir(e.target.value || "./dist")} className="mt-1 bg-card/50 shadow-md" />
+                                <Input 
+                                    placeholder="e.g. ./dist" 
+                                    id="output-dir" 
+                                    value={outputDir} 
+                                    onChange={(e) => setOutputDir(e.target.value)} 
+                                    className="mt-1 bg-card/50 shadow-md" 
+                                />
                             </div>
                         </div>
                     )}
