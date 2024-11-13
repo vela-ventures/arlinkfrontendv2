@@ -20,6 +20,8 @@ import { ArrowLeft, ArrowRight, Globe, Github } from "lucide-react";
 import { Octokit } from "@octokit/rest";
 import { Switch } from "@/components/ui/switch"; // Add this import
 import { setArnsName } from "@/lib/ao-vars";
+import { getRepoConfig } from "@/lib/getRepoconfig";
+
 
 // Add this interface near the top of the file, after the imports
 interface Repository {
@@ -120,7 +122,7 @@ export default function Deploy() {
     const { managerProcess, refresh , deployments } = useDeploymentManager();
     const [projName, setProjName] = useState("");
     const [repoUrl, setRepoUrl] = useState("");
-    const [installCommand, setInstallCommand] = useState("npm ci");
+    const [installCommand, setInstallCommand] = useState("npm install");
     const [buildCommand, setBuildCommand] = useState("npm run build");
     const [outputDir, setOutputDir] = useState("./dist");
     const [deploying, setDeploying] = useState(false);
@@ -415,10 +417,32 @@ export default function Deploy() {
                             <select
                                 className="border rounded-md p-2 w-full bg-card/50 shadow-md"
                                 value={repoUrl}
-                                onChange={(e) => {
-                                    setRepoUrl(e.target.value);
+                                onChange={async (e) => {
+                                    const selectedUrl = e.target.value;
+                                    setRepoUrl(selectedUrl);
                                     setSelectedBranch('');
                                     setBranches([]);
+
+                                    if (selectedUrl) {
+                                        // Extract owner and repo from the GitHub URL
+                                        const [, , , owner, repo] = selectedUrl.split('/');
+                                        
+                                        try {
+                                            // Fetch repository configuration
+                                            const config = await getRepoConfig(owner, repo);
+                                            
+                                            // Pre-fill the form fields
+                                            setInstallCommand(config.installCommand);
+                                            setBuildCommand(config.buildCommand);
+                                            setOutputDir(config.outputDir);
+                                        } catch (error) {
+                                            console.error('Error fetching repo config:', error);
+                                            // Reset to defaults if there's an error
+                                            setInstallCommand('npm install');
+                                            setBuildCommand('npm run build');
+                                            setOutputDir('./dist');
+                                        }
+                                    }
                                 }}
                             >
                                 <option value="" disabled>Select a repository</option>
