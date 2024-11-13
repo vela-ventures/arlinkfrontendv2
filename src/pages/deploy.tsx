@@ -396,6 +396,8 @@ export default function Deploy() {
 
         if (selectedUrl) {
             const [, , , owner, repo] = selectedUrl.split('/');
+            // Extract repo name and remove .git extension if present
+            const defaultProjName = repo.replace(/\.git$/, '');
             
             try {
                 // Fetch repository configuration
@@ -407,21 +409,21 @@ export default function Deploy() {
 
                 if (matchingConfig) {
                     // Auto-fill form fields with existing configuration
-                    setProjName(matchingConfig.Name || '');
+                    setProjName(matchingConfig.Name || defaultProjName);
                     setInstallCommand(matchingConfig.InstallCMD || 'npm install');
                     setBuildCommand(matchingConfig.BuildCMD || 'npm run build');
                     setOutputDir(matchingConfig.OutputDIR || './dist');
                 } else {
                     // Set default values if no matching configuration is found
-                    setProjName('');
+                    setProjName(defaultProjName);
                     setInstallCommand('npm install');
                     setBuildCommand('npm run build');
                     setOutputDir('./dist');
                 }
             } catch (error) {
                 console.error('Error fetching repo config:', error);
-                // Reset to defaults if there's an error
-                setProjName('');
+                // Reset to defaults if there's an error, but still use the repo name
+                setProjName(defaultProjName);
                 setInstallCommand('npm install');
                 setBuildCommand('npm run build');
                 setOutputDir('./dist');
