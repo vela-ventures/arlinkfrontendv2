@@ -7,7 +7,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 // keep it as local host if NODE_ENV is test
 
-export const BUILDER_BACKEND = process.env.NODE_ENV === 'test' ? 'http://localhost:3050' : "https://vmi1968527.contaboserver.net/backend";
+export const BUILDER_BACKEND = process.env.NEXT_PUBLIC_ENV  === 'test' ? 'http://localhost:3050' : "https://vmi1968527.contaboserver.net/backend";
 
 export const DEPLOYMENT_WALLET = "CUO_Jtx-J9Ph4NVKY_Bgii4HSUwK3NbdaIlPDSiy8Cs";
 
