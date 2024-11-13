@@ -56,7 +56,6 @@ app.post('/github-webhook', async (req, res) => {
   
     const config = await getIndividualConfig(owner, folderName);
   
-    
     if (!config) {
       console.log(`Configuration not found for ${owner}/${folderName}`);
       res.status(404).send("Configuration not found");
