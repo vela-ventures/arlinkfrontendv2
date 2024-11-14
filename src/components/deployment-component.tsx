@@ -72,8 +72,20 @@ interface DeploymentComponentProps {
       if (!redeploying) return clearInterval(interval);
       try {
         const logs = await axios.get(`${BUILDER_BACKEND}/logs/${owner}/${folderName}`);
-        const logsData = (logs.data).replaceAll(/\\|\||\-/g, '');
-        setBuildOutput(logsData);
+        const rawLogsData = (logs.data).replaceAll(/\\|\||\-/g, '');
+        
+        // Trim logs to remove sensitive information
+        const trimmedLogs = rawLogsData.split('\n')
+          .reduce((acc: { started: boolean, logs: string[] }, line: string) => {
+            if (acc.started || line.includes('Cloning repository...')) {
+              acc.started = true;
+              acc.logs.push(line);
+            }
+            return acc;
+          }, { started: false, logs: [] as string[] });
+        
+        const safeLogsData = trimmedLogs.logs.join('\n');
+        setBuildOutput(safeLogsData);
 
         // Create table if it doesn't exist and update logs
         if (globalState.managerProcess) {
@@ -86,7 +98,7 @@ interface DeploymentComponentProps {
             ]]
             db:exec([[
               INSERT OR REPLACE INTO DeploymentLogs (DeploymentName, Logs)
-              VALUES ('${deployment.Name}', '${logsData.replace(/'/g, "''")}')
+              VALUES ('${deployment.Name}', '${safeLogsData.replace(/'/g, "''")}')
             ]])
           `, globalState.managerProcess);
         }
@@ -185,15 +197,27 @@ interface DeploymentComponentProps {
     // Then fetch the latest logs from the backend
     axios.get(`${BUILDER_BACKEND}/logs/${owner}/${folderName}`)
       .then((res) => {
-        const logsData = (res.data).replaceAll(/\\|\||\-/g, '');
-        setBuildOutput(logsData);
+        const rawLogsData = (res.data).replaceAll(/\\|\||\-/g, '');
+        
+        // Trim logs to remove sensitive information
+        const trimmedLogs = rawLogsData.split('\n')
+          .reduce((acc: {started: boolean, logs: string[]}, line: string) => {
+            if (acc.started || line.includes('Cloning repository...')) {
+              acc.started = true;
+              acc.logs.push(line);
+            }
+            return acc;
+          }, { started: false, logs: [] as string[] });
+        
+        const safeLogsData = trimmedLogs.logs.join('\n');
+        setBuildOutput(safeLogsData);
         
         // Update logs in the database
         if (globalState.managerProcess) {
           runLua(`
             db:exec([[
               INSERT OR REPLACE INTO DeploymentLogs (DeploymentName, Logs)
-              VALUES ('${deployment.Name}', '${logsData.replace(/'/g, "''")}')
+              VALUES ('${deployment.Name}', '${safeLogsData.replace(/'/g, "''")}')
             ]])
           `, globalState.managerProcess);
         }
