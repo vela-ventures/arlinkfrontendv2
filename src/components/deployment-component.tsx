@@ -11,7 +11,7 @@ import { Card } from '@/components/ui/card-hover-effect';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Github, LinkIcon, Loader, GitBranch, GitCommit, ExternalLink, RotateCw, Trash2 } from 'lucide-react';
+import { Github, LinkIcon, Loader, GitBranch, GitCommit, ExternalLink, RotateCw, Trash2, Pencil, Save } from 'lucide-react';
 import { useGlobalState } from '@/hooks';
 import useDeploymentManager from '@/hooks/useDeploymentManager';
 import { BUILDER_BACKEND } from '@/lib/utils';
@@ -37,6 +37,12 @@ interface DeploymentComponentProps {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('buildLogs');
   const [updatingArns, setUpdatingArns] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedConfig, setEditedConfig] = useState({
+    installCommand: deployment?.InstallCMD || '',
+    buildCommand: deployment?.BuildCMD || '',
+    outputDir: deployment?.OutputDIR || ''
+  });
 
   useEffect(() => {
     if (!deployment?.RepoUrl) return;
@@ -292,6 +298,35 @@ interface DeploymentComponentProps {
     }
   };
 
+  const handleSaveConfig = async () => {
+    if (!globalState.managerProcess || !deployment) return;
+    
+    try {
+      const query = `
+        db:exec[[
+          UPDATE Deployments 
+          SET InstallCMD = '${editedConfig.installCommand}',
+              BuildCMD = '${editedConfig.buildCommand}',
+              OutputDIR = '${editedConfig.outputDir}'
+          WHERE Name = '${deployment.Name}'
+        ]]
+      `;
+      
+      const res = await runLua(query, globalState.managerProcess);
+      if (res.Error) {
+        toast.error(res.Error);
+        return;
+      }
+      
+      await refresh();
+      setIsEditing(false);
+      toast.success('Configuration updated successfully');
+    } catch (error) {
+      console.error('Error updating configuration:', error);
+      toast.error('Failed to update configuration');
+    }
+  };
+
   if (!deployment) return <Layout>
     <div className="text-xl">Searching <span className="text-muted-foreground">{name} </span> ...</div>
   </Layout>;
@@ -386,7 +421,21 @@ interface DeploymentComponentProps {
         </Card>
 
         <Card className="mb-6">
-          <h3 className="text-lg font-semibold mb-4">Deployment Configuration</h3>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold">Deployment Configuration</h3>
+            {!isEditing && (
+              <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)}>
+                <Pencil className="w-4 h-4 mr-2" />
+                Edit
+              </Button>
+            )}
+            {isEditing && (
+              <Button variant="default" size="sm" onClick={handleSaveConfig}>
+                <Save className="w-4 h-4 mr-2" />
+                Save Changes
+              </Button>
+            )}
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Git Repository URL</Label>
@@ -398,15 +447,27 @@ interface DeploymentComponentProps {
             </div>
             <div>
               <Label>Install Command</Label>
-              <Input value={deployment.InstallCMD} readOnly />
+              <Input 
+                value={isEditing ? editedConfig.installCommand : deployment.InstallCMD}
+                onChange={(e) => setEditedConfig(prev => ({ ...prev, installCommand: e.target.value }))}
+                readOnly={!isEditing}
+              />
             </div>
             <div>
               <Label>Build Command</Label>
-              <Input value={deployment.BuildCMD} readOnly />
+              <Input 
+                value={isEditing ? editedConfig.buildCommand : deployment.BuildCMD}
+                onChange={(e) => setEditedConfig(prev => ({ ...prev, buildCommand: e.target.value }))}
+                readOnly={!isEditing}
+              />
             </div>
             <div>
               <Label>Output Directory</Label>
-              <Input value={deployment.OutputDIR} readOnly />
+              <Input 
+                value={isEditing ? editedConfig.outputDir : deployment.OutputDIR}
+                onChange={(e) => setEditedConfig(prev => ({ ...prev, outputDir: e.target.value }))}
+                readOnly={!isEditing}
+              />
             </div>
           </div>
         </Card>
