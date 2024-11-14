@@ -409,7 +409,7 @@ export default function Deploy() {
 
                 if (matchingConfig) {
                     // Auto-fill form fields with existing configuration
-                    setProjName(matchingConfig.Name || defaultProjName);
+                    setProjName(matchingConfig.repoName || defaultProjName);
                     setInstallCommand(matchingConfig.InstallCMD || 'npm install');
                     setBuildCommand(matchingConfig.BuildCMD || 'npm run build');
                     setOutputDir(matchingConfig.OutputDIR || './dist');
