@@ -1,0 +1,59 @@
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes border-rotate {
+  to {
+    --angle: 360deg;
+  }
+}
+
+.animate-border-glow {
+  animation: border-rotate 4s linear infinite;
+  filter: blur(8px);
+}
+
+/* Add BorderBeam styles */
+.border-beam {
+  --border-beam-size: 1000px;
+  --border-beam-duration: 10s;
+  --border-beam-border-width: 4.5px;
+  --border-beam-anchor: 0;
+  --border-beam-color-from: rgba(255, 255, 255, 1);
+  --border-beam-color-to: rgba(220, 220, 225, 0.95);
+  --border-beam-delay: 0s;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.border-beam::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: conic-gradient(
+    from calc(var(--border-beam-anchor) * 1deg),
+    var(--border-beam-color-from),
+    transparent 6%,
+    transparent 94%,
+    var(--border-beam-color-to)
+  );
+  animation: rotate var(--border-beam-duration) linear infinite;
+  animation-delay: var(--border-beam-delay);
+  mask: linear-gradient(#000, #000) content-box content-box,
+    linear-gradient(#000, #000);
+  mask-composite: exclude;
+  padding: var(--border-beam-border-width);
+  border-radius: inherit;
+  opacity: 1;
+  filter: brightness(1.4) contrast(1.2);
+}
+
+@keyframes rotate {
+  to {
+    transform: rotate(360deg);
+  }
+} 

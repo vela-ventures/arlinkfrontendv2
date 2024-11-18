@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 
 
 const Dashboardcomp = () => {
@@ -61,13 +62,34 @@ const Dashboardcomp = () => {
       });
   }, [projects, searchTerm, sortBy]);
 
+  const SkeletonCards = () => (
+    <div className={`grid ${viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'} gap-4`}>
+      {[1, 2, 3, 4, 5, 6].map((i) => (
+        <div key={i} className="block">
+          <div className="p-4 rounded-lg border border-zinc-800 bg-black">
+            <div>
+              <div className="flex items-center space-x-2 mb-2">
+                <Skeleton className="w-8 h-8 rounded-md bg-zinc-800" />
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-5 w-3/4 bg-zinc-800" />
+                  <Skeleton className="h-4 w-full bg-zinc-800" />
+                </div>
+              </div>
+              <Skeleton className="h-4 w-2/3 bg-zinc-800 mt-2" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
   return (
     <Layout>
       <div className="flex justify-between items-center mb-6">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <Input
-            className="pl-10 w-[800px]"
+            className="pl-10 w-[875px] bg-black border-zinc-800 focus:border-zinc-700 focus-visible:ring-zinc-700"
             placeholder="Search Repositories and Projects..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -75,26 +97,41 @@ const Dashboardcomp = () => {
         </div>
         <div className="flex items-center space-x-2">
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[180px] bg-black border-zinc-800 focus:ring-zinc-700">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-black border-zinc-800">
               <SelectItem value="activity">Sort by newest</SelectItem>
               <SelectItem value="created">Sort by oldest</SelectItem>
               <SelectItem value="name">Sort by name</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" onClick={() => setViewMode('grid')}>
+          <Button 
+            variant="outline" 
+            onClick={() => setViewMode('grid')}
+            className="border-zinc-800 bg-black hover:bg-zinc-900 hover:border-zinc-700"
+          >
             <Grid className="w-4 h-4" />
           </Button>
-          <Button variant="outline" onClick={() => setViewMode('list')}>
+          <Button 
+            variant="outline" 
+            onClick={() => setViewMode('list')}
+            className="border-zinc-800 bg-black hover:bg-zinc-900 hover:border-zinc-700"
+          >
             <List className="w-4 h-4" />
           </Button>
-          
         </div>
       </div>
 
-      {!managerProcess && <div className="text-xl"><Loader className="animate-spin m-5 mx-auto" /></div>}
+      {!managerProcess && (
+        <div className="relative">
+          <SkeletonCards />
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <Loader className="animate-spin w-8 h-8 text-zinc-400" />
+          </div>
+        </div>
+      )}
+      
       {managerProcess && deployments.length === 0 && (
         <div className="text-muted-foreground mx-auto text-center">
           No deployments yet<br />
@@ -107,26 +144,26 @@ const Dashboardcomp = () => {
         <div className={`grid ${viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'} gap-4 ` }>
           {filteredAndSortedProjects.map((project) => (
               <Link 
-              href={`/deployment?repo=${project.name}`} // Update this line
+              href={`/deployment?repo=${project.name}`}
               key={project.id} 
               className="block"
             >
-              <div className="group relative p-4 rounded-lg border transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1 h-40 w-full flex flex-col justify-between">
+              <div className="group relative p-4 rounded-lg border border-zinc-800 transition-colors duration-200 
+                  hover:border-slate-400 bg-black">
                 <div>
                   <div className="flex items-center space-x-2 mb-2">
                   <div className="w-8 h-8 rounded-md" style={{
-                   background: 'linear-gradient(to bottom right, #00ff00, #32cd32, #98fb98, #00fa9a, #00bfff, #ffd700)'
-                   }}></div>
+                        background: 'linear-gradient(to bottom right, #00ff00, #32cd32, #98fb98, #00fa9a, #00bfff, #ffd700)'
+                    }}></div>
                     <div className="overflow-hidden">
-                    <div>
-                      <h3 className="font-semibold truncate">{project.name}</h3>
-                      <p className="text-sm text-gray-400 truncate">{project.url}</p>
+                      <div>
+                        <h3 className="font-semibold truncate text-zinc-200">{project.name}</h3>
+                        <p className="text-sm text-zinc-400 truncate">{project.url}</p>
+                      </div>
                     </div>
                   </div>
-                  </div >
-                  <p className="text-sm text-gray-400 truncate">{project.repo}</p>
+                  <p className="text-sm text-zinc-400 truncate">{project.repo}</p>
                 </div>
-                
               </div>
             </Link>
           ))}

@@ -54,9 +54,6 @@ export default function Navbar() {
             </div>
             <div className="flex items-center space-x-4">
                 <Button variant="ghost">Feedback</Button>
-                <Link href="/changelogs">
-                    <Button variant="ghost">Changelog</Button>
-                </Link>
                 <Link href="https://arlink.gitbook.io/arlink-docs/getting-started/quickstart" target="_blank">
                     <Button variant="ghost">Docs</Button>
                 </Link>
