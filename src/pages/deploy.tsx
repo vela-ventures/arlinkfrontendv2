@@ -37,6 +37,7 @@ interface RepoConfig {
   Name: string;
   InstallCMD: string;
   BuildCMD: string;
+  SubDirectory: string;
   OutputDIR: string;
   RepoUrl: string;
 }
@@ -135,6 +136,7 @@ export default function Deploy() {
     const [installCommand, setInstallCommand] = useState("npm install");
     const [buildCommand, setBuildCommand] = useState("npm run build");
     const [outputDir, setOutputDir] = useState("./dist");
+    const [subDirectory, setSubDirectory] = useState("");
     const [deploying, setDeploying] = useState(false);
     const [arnsProcess, setArnsProcess] = useState("");
     const [selectedBranch, setSelectedBranch] = useState("");
@@ -284,6 +286,7 @@ export default function Deploy() {
                 branch: selectedBranch, 
                 installCommand,
                 buildCommand,
+                subDirectory,
                 outputDir,
                 repoName: customArnsName,
                 githubToken
@@ -319,7 +322,7 @@ export default function Deploy() {
             setDeploying(false);
             setDeploymentCompleted(true);
         }
-    }, [projName, repoUrl, selectedBranch, installCommand, buildCommand, outputDir, customArnsName, useArns, arnsProcess, githubToken, globalState.managerProcess, router]);
+    }, [projName, repoUrl, selectedBranch, installCommand, buildCommand, subDirectory, outputDir, customArnsName, useArns, arnsProcess, githubToken, globalState.managerProcess, router]);
 
     const handleProtocolLandImport = () => {
         router.push("/deploythirdparty");
@@ -414,12 +417,14 @@ export default function Deploy() {
                     setInstallCommand(matchingConfig.InstallCMD || 'npm install');
                     setBuildCommand(matchingConfig.BuildCMD || 'npm run build');
                     setOutputDir(matchingConfig.OutputDIR || './dist');
+                    setSubDirectory(matchingConfig.SubDirectory || '');
                 } else {
                     // Set default values if no matching configuration is found
                     setProjName(defaultProjName);
                     setInstallCommand('npm install');
                     setBuildCommand('npm run build');
                     setOutputDir('./dist');
+                    setSubDirectory('');
                 }
             } catch (error) {
                 console.error('Error fetching repo config:', error);
@@ -528,6 +533,16 @@ export default function Deploy() {
                                     id="build-command" 
                                     value={buildCommand} 
                                     onChange={(e) => setBuildCommand(e.target.value)} 
+                                    className="mt-1 bg-card/50 shadow-md" 
+                                />
+                            </div>
+                            <div>
+                                <Label htmlFor="sub-dir">Sub Directory</Label>
+                                <Input 
+                                    placeholder="e.g. ./frontend" 
+                                    id="sub-dir" 
+                                    value={subDirectory } 
+                                    onChange={(e) => setSubDirectory(e.target.value)} 
                                     className="mt-1 bg-card/50 shadow-md" 
                                 />
                             </div>
