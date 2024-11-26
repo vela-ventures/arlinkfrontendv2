@@ -164,6 +164,8 @@ app.post("/deploy", async (req, res) => {
     return res.status(400).send("Output Directory is required");
   }
   const outputDist = outputDir.startsWith("./") ? outputDir.slice(2) : outputDir;
+  const subDist= subDirectory.startsWith("./") ? subDirectory.slice(2) : subDirectory;
+
 
   if (!branch) {
     console.error("Branch is required");
@@ -187,7 +189,7 @@ app.post("/deploy", async (req, res) => {
     if (deployedRepos.length > 0) {
       if (deployedRepos.includes(folderName)) {
         console.log("Repo Already Deployed, proceeding with update");
-        await updateRegistry(owner, folderName, { installCommand: installCommand, buildCommand: buildCommand, outputDir: outputDist, subDirectory: subDirectory, repository: repository, branch: branch });
+        await updateRegistry(owner, folderName, { installCommand: installCommand, buildCommand: buildCommand, outputDir: outputDist, subDirectory: subDist, repository: repository, branch: branch });
         
       }
     }
@@ -206,7 +208,7 @@ app.post("/deploy", async (req, res) => {
       installCommand,
       buildCommand,
       outputDir: outputDist,
-      subDirectory,
+      subDirectory: subDist,
       protocolLand,
       walletAddress,
       lastBuiltCommit: latestCommit,
