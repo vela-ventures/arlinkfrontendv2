@@ -21,6 +21,7 @@ import { Octokit } from "@octokit/rest";
 import { Switch } from "@/components/ui/switch"; // Add this import
 import { setArnsName } from "@/lib/ao-vars";
 import { getRepoConfig } from "@/lib/getRepoconfig";
+import { index } from 'arweave-indexer';
 
 
 
@@ -292,8 +293,10 @@ export default function Deploy() {
                 githubToken
                 // Remove githubToken from here since it's now in the URL
             }, { timeout: 60 * 60 * 1000, headers: { "Content-Type": "application/json" } });
-
+                
             if (response.status === 200 && response.data) {
+               
+                
                 console.log("https://arweave.net/" + response.data);
                 toast.success("Deployment successful");
 
@@ -304,6 +307,19 @@ export default function Deploy() {
                 }
 
                 setDeploymentSuccess(true);
+                const result = await index(
+                    //@ts-ignore
+                    JSON.stringify({
+                      title: projName,
+                      description: 'An awesome decentralized project',
+                      txid: response.data,
+                      link: "https://arweave.net/" + response.data,
+                      owner: activeAddress,
+                      arlink: finalArnsProcess
+                    }),
+                    window.arweaveWallet
+                  );
+                  console.log(result);
                 // In the deploy function within pages/deploy.tsx, update this line:
                 router.push(`/deployment?repo=${projName}`);
                 window.open("https://arweave.net/" + response.data, "_blank");

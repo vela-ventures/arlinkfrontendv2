@@ -28,6 +28,7 @@
     "@tabler/icons-react": "^3.19.0",
     "@tanstack/react-virtual": "^3.10.8",
     "arweave": "^1.15.1",
+    "arweave-indexer": "^1.0.1",
     "arweave-wallet-kit": "^1.0.5",
     "axios": "^1.7.3",
     "class-variance-authority": "^0.7.0",
