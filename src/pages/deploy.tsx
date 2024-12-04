@@ -255,7 +255,7 @@ export default function Deploy() {
         let finalArnsProcess = arnsProcess;
         let customRepo = null;
         if (!useArns && customArnsName) {
-            finalArnsProcess = `${customArnsName}.arlink.ar-io.dev`;
+            finalArnsProcess = `${customArnsName}.arlink.arweave.net`;
             customRepo = customArnsName;
         }
         if (!githubToken) return toast.error("GitHub token is required for deployment.");
@@ -646,7 +646,7 @@ export default function Deploy() {
                                         className="mt-1 bg-card/50 shadow-md"
                                     />
                                     <p className="text-sm text-muted-foreground mt-1">
-                                        Your custom name will be: {customArnsName ? `${customArnsName}_arlink.ar-io.dev` : ""} (if available)
+                                        Your custom name will be: {customArnsName ? `${customArnsName}_arlink.arweave.net` : ""} (if available)
                                     </p>
                                 </div>
                             )}

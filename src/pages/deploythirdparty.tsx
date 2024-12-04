@@ -238,7 +238,7 @@ export default function DeployThirdParty() {
         let finalArnsProcess = arnsProcess;
         let customRepo = null;
         if (!useArns && customArnsName) {
-            finalArnsProcess = `${customArnsName}.arlink.ar-io.dev`;
+            finalArnsProcess = `${customArnsName}.arlink.arweave.net`;
             customRepo = customArnsName;
         }
 
@@ -464,7 +464,7 @@ export default function DeployThirdParty() {
                                         className="mt-1 bg-card/50 shadow-md"
                                     />
                                     <p className="text-sm text-muted-foreground mt-1">
-                                        Your custom name will be: {customArnsName ? `${customArnsName}_arlink.ar-io.dev` : ""} (if available)
+                                        Your custom name will be: {customArnsName ? `${customArnsName}_arlink.arweave.net` : ""} (if available)
                                     </p>
                                 </div>
                             )}
