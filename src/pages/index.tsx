@@ -223,7 +223,7 @@ export default function Home() {
                   © {new Date().getFullYear()} Arlink
                 </span>
                 <span className="text-zinc-700 text-xs font-medium">
-                  Beta 1.0.1
+                  Beta 1.0.2
                 </span>
               </div>
             </div>
