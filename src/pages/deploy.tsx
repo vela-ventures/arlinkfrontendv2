@@ -188,12 +188,16 @@ export default function Deploy() {
     }, [repoUrl, githubToken]);
 
     useEffect(() => {
-        // If we have a code but no token, we're probably in the middle of auth
         const code = searchParams.get('code');
+        const previousStep = sessionStorage.getItem('deploy_previous_step');
+        
         if (code && !githubToken) {
-            setStep("initial"); // Reset to initial step while authenticating
+            setIsAuthenticating(true);
         } else if (githubToken) {
-            setStep("repository"); // Move to repository step when we have a token
+            setStep("repository");
+            sessionStorage.removeItem('deploy_previous_step'); // Clean up
+        } else if (previousStep) {
+            setStep(previousStep as any);
         }
     }, [githubToken, searchParams]);
 
