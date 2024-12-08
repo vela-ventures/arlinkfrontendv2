@@ -7,7 +7,7 @@ import { BUILDER_BACKEND } from '@/lib/utils';
 import { Octokit } from '@octokit/rest';
 import { useLocation, useSearchParams } from 'react-router-dom';
 
-const GITHUB_CLIENT_ID = import.meta.env.VITE_GITHUB_CLIENT_ID as string;
+const GITHUB_CLIENT_ID = 'Iv23linjZLxHZeHfSgqB';
 // GitHub auth functions
 async function initiateGitHubAuth(): Promise<void> {
     const BASE_URL = import.meta.env.VITE_ENV === 'test' ? 'http://localhost:3000' : "https://arlink.arweave.net";
