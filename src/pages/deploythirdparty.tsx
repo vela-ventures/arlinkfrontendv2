@@ -1,31 +1,25 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Github, Globe, ArrowLeft, ArrowRight, Search, Loader } from "lucide-react"
+import { ArrowLeft, ArrowRight, Search, Loader } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+
 import Ansi from '@agbishop/react-ansi-18';
-import Layout from '@/components/layout';
-import { useGlobalState } from "@/hooks";
+import Layout from '@/layouts/layout';
+import { useGlobalState } from "@/hooks/useGlobalState";
 import { runLua } from "@/lib/ao-vars";
-import { useRouter } from "next/router";
 import { toast } from "sonner";
 import axios from 'axios';
 import { BUILDER_BACKEND } from "@/lib/utils";
 import useDeploymentManager from "@/hooks/useDeploymentManager";
 import { useActiveAddress } from "arweave-wallet-kit";
-import fetchUserRepos from '@/lib/fetchrepo';
+import fetchUserRepos from '@/lib/fetchprotolandrepo';
 import { getWalletOwnedNames } from '@/lib/get-arns';
 import { Switch } from "@/components/ui/switch"
 import { setArnsName } from "@/lib/ao-vars";
+import { useNavigate } from "react-router-dom";
 
 type ProtocolLandRepo = {
     name: string;
@@ -70,6 +64,7 @@ function Logs({ name, deploying, repoUrl }: { name: string, deploying?: boolean,
             try {
                 const logs = await axios.get(`${BUILDER_BACKEND}/logs/${owner}/${repo}`);
                 console.log(logs.data);
+                //@ts-ignore
                 setOutput((logs.data as string).replaceAll(/\\|\||\-/g, ""));
                 setError(null); // Clear any previous errors
 
@@ -112,7 +107,8 @@ function Logs({ name, deploying, repoUrl }: { name: string, deploying?: boolean,
 
 export default function DeployThirdParty() {
     const globalState = useGlobalState();
-    const router = useRouter();
+    const navigate = useNavigate();
+    //@ts-ignore
     const { managerProcess, refresh , deployments} = useDeploymentManager();
     const address = useActiveAddress();
     const [projName, setProjName] = useState("");
@@ -236,6 +232,7 @@ export default function DeployThirdParty() {
         if (deployments.find(dep => dep.Name === projName)) return toast.error("Project name already exists");
 
         let finalArnsProcess = arnsProcess;
+        //@ts-ignore
         let customRepo = null;
         if (!useArns && customArnsName) {
             finalArnsProcess = `${customArnsName}.arlink.arweave.net`;
@@ -276,6 +273,7 @@ export default function DeployThirdParty() {
                 console.log("https://arweave.net/" + txid.data);
                 toast.success("Deployment successful");
 
+                //@ts-ignore    
                 const updres = await runLua(`db:exec[[UPDATE Deployments SET DeploymentId='${txid.data}' WHERE Name='${projName}']]`, globalState.managerProcess);
 
                 // Only set ArNS name if we're using ArNS (either existing or custom)
@@ -283,7 +281,7 @@ export default function DeployThirdParty() {
                     await setArnsName(finalArnsProcess, txid.data);
                 }
 
-                router.push({ pathname: "/deployment", query: { repo: projName } });
+                navigate(`/deployment?repo=${projName}`);
 
                 window.open("https://arweave.net/" + txid.data, "_blank");
             } else {

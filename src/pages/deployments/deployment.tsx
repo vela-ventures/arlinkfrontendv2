@@ -1,31 +1,34 @@
-import { useRouter } from 'next/router';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import Layout from '@/components/layout';
+import Layout from '@/layouts/layout';
 import { toast } from 'sonner';
 import { TDeployment } from '@/types';
-import { useGlobalState } from '@/hooks';
-import DeploymentComponent from '@/components/deployment-component';
+import { useGlobalState } from '@/hooks/useGlobalState';
+import DeploymentComponent from '@/pages/deployments/deploymentscomponent';
 
 export default function DeploymentPage() {
-  const router = useRouter();
-  const { repo } = router.query;
+  const [searchParams] = useSearchParams();
+  const repo = searchParams.get('repo'); // Get repo from query parameter
+  const navigate = useNavigate();
   const { deployments } = useGlobalState();
   const [deployment, setDeployment] = useState<TDeployment | null>(null);
 
   useEffect(() => {
-    if (!repo || typeof repo !== 'string') {
+    if (!repo) {
+      toast.error('No repository specified');
+      navigate('/dashboard');
       return;
     }
 
     const foundDeployment = deployments.find(d => d.Name === repo);
     if (!foundDeployment) {
       toast.error('Deployment not found');
-      router.push('/dashboard');
+      navigate('/dashboard');
       return;
     }
 
     setDeployment(foundDeployment);
-  }, [repo, deployments, router]);
+  }, [repo, deployments, navigate]);
 
   if (!deployment) {
     return <Layout>

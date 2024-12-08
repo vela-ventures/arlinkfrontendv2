@@ -1,4 +1,4 @@
-import { BAZAR, readHandler } from "./ao-vars";
+import { BAZAR, readHandler } from "@/lib/ao-vars";
 
 export type AOProfileType = {
     id: string;
@@ -11,7 +11,12 @@ export type AOProfileType = {
     version: string | null;
 };
 
-export type ProfileHeaderType = AOProfileType;
+export interface ProfileHeaderType {
+    displayName?: string;
+    username?: string;
+    avatar?: string;
+    // Add other profile-related fields as needed
+}
 
 export type RegistryProfileType = {
     id: string;
@@ -20,53 +25,19 @@ export type RegistryProfileType = {
     bio?: string;
 };
 
-export async function getProfileByWalletAddress(args: { address: string }): Promise<ProfileHeaderType | null> {
-    const emptyProfile: AOProfileType = {
-        id: '',  // Changed from null to empty string
-        walletAddress: args.address,
-        displayName: null,
-        username: null,
-        bio: null,
-        avatar: null,
-        banner: null,
-        version: null,
-    };
-
+export async function getProfileByWalletAddress({ address }: { address: string }): Promise<ProfileHeaderType> {
+    // Implement the profile fetching logic here
+    // This is just a placeholder implementation
     try {
-        const profileLookup = await readHandler({
-            processId: BAZAR.profileRegistry,
-            action: 'Get-Profiles-By-Delegate',
-            data: { Address: args.address },
-        });
-
-        let activeProfileId: string = '';  // Initialize with empty string
-        if (profileLookup && profileLookup.length > 0 && profileLookup[0].ProfileId) {
-            activeProfileId = profileLookup[0].ProfileId;
+        // Make your API call here
+        const response = await fetch(`YOUR_API_ENDPOINT/profiles/${address}`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch profile');
         }
-
-        if (activeProfileId) {
-            const fetchedProfile = await readHandler({
-                processId: activeProfileId,
-                action: 'Info',
-                data: null,
-            });
-
-            if (fetchedProfile) {
-                return {
-                    id: activeProfileId,
-                    walletAddress: fetchedProfile.Owner || args.address,  // Use args.address as fallback
-                    displayName: fetchedProfile.Profile.DisplayName || null,
-                    username: fetchedProfile.Profile.UserName || null,
-                    bio: fetchedProfile.Profile.Description || null,
-                    avatar: fetchedProfile.Profile.ProfileImage || null,
-                    banner: fetchedProfile.Profile.CoverImage || null,
-                    version: fetchedProfile.Profile.Version || null
-                };
-            }
-        }
-        return emptyProfile;  // Return emptyProfile if no profile is found
-    } catch (e: any) {
-        throw new Error(e);
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching profile:', error);
+        return {};
     }
 }
 

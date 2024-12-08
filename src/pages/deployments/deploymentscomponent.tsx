@@ -1,18 +1,17 @@
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
-import Link from 'next/link';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { connect } from '@permaweb/aoconnect';
 import { toast } from 'sonner';
 import Ansi from '@agbishop/react-ansi-18';
-import Layout from '@/components/layout';
+import Layout from '@/layouts/layout';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card-hover-effect';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Github, LinkIcon, Loader, GitBranch, GitCommit, ExternalLink, RotateCw, Trash2, Pencil, Save } from 'lucide-react';
-import { useGlobalState } from '@/hooks';
+import { Github,  Loader, GitBranch, GitCommit, ExternalLink,  Trash2, Pencil, Save } from 'lucide-react';
+import { useGlobalState } from '@/hooks/useGlobalState';
 import useDeploymentManager from '@/hooks/useDeploymentManager';
 import { BUILDER_BACKEND } from '@/lib/utils';
 import { runLua } from '@/lib/ao-vars';
@@ -27,9 +26,10 @@ interface DeploymentComponentProps {
   
   export default function DeploymentComponent({ deployment }: DeploymentComponentProps) {
   const globalState = useGlobalState();
+  //@ts-ignore
   const { managerProcess, deployments, refresh } = useDeploymentManager();
-  const router = useRouter();
-  const name = router.query.name;
+  const navigate = useNavigate();
+  const { name } = useParams();
   const [buildOutput, setBuildOutput] = useState('');
   const [antName, setAntName] = useState('');
   const [redeploying, setRedeploying] = useState(false);
@@ -52,7 +52,7 @@ interface DeploymentComponentProps {
       try {
         const response = await axios.get(`${BUILDER_BACKEND}/config/${owner}/${repoName}`);
         const newDeploymentUrl = response.data.url;
-        const arnsUnderName = response.data.arnsUnderName
+        const arnsUnderName = response.data.arnsUnderName;
         setDeploymentUrl(newDeploymentUrl);
         setAntName(arnsUnderName);
         
@@ -63,8 +63,20 @@ interface DeploymentComponentProps {
       } catch (error) {
         console.error('Error fetching deployment URL:', error);
         toast.error('Failed to fetch deployment URL');
-        setError('Failed to fetch deployment URL. Using last known deployment ID.');
+        setError('Failed to fetch deployment URL. Using last known values.');
         setDeploymentUrl(deployment.DeploymentId || "");
+        // Use last known ArNS name from the dryrun if available
+        connect().dryrun({
+          process: deployment?.ArnsProcess,
+          tags: [{ name: 'Action', value: 'Info' }]
+        }).then(r => {
+          if (r.Messages && r.Messages.length > 0) {
+            const d = JSON.parse(r.Messages[0].Data);
+            setAntName(d.Name);
+          }
+        }).catch(() => {
+          console.error('Failed to fetch fallback ArNS name');
+        });
       }
     };
     fetchDeploymentUrl();
@@ -155,7 +167,7 @@ interface DeploymentComponentProps {
 
         await runLua(`db:exec[[UPDATE Deployments SET DeploymentId='${txid.data}' WHERE Name='${projName}']]`, globalState.managerProcess);
 
-        router.push({ pathname: "/deployment", query: { repo: projName } });
+        navigate(`/deployment?repo=${projName}`);
         await refresh();
         window.open('https://arweave.net/' + txid.data, '_blank');
 
@@ -183,29 +195,33 @@ interface DeploymentComponentProps {
     const owner = deployment?.RepoUrl.split('/').reverse()[1];
     const folderName = deployment?.RepoUrl.replace(/\.git|\/$/, '').split('/').pop();
     
-    // Fetch logs from the database first
-    if (globalState.managerProcess) {
-      runLua(`
-        local res = db:exec([[
-          SELECT Logs FROM DeploymentLogs
-          WHERE DeploymentName = '${deployment.Name}'
-        ]])
-        return res[1] and res[1].Logs or ''
-      `, globalState.managerProcess).then(result => {
-        if (result && typeof result === 'string') {
-          setBuildOutput(result);
+    // First try to get logs from the database
+    const fetchLogsFromDB = async () => {
+      if (globalState.managerProcess) {
+        try {
+          const result = await runLua(`
+            local res = db:exec([[
+              SELECT Logs FROM DeploymentLogs
+              WHERE DeploymentName = '${deployment.Name}'
+            ]])
+            return res[1] and res[1].Logs or ''
+          `, globalState.managerProcess);
+          
+          if (result && typeof result === 'string') {
+            setBuildOutput(result);
+          }
+        } catch (error) {
+          console.error('Error fetching logs from database:', error);
         }
-      }).catch(error => {
-        console.error('Error fetching logs from database:', error);
-      });
-    }
+      }
+    };
 
-    // Then fetch the latest logs from the backend
-    axios.get(`${BUILDER_BACKEND}/logs/${owner}/${folderName}`)
-      .then((res) => {
+    // Then try to get latest logs from backend
+    const fetchLatestLogs = async () => {
+      try {
+        const res = await axios.get(`${BUILDER_BACKEND}/logs/${owner}/${folderName}`);
         const rawLogsData = (res.data).replaceAll(/\\|\||\-/g, '');
         
-        // Trim logs to remove sensitive information
         const trimmedLogs = rawLogsData.split('\n')
           .reduce((acc: {started: boolean, logs: string[]}, line: string) => {
             if (acc.started || line.includes('Cloning repository...')) {
@@ -220,34 +236,42 @@ interface DeploymentComponentProps {
         
         // Update logs in the database
         if (globalState.managerProcess) {
-          runLua(`
+          await runLua(`
             db:exec([[
               INSERT OR REPLACE INTO DeploymentLogs (DeploymentName, Logs)
               VALUES ('${deployment.Name}', '${safeLogsData.replace(/'/g, "''")}')
             ]])
           `, globalState.managerProcess);
         }
-      })
-      .catch((error) => {
-        console.error('Error fetching logs:', error);
-        setError('Failed to fetch build logs. Please try again later.');
-      });
+      } catch (error) {
+        console.error('Error fetching latest logs:', error);
+        // If fetching latest logs fails, we'll keep using the database logs
+        // that were already set by fetchLogsFromDB
+        setError('Failed to fetch latest build logs. Showing last known logs.');
+      }
+    };
 
+    // Execute both operations
+    fetchLogsFromDB();
+    fetchLatestLogs();
+
+    // Fetch ArNS info
     connect().dryrun({
       process: deployment?.ArnsProcess,
       tags: [{ name: 'Action', value: 'Info' }]
     }).then(r => {
       if (r.Messages && r.Messages.length > 0) {
         const d = JSON.parse(r.Messages[0].Data);
-        console.log(d);
         setAntName(d.Name);
       } else {
         console.error('No messages received or messages array is empty');
-        setError('Failed to fetch ArNS information. Please try again later.');
+        // Keep the last known antName value
+        setError('Failed to fetch latest ArNS information. Using last known value.');
       }
     }).catch(error => {
       console.error('Error during dryrun:', error);
-      setError('An error occurred while fetching ArNS information. Please try again later.');
+      // Keep the last known antName value
+      setError('Failed to fetch latest ArNS information. Using last known value.');
     });
   }, [deployment, globalState.managerProcess]);
 
@@ -272,7 +296,7 @@ interface DeploymentComponentProps {
       await refresh();
 
       toast.success('Deployment deleted successfully');
-      router.push('/dashboard');
+      navigate('/dashboard');
     } catch (error) {
       console.error('Error deleting deployment:', error);
       toast.error('An error occurred while deleting the deployment');
@@ -377,7 +401,11 @@ interface DeploymentComponentProps {
             <div className="space-y-4">
               <div>
                 <Label>Deployment URL</Label>
-                <Link href={`https://arweave.net/${deploymentUrl || deployment?.DeploymentId}`} target="_blank" className="text-sm flex items-center">
+                <Link 
+                  to={`https://arweave.net/${deploymentUrl || deployment?.DeploymentId}`} 
+                  target="_blank" 
+                  className="text-sm flex items-center"
+                >
                   {deploymentUrl ? `https://arweave.net/${deploymentUrl}` : (deployment?.DeploymentId ? `https://arweave.net/${deployment.DeploymentId}` : 'Not available')}
                   <ExternalLink className="w-4 h-4 ml-2" />
                 </Link>
@@ -385,7 +413,11 @@ interface DeploymentComponentProps {
               <div>
                 <Label>ArNS UnderName</Label>
                 <div className="flex items-center space-x-2">
-                  <Link href={`https://${antName ? antName : ''}_arlink.arweave.net`} target="_blank" className="text-sm flex items-center">
+                  <Link 
+                    to={`https://${antName ? antName : ''}_arlink.arweave.net`} 
+                    target="_blank" 
+                    className="text-sm flex items-center"
+                  >
                     {(antName || '[fetching]') + '_arlink.arweave.net'}
                     <ExternalLink className="w-4 h-4 ml-2" />
                   </Link>
@@ -413,7 +445,11 @@ interface DeploymentComponentProps {
                   <span>{deployment.DeploymentId?.substring(0, 7)}</span>
                 </div>
               </div>
-              <Link href={deployment?.RepoUrl || ''} target="_blank" className="text-sm flex items-center gap-1 hover:underline underline-offset-4">
+              <Link 
+                to={deployment?.RepoUrl || ''} 
+                target="_blank" 
+                className="text-sm flex items-center gap-1 hover:underline underline-offset-4"
+              >
                 <Github size={16} />{deployment?.RepoUrl}
               </Link>
             </div>

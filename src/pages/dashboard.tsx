@@ -1,14 +1,14 @@
 "use client"
 
-import React, { useEffect, useState, useMemo } from "react";
-import { Loader, Search, Grid, List, ChevronDown } from "lucide-react";
-import Link from "next/link";
+import  { useEffect, useState, useMemo } from "react";
+import { Loader, Search, Grid, List } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useConnection, useActiveAddress } from "arweave-wallet-kit";
-import Layout from "@/components/layout";
+import Layout from "@/layouts/layout";
 import useDeploymentManager from "@/hooks/useDeploymentManager";
-import { TDeployment } from "@/types";
+import { TDeployment } from "@/types/index";
 import {
   Select,
   SelectContent,
@@ -85,69 +85,70 @@ const Dashboardcomp = () => {
 
   return (
     <Layout>
-      <div className="flex justify-between items-center mb-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-          <Input
-            className="pl-10 w-[875px] bg-black border-zinc-800 focus:border-zinc-700 focus-visible:ring-zinc-700"
-            placeholder="Search Repositories and Projects..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <div className="flex items-center space-x-2">
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-[180px] bg-black border-zinc-800 focus:ring-zinc-700">
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent className="bg-black border-zinc-800">
-              <SelectItem value="activity">Sort by newest</SelectItem>
-              <SelectItem value="created">Sort by oldest</SelectItem>
-              <SelectItem value="name">Sort by name</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button 
-            variant="outline" 
-            onClick={() => setViewMode('grid')}
-            className="border-zinc-800 bg-black hover:bg-zinc-900 hover:border-zinc-700"
-          >
-            <Grid className="w-4 h-4" />
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => setViewMode('list')}
-            className="border-zinc-800 bg-black hover:bg-zinc-900 hover:border-zinc-700"
-          >
-            <List className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
-
-      {!managerProcess && (
-        <div className="relative">
-          <SkeletonCards />
-          <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <Loader className="animate-spin w-8 h-8 text-zinc-400" />
+      <div className="px-6 pt-6">
+        <div className="flex justify-between items-center mb-6">
+          <div className="relative flex-1 max-w-[875px]">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <Input
+              className="pl-10 w-full bg-black border-zinc-800 focus:border-zinc-700 focus-visible:ring-zinc-700"
+              placeholder="Search Repositories and Projects..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="flex items-center space-x-2">
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-[180px] bg-black border-zinc-800 focus:ring-zinc-700">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent className="bg-black border-zinc-800">
+                <SelectItem value="activity">Sort by newest</SelectItem>
+                <SelectItem value="created">Sort by oldest</SelectItem>
+                <SelectItem value="name">Sort by name</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button 
+              variant="outline" 
+              onClick={() => setViewMode('grid')}
+              className="border-zinc-800 bg-black hover:bg-zinc-900 hover:border-zinc-700"
+            >
+              <Grid className="w-4 h-4" />
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => setViewMode('list')}
+              className="border-zinc-800 bg-black hover:bg-zinc-900 hover:border-zinc-700"
+            >
+              <List className="w-4 h-4" />
+            </Button>
           </div>
         </div>
-      )}
-      
-      {managerProcess && deployments.length === 0 && (
-        <div className="text-muted-foreground mx-auto text-center">
-          No deployments yet<br />
-          <Link href="/deploy">
-            <Button variant="link" className="text-muted-foreground p-0">Click here to create one</Button>
-          </Link>
-        </div>
-      )}
-      {managerProcess && deployments.length > 0 && (
-        <div className={`grid ${viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'} gap-4 ` }>
-          {filteredAndSortedProjects.map((project) => (
-              <Link 
-              href={`/deployment?repo=${project.name}`}
-              key={project.id} 
-              className="block"
-            >
+
+        {!managerProcess && (
+          <div className="relative">
+            <SkeletonCards />
+            <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+              <Loader className="animate-spin w-8 h-8 text-zinc-400" />
+            </div>
+          </div>
+        )}
+        
+        {managerProcess && deployments.length === 0 && (
+          <div className="text-muted-foreground mx-auto text-center">
+            No deployments yet<br />
+            <Link to="/deploy">
+              <Button variant="link" className="text-muted-foreground p-0">Click here to create one</Button>
+            </Link>
+          </div>
+        )}
+        {managerProcess && deployments.length > 0 && (
+          <div className={`grid ${viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'} gap-4`}>
+            {filteredAndSortedProjects.map((project) => (
+             <Link 
+             to={`/deployment?repo=${project.name}`}  // Changed href to to
+             key={project.id} 
+             className="block"
+           >
               <div className="group relative p-4 rounded-lg border border-zinc-800 transition-colors duration-200 
                   hover:border-slate-400 bg-black">
                 <div>
@@ -169,7 +170,8 @@ const Dashboardcomp = () => {
           ))}
         </div>
       )}
-    </Layout>
+    </div>
+  </Layout>
   );
 };
 

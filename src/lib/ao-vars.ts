@@ -1,5 +1,4 @@
 import { connect, createDataItemSigner } from "@permaweb/aoconnect";
-import { createDataItemSigner as nodeCDIS } from "@permaweb/aoconnect/node";
 
 export const AppVersion = "1.0.0";
 export const AOModule = "u1Ju_X8jiuq4rX9Nh-ZGRQuYQZgV2MKLMT3CZsykk54"; // sqlite
@@ -28,7 +27,7 @@ export async function spawnProcess(name?: string, tags?: Tag[], newProcessModule
         module: newProcessModule ? newProcessModule : AOModule,
         scheduler: AOScheduler,
         tags,
-        signer: (window.arweaveWallet as any)?.signDataItem ? createDataItemSigner(window.arweaveWallet) : nodeCDIS(window.arweaveWallet),
+        signer: createDataItemSigner(window.arweaveWallet),
     });
 
     return result;
@@ -57,7 +56,7 @@ export async function runLua(code: string, process: string, tags?: Tag[]) {
     const message = await ao.message({
         process,
         data: code,
-        signer: (window.arweaveWallet as any)?.signDataItem ? createDataItemSigner(window.arweaveWallet) : nodeCDIS(window.arweaveWallet),
+        signer: createDataItemSigner(window.arweaveWallet),
         tags,
     });
 
@@ -91,7 +90,7 @@ export async function monitor(process: string) {
 
     const r = await ao.monitor({
         process,
-        signer: (window.arweaveWallet as any)?.signDataItem ? createDataItemSigner(window.arweaveWallet) : nodeCDIS(window.arweaveWallet),
+        signer: createDataItemSigner(window.arweaveWallet),
     });
 
     return r;
@@ -102,7 +101,7 @@ export async function unmonitor(process: string) {
 
     const r = await ao.unmonitor({
         process,
-        signer: (window.arweaveWallet as any)?.signDataItem ? createDataItemSigner(window.arweaveWallet) : nodeCDIS(window.arweaveWallet),
+        signer: createDataItemSigner(window.arweaveWallet),
     });
 
     return r;
@@ -162,6 +161,7 @@ export const BAZAR = {
         }
       }
     }
+    return null;
   }
   
   export async function setArnsName(antProcess: string, manifestId: string, undername = '@') {
@@ -178,7 +178,7 @@ export const BAZAR = {
     const result = await ao.message({
         process: antProcess,
         tags: msgtags,
-        signer: (window.arweaveWallet as any)?.signDataItem ? createDataItemSigner(window.arweaveWallet) : nodeCDIS(window.arweaveWallet),
+        signer: createDataItemSigner(window.arweaveWallet),
         data: "",
     });
     console.log("set arns message officially sent out ", result);

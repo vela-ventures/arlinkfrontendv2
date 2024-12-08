@@ -1,5 +1,5 @@
 {
-  "$schema": "https://ui.shadcn.com/schema.json",
+  "$schema": "https://nyxbui.design/schema.json",
   "style": "default",
   "rsc": false,
   "tsx": true,
@@ -7,7 +7,7 @@
     "config": "tailwind.config.ts",
     "css": "src/styles/globals.css",
     "baseColor": "zinc",
-    "cssVariables": true,
+    "cssVariables": false,
     "prefix": ""
   },
   "aliases": {

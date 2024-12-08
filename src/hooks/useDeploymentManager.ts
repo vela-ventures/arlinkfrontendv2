@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
-import { useGlobalState } from "./useGlobalState";
+import { useEffect } from "react";
+import { useGlobalState } from "@/hooks/useGlobalState";
 import { useActiveAddress, useConnection } from "arweave-wallet-kit";
-import { getManagerProcessFromAddress } from "@/lib/utils";
 import { runLua, spawnProcess } from "@/lib/ao-vars";
 import { connect } from "@permaweb/aoconnect";
+import { gql, GraphQLClient } from "graphql-request";
+
 
 const setupCommands = `json = require "json"
 
@@ -46,6 +47,7 @@ export default function useDeploymentManager() {
     const globalState = useGlobalState();
     const { connected } = useConnection();
     const address = useActiveAddress();
+    //@ts-ignore
     const ao = connect()
 
     useEffect(() => {
@@ -56,6 +58,7 @@ export default function useDeploymentManager() {
                     globalState.setManagerProcess(id);
                 } else {
                     console.log("No manager process found, spawning new one");
+                      //@ts-ignore
                     spawnProcess("ARlink-Manager").then(async (newId) => {
                         await runLua(setupCommands, newId)
                         console.log("deployment manager id", newId);
@@ -65,6 +68,7 @@ export default function useDeploymentManager() {
             })
         }
     }, [connected, address])
+   
 
     useEffect(() => {
         refresh();
@@ -101,4 +105,43 @@ export default function useDeploymentManager() {
         deployments: globalState.deployments,
         refresh
     }
+}
+// keep it as local host if NODE_ENV is test
+
+
+
+export async function getManagerProcessFromAddress(address: string) {
+  const client = new GraphQLClient("https://arweave.net/graphql");
+
+  const query = gql`
+  query {
+  transactions(
+    owners: ["${address}"]
+    tags: [
+      { name: "App-Name", values: ["ARlink"] }
+      { name: "Name", values: ["ARlink-Manager"] }
+    ]
+  ) {
+    edges {
+      node {
+        id
+      }
+    }
+  }
+}`;
+
+  type response = {
+    transactions: {
+      edges: {
+        node: {
+          id: string;
+        };
+      }[];
+    };
+  };
+
+  const data: response = await client.request(query);
+  return data.transactions.edges.length > 0
+    ? data.transactions.edges[0].node.id
+    : null;
 }

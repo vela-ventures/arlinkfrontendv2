@@ -1,25 +1,26 @@
+"use client"
 import { Button } from "@/components/ui/button"
-import { ConnectButton, useActiveAddress, useConnection } from "arweave-wallet-kit";
+import { ConnectButton, useConnection } from "arweave-wallet-kit";
 import { useEffect } from "react";
-import { useRouter } from 'next/router';
-import Link from "next/link";
-
+import { Link, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 
 export default function Home() {
   const { connected, connect } = useConnection();
-  const router = useRouter();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     connect();
 
     // Check if we're not supposed to be on the home page
-    if (typeof window !== 'undefined' && window.location.pathname !== '/') {
-      router.replace(window.location.pathname + window.location.search);
+    if (location.pathname !== '/') {
+      navigate(location.pathname + location.search);
     }
-  }, []);
+  }, [navigate, location]);
 
   // Only render the home page content if we're actually on the home page
-  if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+  if (location.pathname !== '/') {
     return null; // or a loading spinner
   }
   return (
@@ -57,7 +58,7 @@ export default function Home() {
                 Arlink allows you to permanently deploy and manage your web apps on the  PermaWeb with ease.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link href={connected ? "/dashboard" : "/deploy"}>
+                <Link to={connected ? "/dashboard" : "/deploy"}>
                   <Button className="bg-gradient-to-r from-white via-zinc-200 to-white text-black hover:opacity-90 transition-opacity min-w-[140px]">
                     {connected ? "View your Deployments" : "Deploy your first app"} 
                     <span className="text-2xl ml-1"></span>
@@ -223,7 +224,7 @@ export default function Home() {
                   © {new Date().getFullYear()} Arlink
                 </span>
                 <span className="text-zinc-700 text-xs font-medium">
-                  Beta 1.0.2
+                  Beta 1.0.0
                 </span>
               </div>
             </div>

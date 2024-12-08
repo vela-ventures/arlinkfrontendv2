@@ -1,19 +1,20 @@
 import { Plus } from 'lucide-react'
 import { Button } from "@/components/ui/button"
-import Link from "next/link"
+import { Link, useLocation } from "react-router-dom"
 import { useConnection, ConnectButton, useActiveAddress } from "arweave-wallet-kit"
-import { useRouter } from 'next/router'
 import { useState, useEffect } from 'react'
 import { getProfileByWalletAddress, ProfileHeaderType } from '@/lib/Bazar';
 
 export default function Navbar() {
+    //@ts-ignore
     const { connected } = useConnection();
     const address = useActiveAddress();
-    const router = useRouter();
+    //@ts-ignore
     const [isNewDeployment, setIsNewDeployment] = useState(false);
     const [profile, setProfile] = useState<ProfileHeaderType | null>(null);
 
-    const isDeployPage = router.pathname === '/deploy';
+    const location = useLocation();
+    const isDeployPage = location.pathname === '#/deploy';
 
     useEffect(() => {
         async function fetchProfile() {
@@ -42,10 +43,10 @@ export default function Navbar() {
                     {isDeployPage ? "Create New Deployment" : `${displayName}'s projects`}
                 </span>
        
-                <Link href="/dashboard">
+                <Link to="/dashboard">
                     <Button variant="ghost">Dashboard</Button>
                 </Link>
-                <Link href="/deploy">
+                <Link to="/deploy">
                     <Button variant="ghost">
                         <Plus className="mr-2 h-4 w-4" />
                         New Deployment
@@ -54,9 +55,11 @@ export default function Navbar() {
             </div>
             <div className="flex items-center space-x-4">
                 <Button variant="ghost">Feedback</Button>
-                <Link href="https://arlink.gitbook.io/arlink-docs/getting-started/quickstart" target="_blank">
+                <a href="https://arlink.gitbook.io/arlink-docs/getting-started/quickstart" 
+                   target="_blank" 
+                   rel="noopener noreferrer">
                     <Button variant="ghost">Docs</Button>
-                </Link>
+                </a>
                 <ConnectButton />
                 <div className="w-8 h-8 bg-purple-500 rounded-full">
                     {avatar && (
