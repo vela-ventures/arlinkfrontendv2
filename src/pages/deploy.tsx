@@ -188,18 +188,12 @@ export default function Deploy() {
     }, [repoUrl, githubToken]);
 
     useEffect(() => {
-        const code = searchParams.get('code');
-        const previousStep = sessionStorage.getItem('deploy_previous_step');
-        
-        if (code && !githubToken) {
-            setIsAuthenticating(true);
-        } else if (githubToken) {
+        // Only respond to successful authentication
+        if (githubToken) {
             setStep("repository");
-            sessionStorage.removeItem('deploy_previous_step'); // Clean up
-        } else if (previousStep) {
-            setStep(previousStep as any);
+            setIsAuthenticating(false);
         }
-    }, [githubToken, searchParams]);
+    }, [githubToken]);
 
     async function fetchRepositories() {
         if (!githubToken) return;
