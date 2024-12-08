@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useGlobalState } from "@/hooks/useGlobalState";
 import { runLua } from "@/lib/ao-vars";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
@@ -162,6 +162,8 @@ export default function Deploy() {
     const [customArnsName, setCustomArnsName] = useState("");
     const [deploymentCompleted, setDeploymentCompleted] = useState(false);
     const [deploymentSuccess, setDeploymentSuccess] = useState(false);
+    const [searchParams] = useSearchParams();
+    const [isAuthenticating, setIsAuthenticating] = useState(false);
     
     //@ts-ignore
     const arweave = Arweave.init({
@@ -184,6 +186,16 @@ export default function Deploy() {
             fetchBranches();
         }
     }, [repoUrl, githubToken]);
+
+    useEffect(() => {
+        // If we have a code but no token, we're probably in the middle of auth
+        const code = searchParams.get('code');
+        if (code && !githubToken) {
+            setStep("initial"); // Reset to initial step while authenticating
+        } else if (githubToken) {
+            setStep("repository"); // Move to repository step when we have a token
+        }
+    }, [githubToken, searchParams]);
 
     async function fetchRepositories() {
         if (!githubToken) return;
@@ -471,23 +483,37 @@ export default function Deploy() {
                 <main className="p-6 max-w-4xl mx-auto">
                     {step === "initial" && (
                         <div className="space-y-6">
-                            <h2 className="text-xl font-semibold">Select a Git provider to import an existing project</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <GitHubLoginButton
-                                    onSuccess={() => setStep("repository")}
-                                    className="flex items-center justify-center space-x-2 h-16 bg-primary/80 hover:bg-primary/90 text-primary-foreground shadow-lg"
-                                >
-                                    <Github className="w-6 h-6" />
-                                    <span>Import from GitHub</span>
-                                </GitHubLoginButton>
-                                <Button 
-                                    className="flex items-center justify-center space-x-2 h-16 bg-primary/80 hover:bg-primary/90 text-primary-foreground shadow-lg"
-                                    onClick={handleProtocolLandImport}
-                                >
-                                    <Globe className="w-6 h-6" />
-                                    <span>Import from Protocol Land</span>
-                                </Button>
-                            </div>
+                            {isAuthenticating ? (
+                                <div className="flex items-center justify-center">
+                                    <Loader className="animate-spin mr-2" />
+                                    <span>Authenticating with GitHub...</span>
+                                </div>
+                            ) : (
+                                <>
+                                    <h2 className="text-xl font-semibold">
+                                        Select a Git provider to import an existing project
+                                    </h2>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <GitHubLoginButton
+                                            onSuccess={() => {
+                                                setIsAuthenticating(false);
+                                                setStep("repository");
+                                            }}
+                                            className="flex items-center justify-center space-x-2 h-16 bg-primary/80 hover:bg-primary/90 text-primary-foreground shadow-lg"
+                                        >
+                                            <Github className="w-6 h-6" />
+                                            <span>Import from GitHub</span>
+                                        </GitHubLoginButton>
+                                        <Button 
+                                            className="flex items-center justify-center space-x-2 h-16 bg-primary/80 hover:bg-primary/90 text-primary-foreground shadow-lg"
+                                            onClick={handleProtocolLandImport}
+                                        >
+                                            <Globe className="w-6 h-6" />
+                                            <span>Import from Protocol Land</span>
+                                        </Button>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     )}
 
