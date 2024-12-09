@@ -4,10 +4,10 @@
     <meta charset="utf-8">
     <title>Arlink</title>
     <script>
-      // Store the route path before redirecting
-      sessionStorage.setItem('redirect', window.location.pathname);
-      // Redirect to the root
-      window.location.href = '/';
+      // Store the full URL including query parameters
+      sessionStorage.setItem('redirect', window.location.pathname + window.location.search);
+      // Redirect to the root while preserving query parameters
+      window.location.href = '/' + window.location.search;
     </script>
   </head>
   <body>

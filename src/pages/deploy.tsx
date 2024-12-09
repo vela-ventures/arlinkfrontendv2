@@ -3,18 +3,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useGlobalState } from "@/hooks/useGlobalState";
 import { runLua } from "@/lib/ao-vars";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
-import { useEffect, useState, useCallback } from "react";
+import { SetStateAction, useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
 import Arweave from "arweave";
 import { Loader } from "lucide-react";
 import axios from 'axios';
-import { useActiveAddress } from 'arweave-wallet-kit';  
+import { useActiveAddress } from 'arweave-wallet-kit'; 
 import Ansi from "@agbishop/react-ansi-18";
 import { BUILDER_BACKEND } from "@/lib/utils";
 import useDeploymentManager from "@/hooks/useDeploymentManager";
-import { GitHubLoginButton } from '@/components/Githubloginbutton';
+import { GitHubLoginButton, handleGitHubCallback } from '@/components/Githubloginbutton';
 import { getWalletOwnedNames } from '@/lib/get-arns';
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, ArrowRight, Globe, Github } from "lucide-react";
@@ -83,7 +83,6 @@ function Logs({ name, deploying, repoUrl }: { name: string, deploying?: boolean,
             try {
                 const logs = await axios.get(`${BUILDER_BACKEND}/logs/${owner}/${repo}`);
                 console.log(logs.data);
-                //@ts-ignore
                 setOutput((logs.data as string).replaceAll(/\\|\||\-/g, ""));
                 setError(null); // Clear any previous errors
 
@@ -131,9 +130,11 @@ function createTokenizedRepoUrl(repoUrl: string, token: string): string {
 }
 
 export default function Deploy() {
+    const [searchParams] = useSearchParams();
     const globalState = useGlobalState();
+    const [isAuthenticating, setIsAuthenticating] = useState(false);
+
     const navigate = useNavigate();
-    //@ts-ignore
     const { managerProcess, refresh , deployments } = useDeploymentManager();
     const [projName, setProjName] = useState("");
     const [repoUrl, setRepoUrl] = useState("");
@@ -147,7 +148,6 @@ export default function Deploy() {
     const [branches, setBranches] = useState([""]);
     const [loadingBranches, setLoadingBranches] = useState(false);
     const [branchError, setBranchError] = useState("");
-    //@ts-ignore
     const { githubToken, setGithubToken } = useGlobalState();
     const [repositories, setRepositories] = useState<Repository[]>([]);
     const [arnsNames, setArnsNames] = useState<{ name: string; processId: string }[]>([]);
@@ -156,16 +156,13 @@ export default function Deploy() {
     const [showArnsDropdown, setShowArnsDropdown] = useState(false);
     const [step, setStep] = useState<"initial" | "repository" | "project" | "domain" | "deploy">("initial");
     const [deploymentStarted, setDeploymentStarted] = useState(false);
-    //@ts-ignore
     const [deploymentFailed, setDeploymentFailed] = useState(false);
     const [useArns, setUseArns] = useState(false);
     const [customArnsName, setCustomArnsName] = useState("");
     const [deploymentCompleted, setDeploymentCompleted] = useState(false);
     const [deploymentSuccess, setDeploymentSuccess] = useState(false);
-    const [searchParams] = useSearchParams();
-    const [isAuthenticating, setIsAuthenticating] = useState(false);
     
-    //@ts-ignore
+
     const arweave = Arweave.init({
         host: "arweave.net",
         port: 443,
@@ -188,11 +185,27 @@ export default function Deploy() {
     }, [repoUrl, githubToken]);
 
     useEffect(() => {
-        if (githubToken) {
-            setStep("repository");
-            setIsAuthenticating(false);
+        const code = searchParams.get('code');
+        
+        if (code && !isAuthenticating && !githubToken) {
+            setIsAuthenticating(true);
+            
+            handleGitHubCallback(code)
+                .then(token => {
+                    setGithubToken(token);
+                    setStep("repository");
+                    // Update URL without causing a reload
+                    navigate('/deploy', { replace: true });
+                })
+                .catch(error => {
+                    console.error('GitHub auth error:', error);
+                    toast.error('Failed to authenticate with GitHub');
+                })
+                .finally(() => {
+                    setIsAuthenticating(false);
+                });
         }
-    }, [githubToken]);
+    }, [searchParams, isAuthenticating, githubToken]);
 
     async function fetchRepositories() {
         if (!githubToken) return;
@@ -267,7 +280,6 @@ export default function Deploy() {
         if (deployments.find(dep => dep.Name === projName)) return toast.error("Project name already exists");
 
         let finalArnsProcess = arnsProcess;
-        //@ts-ignore
         let customRepo = null;
         if (!useArns && customArnsName) {
             finalArnsProcess = `${customArnsName}.arlink.arweave.net`;
@@ -314,7 +326,7 @@ export default function Deploy() {
                 
                 console.log("https://arweave.net/" + response.data);
                 toast.success("Deployment successful");
-                //@ts-ignore
+
                 const updres = await runLua(`db:exec[[UPDATE Deployments SET DeploymentId='${response.data}' WHERE Name='${projName}']]`, globalState.managerProcess);
 
                 if (useArns || customArnsName) {
@@ -354,7 +366,6 @@ export default function Deploy() {
             setDeploymentCompleted(true);
         }
     }, [projName, repoUrl, selectedBranch, installCommand, buildCommand, subDirectory, outputDir, customArnsName, useArns, arnsProcess, githubToken, globalState.managerProcess, navigate]);
-
     const handleProtocolLandImport = () => {
         navigate("/deploythirdparty");
     };
@@ -468,6 +479,11 @@ export default function Deploy() {
         }
     };
 
+    const onGitHubSuccess = useCallback(() => {
+        setIsAuthenticating(false);
+        setStep("repository");  // This will show the repository selection step
+    }, []);
+
     return (
         <Layout>
             <div className="min-h-screen">
@@ -480,37 +496,24 @@ export default function Deploy() {
                 <main className="p-6 max-w-4xl mx-auto">
                     {step === "initial" && (
                         <div className="space-y-6">
-                            {isAuthenticating ? (
-                                <div className="flex items-center justify-center">
-                                    <Loader className="animate-spin mr-2" />
-                                    <span>Authenticating with GitHub...</span>
-                                </div>
-                            ) : (
-                                <>
-                                    <h2 className="text-xl font-semibold">
-                                        Select a Git provider to import an existing project
-                                    </h2>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <GitHubLoginButton
-                                            onSuccess={() => {
-                                                setIsAuthenticating(false);
-                                                setStep("repository");
-                                            }}
-                                            className="flex items-center justify-center space-x-2 h-16 bg-primary/80 hover:bg-primary/90 text-primary-foreground shadow-lg"
-                                        >
-                                            <Github className="w-6 h-6" />
-                                            <span>Import from GitHub</span>
-                                        </GitHubLoginButton>
-                                        <Button 
-                                            className="flex items-center justify-center space-x-2 h-16 bg-primary/80 hover:bg-primary/90 text-primary-foreground shadow-lg"
-                                            onClick={handleProtocolLandImport}
-                                        >
-                                            <Globe className="w-6 h-6" />
-                                            <span>Import from Protocol Land</span>
-                                        </Button>
-                                    </div>
-                                </>
-                            )}
+                            <h2 className="text-xl font-semibold">Select a Git provider to import an existing project</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <GitHubLoginButton
+                                        onSuccess={onGitHubSuccess}
+                                        disabled={isAuthenticating}
+                                        className="flex items-center justify-center space-x-2 h-16 bg-primary/80 hover:bg-primary/90 text-primary-foreground shadow-lg"
+                                    >
+                                        <Github className="w-6 h-6" />
+                                        <span>Import from GitHub</span>
+                                    </GitHubLoginButton>
+                                <Button 
+                                    className="flex items-center justify-center space-x-2 h-16 bg-primary/80 hover:bg-primary/90 text-primary-foreground shadow-lg"
+                                    onClick={handleProtocolLandImport}
+                                >
+                                    <Globe className="w-6 h-6" />
+                                    <span>Import from Protocol Land</span>
+                                </Button>
+                            </div>
                         </div>
                     )}
 
@@ -722,7 +725,7 @@ export default function Deploy() {
                 </main>
 
                 <footer className="mt-8 p-6 border-t border-border text-center text-muted-foreground bg-transparent">
-                    <a href="https://arlink.gitbook.io/arlink-docs/getting-started/making-your-website-arweave-compatible" className="hover:text-foreground">Learn more about deploying projects →</a>
+                    <a href="#" className="hover:text-foreground">Learn more about deploying projects →</a>
                 </footer>
             </div>
         </Layout>
