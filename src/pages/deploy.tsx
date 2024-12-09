@@ -188,19 +188,11 @@ export default function Deploy() {
     }, [repoUrl, githubToken]);
 
     useEffect(() => {
-        const code = searchParams.get('code');
-        
-        if (code && !githubToken && !isAuthenticating) {
-            setIsAuthenticating(true);
-            // Let the GitHubLoginButton handle the auth
-            return;
-        }
-        
         if (githubToken) {
             setStep("repository");
             setIsAuthenticating(false);
         }
-    }, [githubToken, searchParams, isAuthenticating]);
+    }, [githubToken]);
 
     async function fetchRepositories() {
         if (!githubToken) return;
