@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useGlobalState } from '@/hooks/useGlobalState';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import {  useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { Github } from 'lucide-react';
@@ -9,7 +9,7 @@ import { ReactNode } from 'react';
 import { BUILDER_BACKEND } from '@/lib/utils';
 
 import { Octokit } from '@octokit/rest';
-const GITHUB_CLIENT_ID = import.meta.env.VITE_GITHUB_CLIENT_ID as string;
+const GITHUB_CLIENT_ID = 'Iv23linjZLxHZeHfSgqB'
 
 export async function initiateGitHubAuth() {
     const BASE_URL = import.meta.env.VITE_ENV === 'test' ? 'http://localhost:3000' : "https://arlink.arweave.net";
@@ -78,22 +78,14 @@ export function GitHubLoginButton({ onSuccess, className, children, disabled }: 
         if (code && !isProcessingAuth && !githubToken) {
             setIsProcessingAuth(true);
             
-            // Prevent navigation/reload
-            if (window.history && window.history.replaceState) {
-                window.history.replaceState(
-                    null,
-                    '',
-                    window.location.pathname
-                );
-            }
-            
             handleGitHubCallback(code)
                 .then(token => {
-                    console.log("Got token:", token);
                     setGithubToken(token);
                     return checkAndInstallGitHubApp(token);
                 })
                 .then(() => {
+                    // Remove the code from URL without causing a page reload
+                    window.history.replaceState({}, '', window.location.pathname);
                     onSuccess();
                 })
                 .catch(error => {
@@ -116,16 +108,11 @@ export function GitHubLoginButton({ onSuccess, className, children, disabled }: 
         await initiateGitHubAuth();
     };
 
-    // Don't render anything while processing auth
-    if (isProcessingAuth) {
-        return null;
-    }
-
     return (
         <Button
             className={className}
             onClick={handleLogin}
-            disabled={isProcessingAuth}
+            disabled={disabled || isProcessingAuth}
         >
             {children}
         </Button>

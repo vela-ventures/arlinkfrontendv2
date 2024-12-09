@@ -188,31 +188,6 @@ export default function Deploy() {
         }
     }, [repoUrl, githubToken]);
 
-    useEffect(() => {
-        const code = searchParams.get('code');
-        
-        if (code && !isAuthenticating && !githubToken) {
-            setIsAuthenticating(true);
-            
-            handleGitHubCallback(code)
-                .then(token => {
-                    setGithubToken(token);
-                    setStep("repository");
-                    navigate('/deploy', { replace: true });
-                })
-                .catch(error => {
-                    console.error('GitHub auth error:', error);
-                    toast({
-                        description: 'Failed to authenticate with GitHub',
-                        variant: "destructive"
-                    });
-                })
-                .finally(() => {
-                    setIsAuthenticating(false);
-                });
-        }
-    }, [searchParams, isAuthenticating, githubToken]);
-
     async function fetchRepositories() {
         if (!githubToken) return;
         const octokit = new Octokit({ auth: githubToken });
