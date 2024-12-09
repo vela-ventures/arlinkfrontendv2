@@ -26,13 +26,7 @@ type ProtocolLandRepo = {
     cloneUrl: string;
 };
 
-function extractRepoName(url: string): string {
-    return url.replace(/\.git|\/$/, '').split('/').pop() as string;
-}
 
-function extractOwnerName(url: string): string {
-    return url.split("/").reverse()[1];
-}
 
 // Define a custom type for Axios errors
 type AxiosErrorType = {
@@ -47,14 +41,18 @@ function isAxiosError(error: any): error is AxiosErrorType {
   return error && error.isAxiosError === true;
 }
 
-function Logs({ name, deploying, repoUrl }: { name: string, deploying?: boolean, repoUrl: string }) {
+function Logs({ name, deploying, repoUrl, owner }: { 
+    name: string, 
+    deploying?: boolean, 
+    repoUrl: string,
+    owner: string 
+}) {
     const [output, setOutput] = useState("");
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!name || !repoUrl) return;
-        const repo = extractRepoName(repoUrl);
-        const owner = extractOwnerName(repoUrl);
+        if (!name || !repoUrl || !owner) return;
+        const repo = name;
         let startTime = Date.now();
         const waitTime = 60000; // 1 minute in milliseconds
 
@@ -66,7 +64,7 @@ function Logs({ name, deploying, repoUrl }: { name: string, deploying?: boolean,
                 console.log(logs.data);
                 //@ts-ignore
                 setOutput((logs.data as string).replaceAll(/\\|\||\-/g, ""));
-                setError(null); // Clear any previous errors
+                setError(null);
 
                 setTimeout(() => {
                     const logsDiv = document.getElementById("logs");
@@ -90,7 +88,7 @@ function Logs({ name, deploying, repoUrl }: { name: string, deploying?: boolean,
         }, 1000);
 
         return () => { clearInterval(interval); }
-    }, [name, deploying, repoUrl]);
+    }, [name, deploying, repoUrl, owner]);
 
     return (
         <div>
@@ -261,10 +259,11 @@ export default function DeployThirdParty() {
                 buildCommand,
                 outputDir,
                 branch: "main", // Assuming main branch for Protocol Land repos
-                subDirectory: selectedRepo?.name,
+                subDirectory: "./",
                 protocolLand: true,
+                repoName: selectedRepo?.name,
                 walletAddress: address,
-                repoName: customArnsName,
+                customArnsName: customArnsName || "",
                 
                
             }, { timeout: 60 * 60 * 1000, headers: { "Content-Type": "application/json" } });
@@ -473,7 +472,14 @@ export default function DeployThirdParty() {
                         <div className="space-y-4">
                             <h2 className="text-xl font-semibold">Deployment Logs</h2>
                             <div className="bg-card/50 p-4 rounded-md h-64 overflow-y-auto shadow-lg">
-                                <Logs name={projName} deploying={deploying} repoUrl={repoUrl} />
+                                <Logs 
+                                    
+                                    name={selectedRepo?.name || '' } 
+                                    deploying={deploying} 
+                                    repoUrl={repoUrl}
+                                    
+                                    owner={address || ''}
+                                />
                             </div>
                         </div>
                     )}
