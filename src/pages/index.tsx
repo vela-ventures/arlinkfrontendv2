@@ -10,20 +10,20 @@ export default function Home() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // useEffect(() => {
-  //   connect();
-  //   console.log(import.meta.env.VITE_ENV);
+  useEffect(() => {
+    connect();
+    console.log(import.meta.env.VITE_ENV);
 
-  //   // Check if we're not supposed to be on the home page
-  //   if (location.pathname !== '/') {
-  //     navigate(location.pathname + location.search);
-  //   }
-  // }, [navigate, location]);
+    // Check if we're not supposed to be on the home page
+    if (location.pathname !== '/') {
+      navigate(location.pathname + location.search);
+    }
+  }, [navigate, location]);
 
-  // // Only render the home page content if we're actually on the home page
-  // if (location.pathname !== '/') {
-  //   return null; // or a loading spinner
-  // }
+  // Only render the home page content if we're actually on the home page
+  if (location.pathname !== '/') {
+    return null; // or a loading spinner
+  }
   return (
     <>
       <div className="min-h-screen bg-black text-white relative overflow-hidden">
@@ -225,7 +225,7 @@ export default function Home() {
                   © {new Date().getFullYear()} Arlink
                 </span>
                 <span className="text-zinc-700 text-xs font-medium">
-                  Beta 1.0.2
+                  Beta 1.0.8
                 </span>
               </div>
             </div>
