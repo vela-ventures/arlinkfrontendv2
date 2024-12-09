@@ -56,8 +56,14 @@ const initiateGitHubAuth = async (): Promise<void> => {
 
 const handleGitHubCallback = async (code: string): Promise<string> => {
     try {
-        // Prevent default navigation
-        history.replaceState(null, '', '/deploy');
+        // IMPORTANT: Prevent the redirect/reload immediately
+        if (window.history && window.history.replaceState) {
+            window.history.replaceState(
+                {},
+                document.title,
+                window.location.pathname
+            );
+        }
         
         const response = await fetch(`${BUILDER_BACKEND}/github/callback`, {
             method: 'POST',
@@ -128,9 +134,6 @@ export function GitHubLoginButton({ onSuccess, className, children }: GitHubLogi
         if (code && state === savedState && !isProcessingAuth && !githubToken) {
             setIsProcessingAuth(true);
             
-            // Immediately prevent navigation/reload
-            window.history.pushState({}, '', '/deploy');
-            
             handleGitHubCallback(code)
                 .then((token: string) => {
                     setGithubToken(token);
@@ -149,14 +152,6 @@ export function GitHubLoginButton({ onSuccess, className, children }: GitHubLogi
                 });
         }
     }, [searchParams, setGithubToken, onSuccess, isProcessingAuth, githubToken]);
-
-    useEffect(() => {
-        const code = searchParams.get('code');
-        if (code) {
-            console.log('Code detected, before potential reload');
-            window.history.pushState({}, '', '/deploy');
-        }
-    }, [searchParams]);
 
     const handleLogin = async () => {
         try {
