@@ -261,7 +261,7 @@ export default function DeployThirdParty() {
                 buildCommand,
                 outputDir,
                 branch: "main", // Assuming main branch for Protocol Land repos
-                subDirectory: selectedRepo?.name,
+                subDirectory: "./",
                 protocolLand: true,
                 walletAddress: address,
                 repoName: selectedRepo?.name,

@@ -120,9 +120,6 @@ const checkAndInstallGitHubApp = async (token: string): Promise<boolean> => {
 export function GitHubLoginButton({ onSuccess, className, children }: GitHubLoginButtonProps) {
     const { githubToken, setGithubToken } = useGlobalState();
     const [searchParams] = useSearchParams();
-    const navigate = useNavigate();
-
-    // Add this to prevent double processing
     const [isProcessingAuth, setIsProcessingAuth] = useState(false);
 
     useEffect(() => {
@@ -133,6 +130,15 @@ export function GitHubLoginButton({ onSuccess, className, children }: GitHubLogi
         // Only process if we have a code and aren't already processing
         if (code && state === savedState && !isProcessingAuth && !githubToken) {
             setIsProcessingAuth(true);
+            
+            // IMPORTANT: Prevent the redirect/reload immediately
+            if (window.history && window.history.replaceState) {
+                window.history.replaceState(
+                    {},
+                    document.title,
+                    window.location.pathname
+                );
+            }
             
             handleGitHubCallback(code)
                 .then((token: string) => {
