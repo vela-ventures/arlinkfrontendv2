@@ -261,10 +261,10 @@ export default function DeployThirdParty() {
                 buildCommand,
                 outputDir,
                 branch: "main", // Assuming main branch for Protocol Land repos
-                subDirectory: "./",
+                subDirectory: selectedRepo?.name,
                 protocolLand: true,
                 walletAddress: address,
-                repoName: selectedRepo?.name,
+                repoName: customArnsName,
                 
                
             }, { timeout: 60 * 60 * 1000, headers: { "Content-Type": "application/json" } });
