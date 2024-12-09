@@ -1,6 +1,8 @@
 import React from "react";
 import {  useConnection } from "arweave-wallet-kit";
 import Navbar from "@/components/navbar";
+import { Toaster } from "@/components/ui/toaster"
+
 
 export default function Layout({ children }: { children?: React.ReactNode }) {
     const { connected } = useConnection();
@@ -16,6 +18,7 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
                     <div className="text-zinc-200">Connect Wallet to continue :)</div>
                 )}
             </main>
+            <Toaster />
         </div>
     );
 }

@@ -62,11 +62,12 @@ async function checkAndInstallGitHubApp(token: string) {
 
 interface GitHubLoginButtonProps {
     onSuccess: () => void;
-    className?: string;
-    children?: ReactNode;
+    className: string;
+    children: ReactNode;
+    disabled?: boolean;
 }
 
-export function GitHubLoginButton({ onSuccess, className, children }: GitHubLoginButtonProps) {
+export function GitHubLoginButton({ onSuccess, className, children, disabled }: GitHubLoginButtonProps) {
     const { githubToken, setGithubToken } = useGlobalState();
     const [searchParams] = useSearchParams();
     const [isProcessingAuth, setIsProcessingAuth] = useState(false);

@@ -19,6 +19,7 @@
     "@radix-ui/react-slot": "^1.1.0",
     "@radix-ui/react-switch": "^1.1.1",
     "@radix-ui/react-tabs": "^1.1.1",
+    "@radix-ui/react-toast": "^1.2.2",
     "@tanstack/react-virtual": "^3.11.0",
     "arweave-indexer": "^1.1.0",
     "arweave-wallet-kit": "^1.0.2",

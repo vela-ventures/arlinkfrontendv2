@@ -5,8 +5,8 @@ import { useGlobalState } from "@/hooks/useGlobalState";
 import { runLua } from "@/lib/ao-vars";
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
-import { SetStateAction, useEffect, useState, useCallback } from "react";
-import { toast } from "sonner";
+import {  useEffect, useState, useCallback } from "react";
+import { useToast } from "@/hooks/use-toast";
 import Arweave from "arweave";
 import { Loader } from "lucide-react";
 import axios from 'axios';
@@ -83,6 +83,7 @@ function Logs({ name, deploying, repoUrl }: { name: string, deploying?: boolean,
             try {
                 const logs = await axios.get(`${BUILDER_BACKEND}/logs/${owner}/${repo}`);
                 console.log(logs.data);
+                //@ts-ignore
                 setOutput((logs.data as string).replaceAll(/\\|\||\-/g, ""));
                 setError(null); // Clear any previous errors
 
@@ -130,11 +131,13 @@ function createTokenizedRepoUrl(repoUrl: string, token: string): string {
 }
 
 export default function Deploy() {
+    const { toast } = useToast();
     const [searchParams] = useSearchParams();
     const globalState = useGlobalState();
     const [isAuthenticating, setIsAuthenticating] = useState(false);
 
     const navigate = useNavigate();
+    //@ts-ignore
     const { managerProcess, refresh , deployments } = useDeploymentManager();
     const [projName, setProjName] = useState("");
     const [repoUrl, setRepoUrl] = useState("");
@@ -156,13 +159,14 @@ export default function Deploy() {
     const [showArnsDropdown, setShowArnsDropdown] = useState(false);
     const [step, setStep] = useState<"initial" | "repository" | "project" | "domain" | "deploy">("initial");
     const [deploymentStarted, setDeploymentStarted] = useState(false);
+    //@ts-ignore
     const [deploymentFailed, setDeploymentFailed] = useState(false);
     const [useArns, setUseArns] = useState(false);
     const [customArnsName, setCustomArnsName] = useState("");
     const [deploymentCompleted, setDeploymentCompleted] = useState(false);
     const [deploymentSuccess, setDeploymentSuccess] = useState(false);
     
-
+    //@ts-ignore
     const arweave = Arweave.init({
         host: "arweave.net",
         port: 443,
@@ -194,12 +198,14 @@ export default function Deploy() {
                 .then(token => {
                     setGithubToken(token);
                     setStep("repository");
-                    // Update URL without causing a reload
                     navigate('/deploy', { replace: true });
                 })
                 .catch(error => {
                     console.error('GitHub auth error:', error);
-                    toast.error('Failed to authenticate with GitHub');
+                    toast({
+                        description: 'Failed to authenticate with GitHub',
+                        variant: "destructive"
+                    });
                 })
                 .finally(() => {
                     setIsAuthenticating(false);
@@ -231,7 +237,10 @@ export default function Deploy() {
             setRepositories(allRepos);
         } catch (error) {
             console.error('Error fetching repositories:', error);
-            toast.error('Failed to fetch repositories');
+            toast({
+                description: 'Failed to fetch repositories',
+                variant: "destructive"
+            });
         }
     }
 
@@ -267,25 +276,52 @@ export default function Deploy() {
     }
 
     const deploy = useCallback(async () => {
-        if (!projName) return toast.error("Project Name is required");
-        if (!repoUrl) return toast.error("Repository Url is required");
-        if (!selectedBranch) return toast.error("Branch is required");
-        if (!installCommand) return toast.error("Install Command is required");
-        if (!buildCommand) return toast.error("Build Command is required");
-        if (!outputDir) return toast.error("Output Directory is required");
+        if (!projName) return toast({
+            description: "Project Name is required",
+            variant: "destructive"
+        });
+        if (!repoUrl) return toast({
+            description: "Repository Url is required",
+            variant: "destructive"
+        });
+        if (!selectedBranch) return toast({
+            description: "Branch is required",
+            variant: "destructive"
+        });
+        if (!installCommand) return toast({
+            description: "Install Command is required",
+            variant: "destructive"
+        });
+        if (!buildCommand) return toast({
+            description: "Build Command is required",
+            variant: "destructive"
+        });
+        if (!outputDir) return toast({
+            description: "Output Directory is required",
+            variant: "destructive"
+        });
 
-        if (deploying) return;
+        if (!globalState.managerProcess) return toast({
+            description: "Manager process not found",
+            variant: "destructive"
+        });
+        if (deployments.find(dep => dep.Name === projName)) return toast({
+            description: "Project name already exists",
+            variant: "destructive"
+        });
 
-        if (!globalState.managerProcess) return toast.error("Manager process not found");
-        if (deployments.find(dep => dep.Name === projName)) return toast.error("Project name already exists");
+        if (!githubToken) return toast({
+            description: "GitHub token is required for deployment.",
+            variant: "destructive"
+        });
 
         let finalArnsProcess = arnsProcess;
+        //@ts-ignore
         let customRepo = null;
         if (!useArns && customArnsName) {
             finalArnsProcess = `${customArnsName}.arlink.arweave.net`;
             customRepo = customArnsName;
         }
-        if (!githubToken) return toast.error("GitHub token is required for deployment.");
 
         // Create the tokenized repo URL
         const tokenizedRepoUrl = createTokenizedRepoUrl(repoUrl, githubToken);
@@ -304,7 +340,10 @@ export default function Deploy() {
         console.log(query);
 
         const res = await runLua(query, globalState.managerProcess);
-        if (res.Error) return toast.error(res.Error);
+        if (res.Error) return toast({
+            description: res.Error,
+            variant: "destructive"
+        });
         console.log(res);
         await refresh();
 
@@ -325,8 +364,10 @@ export default function Deploy() {
                
                 
                 console.log("https://arweave.net/" + response.data);
-                toast.success("Deployment successful");
-
+                toast({
+                    description: "Deployment successful"
+                });
+                //@ts-ignore
                 const updres = await runLua(`db:exec[[UPDATE Deployments SET DeploymentId='${response.data}' WHERE Name='${projName}']]`, globalState.managerProcess);
 
                 if (useArns || customArnsName) {
@@ -351,14 +392,20 @@ export default function Deploy() {
                 navigate(`/deployment?repo=${projName}`);
                 window.open("https://arweave.net/" + response.data, "_blank");
             } else {
-                toast.error("Deployment failed: Unexpected response");
+                toast({
+                    description: "Deployment failed: Unexpected response",
+                    variant: "destructive"
+                });
                 navigate(`/deployment?repo=${projName}`);
                 throw new Error("Deployment failed: Unexpected response");
                 
             }
         } catch (error) {
             console.error("Deployment error:", error);
-            toast.error("Deployment failed. Please check logs on dashboard.");
+            toast({
+                description: "Deployment failed. Please check logs on dashboard.",
+                variant: "destructive"
+            });
             setDeploymentFailed(true);
             setDeploymentSuccess(false);
         } finally {
@@ -372,7 +419,10 @@ export default function Deploy() {
 
     async function fetchArnsNames() {
         if (!activeAddress) {
-            toast.error("Wallet address not found");
+            toast({
+                description: "Wallet address not found",
+                variant: "destructive"
+            });
             return;
         }
         setLoadingArnsNames(true);
@@ -381,7 +431,10 @@ export default function Deploy() {
             setArnsNames(names);
         } catch (error) {
             console.error("Error fetching ArNS names:", error);
-            toast.error("Failed to fetch ArNS names");
+            toast({
+                description: "Failed to fetch ArNS names",
+                variant: "destructive"
+            });
         } finally {
             setLoadingArnsNames(false);
         }
@@ -500,6 +553,7 @@ export default function Deploy() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <GitHubLoginButton
                                         onSuccess={onGitHubSuccess}
+                                    
                                         disabled={isAuthenticating}
                                         className="flex items-center justify-center space-x-2 h-16 bg-primary/80 hover:bg-primary/90 text-primary-foreground shadow-lg"
                                     >
