@@ -1,5 +1,6 @@
 import { parentPort, workerData } from 'worker_threads';
 import { spawn } from 'child_process';
+import fs from 'fs';
 
 function runBuild(buildParams) {
   const { repository, branch, installCommand, buildCommand, outputDist, subDirectory, protocolLand, walletAddress, repoName, projectRoot } = buildParams;
@@ -16,25 +17,37 @@ function runBuild(buildParams) {
   // Set 10 minute timeout
   const timeout = setTimeout(() => {
     console.error(`Build timeout reached (10 minutes) for ${repository}`);
-    buildProcess.kill(); // This kills just this process tree
-    parentPort.postMessage(`Build for ${repository} terminated due to timeout`);
+    buildProcess.kill();
+    parentPort.postMessage({ success: false, error: `Build for ${repository} terminated due to timeout` });
     parentPort.close();
-  }, 720000); // 10 minutes in milliseconds
+  }, 720000);
+
+  let buildOutput = '';
 
   buildProcess.stdout.on('data', (data) => {
+    buildOutput += data;
     console.log(`${data}`);
   });
 
   buildProcess.stderr.on('data', (data) => {
+    buildOutput += data;
     console.error(`${data}`);
   });
 
   buildProcess.on('close', (code) => {
     clearTimeout(timeout);
     if (code === 0) {
-      parentPort.postMessage(`Build for ${repository} completed successfully`);
+      parentPort.postMessage({ 
+        success: true, 
+        message: `Build for ${repository} completed successfully`,
+        logs: buildOutput
+      });
     } else {
-      parentPort.postMessage(`Build for ${repository} failed with code ${code}`);
+      parentPort.postMessage({ 
+        success: false, 
+        error: `Build for ${repository} failed with code ${code}`,
+        logs: buildOutput
+      });
     }
     parentPort.close();
   });
@@ -42,7 +55,11 @@ function runBuild(buildParams) {
   buildProcess.on('error', (err) => {
     clearTimeout(timeout);
     console.error('Failed to start build process:', err);
-    parentPort.postMessage(`Build for ${repository} failed to start: ${err.message}`);
+    parentPort.postMessage({ 
+      success: false, 
+      error: `Build for ${repository} failed to start: ${err.message}`,
+      logs: buildOutput
+    });
     parentPort.close();
   });
 }

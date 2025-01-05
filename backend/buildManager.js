@@ -14,15 +14,23 @@ function createBuildWorker(buildParams) {
     });
 
     worker.on('message', (message) => {
-      console.log(`Build completed: ${message}`);
-      resolve(message);
+      if (message.success) {
+        console.log(`Build completed: ${message.message}`);
+        resolve(message);
+      } else {
+        console.error(`Build failed: ${message.error}`);
+        reject(new Error(message.error));
+      }
     });
 
-    worker.on('error', reject);
+    worker.on('error', (error) => {
+      console.error('Worker error:', error);
+      reject(error);
+    });
 
     worker.on('exit', (code) => {
       runningBuilds--;
-      if (code !== 0) {
+      if (code !== 0 && code !== null) {
         reject(new Error(`Worker stopped with exit code ${code}`));
       }
       processQueue();

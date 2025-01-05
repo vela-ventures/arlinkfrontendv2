@@ -227,20 +227,20 @@ app.post("/deploy", async (req, res) => {
       
       const result = await handleBuild(req, outputDist, owner, folderName);
       if (result === false) {
-        fs.rmSync(`./builds/${owner}/${folderName}`, { recursive: true, force: true });
-        return res.status(500).send(`Deployment failed:`);
-      }
-        buildConfig.url = result;
-        // if repoName is not provided, use the owner name and folder name
-        const undernamePre = buildConfig.repoName ? buildConfig.repoName : folderName;
-        const arnsUnderName = _.kebabCase(`${undernamePre}`.toLowerCase());
-        const { checkArns, finalUnderName }= await setUnderName(arnsUnderName, result, latestCommit, owner, folderName);
-        if (checkArns) {
-          buildConfig.arnsUnderName = finalUnderName;
+        // Read logs before cleaning up
+        const logPathFolder = `./builds/${owner}/${folderName}/build.log`;
+        try {
+          const logData = await fs.promises.readFile(logPathFolder, "utf-8");
+          // Wait a few seconds to ensure logs are readable by streaming clients
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          await fs.promises.rm(`./builds/${owner}/${folderName}`, { recursive: true, force: true });
+          return res.status(500).json({ error: "Build failed", logs: logData });
+        } catch (readError) {
+          console.error(`Error reading log: ${readError.message}`);
+          return res.status(500).json({ error: "Build failed", logs: "Logs not available" });
         }
-        await addToRegistry(buildConfig);
-        return res.status(200).send(result);
-
+      }
+      return res.status(200).send(result);
     } else {
       const deployCount = await getDeployCount(owner, folderName);
       const maxDailyDeploys = buildConfig.maxDailyDeploys;
@@ -277,17 +277,17 @@ app.post("/deploy", async (req, res) => {
     console.error("Build failed:", error);
     const logPathFolder = `./builds/${owner}/${folderName}/build.log`;
 
-    fs.readFile(logPathFolder, "utf-8", (err, data) => {
-      if (err) {
-        console.error(`Error reading log: ${err.message}`);
-        return res.status(404).send("Log not found");
-      } else {
-        fs.rmSync(`./builds/${owner}/${folderName}`, { recursive: true, force: true });
-        return res.status(500).send(data);
-      }
-    });
-    
-    return res.status(500).send(error.message);
+    try {
+      // Read logs before cleaning up
+      const logData = await fs.promises.readFile(logPathFolder, "utf-8");
+      // Wait a few seconds to ensure logs are readable by streaming clients
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      await fs.promises.rm(`./builds/${owner}/${folderName}`, { recursive: true, force: true });
+      return res.status(500).json({ error: error.message, logs: logData });
+    } catch (readError) {
+      console.error(`Error reading log: ${readError.message}`);
+      return res.status(500).json({ error: error.message, logs: "Logs not available" });
+    }
   }
 });
 
@@ -303,6 +303,61 @@ app.get("/logs/:owner/:repo", (req, res) => {
       return res.status(200).send(data);
     }
   });
+});
+
+// Add streaming logs support
+app.get("/logs/:owner/:repo/stream", (req, res) => {
+  const { owner, repo } = req.params;
+  const logPath = `./builds/${owner}/${repo}/build.log`;
+  let retryCount = 0;
+  const maxRetries = 30; // 1 minute with 2-second intervals
+
+  // Set headers for SSE
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+
+  const checkAndSendLogs = async () => {
+    try {
+      if (fs.existsSync(logPath)) {
+        const data = await fs.promises.readFile(logPath, "utf-8");
+        res.write(`data: ${JSON.stringify(data)}\n\n`);
+
+        // Check if build has completed or failed
+        if (data.includes("Build completed") || data.includes("Build failed") || data.includes("error during build")) {
+          res.write(`event: build_complete\ndata: Build process finished\n\n`);
+          return true; // Signal completion
+        }
+      } else {
+        retryCount++;
+        if (retryCount >= maxRetries) {
+          res.write(`event: timeout\ndata: Log monitoring timed out\n\n`);
+          return true; // Signal completion
+        }
+      }
+      return false; // Continue monitoring
+    } catch (error) {
+      console.error(`Error reading logs: ${error.message}`);
+      return false;
+    }
+  };
+
+  const interval = setInterval(async () => {
+    const shouldStop = await checkAndSendLogs();
+    if (shouldStop) {
+      clearInterval(interval);
+      res.end();
+    }
+  }, 2000);
+
+  // Clean up on client disconnect
+  req.on('close', () => {
+    clearInterval(interval);
+    res.end();
+  });
+
+  // Initial check
+  checkAndSendLogs();
 });
 
 
