@@ -50,6 +50,30 @@ export default function DeploymentComponent({
     // github path
     const githubUserPath = extractGithubPath(deployment.RepoUrl);
 
+    const updateUnderName = async (underName: string) => {
+        try {
+            await runLua(
+                `local res = db:exec[[
+                  ALTER TABLE Deployments 
+                  ADD COLUMN UnderName TEXT
+                ]]`,
+                managerProcess,
+            );
+            // console.log("Table altered:", alter);
+
+            await runLua(
+                `db:exec[[UPDATE Deployments SET UnderName='${underName}' WHERE Name='${deployment.Name}']]`,
+                managerProcess,
+            );
+            // console.log("UnderName updated:", updateQuery);
+            refresh();
+            return { success: true };
+        } catch (error) {
+            console.error("Error updating UnderName:", error);
+            return { success: false, error };
+        }
+    };
+
     // checking for any deploymentConfig
     useEffect(() => {
         if (!deployment?.RepoUrl) return;
@@ -67,7 +91,7 @@ export default function DeploymentComponent({
 
             await runLua(
                 `db:exec[[UPDATE Deployments SET DeploymentId='${newDeploymentUrl}' WHERE Name='${deployment.Name}']]`,
-                globalState.managerProcess
+                globalState.managerProcess,
             );
         };
 
@@ -91,7 +115,7 @@ export default function DeploymentComponent({
             console.error("Error fetching deployment URL:", error);
             toast.error("Failed to fetch deployment URL");
             setError(
-                "Failed to fetch deployment URL. Using last known values."
+                "Failed to fetch deployment URL. Using last known values.",
             );
             setDeploymentUrl(deployment.DeploymentId || "");
             getFallbackArNSName();
@@ -102,19 +126,35 @@ export default function DeploymentComponent({
                 setIsFetchingProject(true);
                 const { owner, repoName } = extractRepoInfo(deployment.RepoUrl);
 
-                const response = await axios.get<DeploymentConfig>(
-                    `${TESTING_FETCH}/config/${owner}/${repoName}`
-                );
+                /*
+                    I mean let's think about this for a second
+                    if we already have all the data in the on chain why would we need to fetch from the backend
+                    let's only call this for the people who don't have undername field in their table
+                    if they don't have the undername we call this axios, add the column and update the column with the undername
+                */
 
-                const { url: newDeploymentUrl, arnsUnderName } = response.data;
-                deploymentConfigStore.addDeployment(response.data);
-                deploymentConfigStore.updateDeployment(
-                    githubUserPath,
-                    response.data
-                );
-                setDeploymentUrl(newDeploymentUrl);
-                setAntName(arnsUnderName);
-                await updateDeploymentInDB(newDeploymentUrl);
+                /*
+                    By the way if the user has the undername already, this is page loads blazingly fast 
+                */
+                if (!deployment.UnderName) {
+                    const response = await axios.get<DeploymentConfig>(
+                        `${TESTING_FETCH}/config/${owner}/${repoName}`,
+                    );
+
+                    const { url: newDeploymentUrl, arnsUnderName } =
+                        response.data;
+                    deploymentConfigStore.addDeployment(response.data);
+                    deploymentConfigStore.updateDeployment(
+                        githubUserPath,
+                        response.data,
+                    );
+
+                    await updateUnderName(arnsUnderName);
+
+                    setDeploymentUrl(newDeploymentUrl);
+                    setAntName(arnsUnderName);
+                    await updateDeploymentInDB(newDeploymentUrl);
+                }
             } catch (error) {
                 handleError(error);
             } finally {
@@ -135,7 +175,7 @@ export default function DeploymentComponent({
             if (!redeploying) return clearInterval(interval);
             try {
                 const logs = await axios.get(
-                    `${TESTING_FETCH}/logs/${owner}/${folderName}`
+                    `${TESTING_FETCH}/logs/${owner}/${folderName}`,
                 );
                 const rawLogsData = logs.data.replaceAll(/\\|\||\-/g, "");
 
@@ -143,7 +183,7 @@ export default function DeploymentComponent({
                 const trimmedLogs = rawLogsData.split("\n").reduce(
                     (
                         acc: { started: boolean; logs: string[] },
-                        line: string
+                        line: string,
                     ) => {
                         if (
                             acc.started ||
@@ -154,7 +194,7 @@ export default function DeploymentComponent({
                         }
                         return acc;
                     },
-                    { started: false, logs: [] as string[] }
+                    { started: false, logs: [] as string[] },
                 );
 
                 const safeLogsData = trimmedLogs.logs.join("\n");
@@ -177,7 +217,7 @@ export default function DeploymentComponent({
                             }', '${safeLogsData.replace(/'/g, "''")}')
                             ]])
                         `,
-                        globalState.managerProcess
+                        globalState.managerProcess,
                     );
                 }
             } catch (error) {
@@ -224,7 +264,7 @@ export default function DeploymentComponent({
 
                 await runLua(
                     `db:exec[[UPDATE Deployments SET DeploymentId='${txid.data}' WHERE Name='${projName}']]`,
-                    globalState.managerProcess
+                    globalState.managerProcess,
                 );
 
                 navigate(`/deployment?repo=${projName}`);
@@ -243,12 +283,11 @@ export default function DeploymentComponent({
             console.log(error);
             setRedeploying(false);
             setError(
-                "An error occurred during deployment. Please try again later."
+                "An error occurred during deployment. Please try again later.",
             );
         }
     };
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
     useEffect(() => {
         refresh();
     }, []);
@@ -272,7 +311,7 @@ export default function DeploymentComponent({
             ]])
             return res[1] and res[1].Logs or ''
           `,
-                        globalState.managerProcess
+                        globalState.managerProcess,
                     );
 
                     if (result && typeof result === "string") {
@@ -288,14 +327,14 @@ export default function DeploymentComponent({
         const fetchLatestLogs = async () => {
             try {
                 const res = await axios.get(
-                    `${TESTING_FETCH}/logs/${owner}/${folderName}`
+                    `${TESTING_FETCH}/logs/${owner}/${folderName}`,
                 );
                 const rawLogsData = res.data.replaceAll(/\\|\||\-/g, "");
 
                 const trimmedLogs = rawLogsData.split("\n").reduce(
                     (
                         acc: { started: boolean; logs: string[] },
-                        line: string
+                        line: string,
                     ) => {
                         if (
                             acc.started ||
@@ -306,7 +345,7 @@ export default function DeploymentComponent({
                         }
                         return acc;
                     },
-                    { started: false, logs: [] as string[] }
+                    { started: false, logs: [] as string[] },
                 );
 
                 const safeLogsData = trimmedLogs.logs.join("\n");
@@ -316,23 +355,20 @@ export default function DeploymentComponent({
                 if (globalState.managerProcess) {
                     await runLua(
                         `
-            db:exec([[
-              INSERT OR REPLACE INTO DeploymentLogs (DeploymentName, Logs)
-              VALUES ('${deployment.Name}', '${safeLogsData.replace(
-                            /'/g,
-                            "''"
-                        )}')
-            ]])
-          `,
-                        globalState.managerProcess
+                          db:exec([[
+                            INSERT OR REPLACE INTO DeploymentLogs (DeploymentName, Logs)
+                            VALUES ('${
+                                deployment.Name
+                            }', '${safeLogsData.replace(/'/g, "''")}')
+                          ]])
+                        `,
+                        globalState.managerProcess,
                     );
                 }
             } catch (error) {
                 console.error("Error fetching latest logs:", error);
-                // If fetching latest logs fails, we'll keep using the database logs
-                // that were already set by fetchLogsFromDB
                 setError(
-                    "Failed to fetch latest build logs. Showing last known logs."
+                    "Failed to fetch latest build logs. Showing last known logs.",
                 );
             }
         };
@@ -353,11 +389,11 @@ export default function DeploymentComponent({
                     setAntName(d.Name);
                 } else {
                     console.error(
-                        "No messages received or messages array is empty"
+                        "No messages received or messages array is empty",
                     );
                     // Keep the last known antName value
                     setError(
-                        "Failed to fetch latest ArNS information. Using last known value."
+                        "Failed to fetch latest ArNS information. Using last known value.",
                     );
                 }
             })
@@ -365,7 +401,7 @@ export default function DeploymentComponent({
                 console.error("Error during dryrun:", error);
                 // Keep the last known antName value
                 setError(
-                    "Failed to fetch latest ArNS information. Using last known value."
+                    "Failed to fetch latest ArNS information. Using last known value.",
                 );
             });
     }, [globalState.managerProcess]);
@@ -410,7 +446,7 @@ export default function DeploymentComponent({
         try {
             await setArnsName(deployment.ArnsProcess, deploymentUrl);
             toast.success(
-                "ArNS update initiated successfully. This may take approximately 5 minutes to fully update."
+                "ArNS update initiated successfully. This may take approximately 5 minutes to fully update.",
             );
         } catch (error) {
             console.error("Error updating ArNS:", error);

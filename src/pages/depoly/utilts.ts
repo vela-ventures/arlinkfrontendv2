@@ -1,9 +1,4 @@
-import type {
-    ArnsName,
-    DirectoryStructure,
-    ProtocolLandRepo,
-    Repository,
-} from "@/types";
+import type { ArnsName, ProtocolLandRepo, Repository } from "@/types";
 import { BUILDER_BACKEND } from "@/lib/utils";
 import { Octokit } from "@octokit/rest";
 import { index } from "arweave-indexer";
@@ -13,7 +8,6 @@ import { toast } from "sonner";
 import { SetStateAction } from "react";
 import fetchUserRepos from "@/lib/fetchprotolandrepo";
 import { getWalletOwnedNames } from "@/lib/get-arns";
-import { getRepoConfig } from "@/lib/getRepoconfig";
 
 export async function fetchRepositories({
     githubToken,
@@ -67,7 +61,7 @@ export const indexInMalik = async ({
             owner,
             arlink,
         }),
-        window.arweaveWallet
+        window.arweaveWallet,
     );
 };
 
@@ -109,29 +103,39 @@ export async function fetchRepositoryByName({
     }
 }
 
+interface DirectoryStructure {
+    name: string;
+    path: string;
+    type: "dir" | "file";
+    children?: DirectoryStructure[];
+}
+
 export async function analyzeRepoStructure(
     owner: string,
     repo: string,
-    githubToken: string
+    githubToken: string,
 ): Promise<DirectoryStructure[]> {
+
+    // because we are caling this recursively I guess it is draining the api request for me
+    // so kindly look into this
     async function getContents(path = ""): Promise<DirectoryStructure[]> {
         try {
             const response = await fetch(
-                `https://api.github.com/repos/${owner}/${extractRepoName(
-                    repo
-                )}/contents/${path}`,
+                `https://api.github.com/repos/${owner}/${repo}/contents/${path}`,
                 {
                     headers: {
                         Authorization: `Bearer ${githubToken}`,
                         Accept: "application/vnd.github.v3+json",
                     },
-                }
+                },
             );
+
             if (!response.ok) {
                 throw new Error(`GitHub API error: ${response.statusText}`);
             }
 
             const data = await response.json();
+
             if (Array.isArray(data)) {
                 const contents = await Promise.all(
                     data.map(async (item) => {
@@ -141,20 +145,21 @@ export async function analyzeRepoStructure(
                             type: item.type as "dir" | "file",
                         };
 
+                        // Recursively get contents of directories
                         if (
                             item.type === "dir" &&
                             !["node_modules", ".git", "dist"].includes(
-                                item.name
+                                item.name,
                             )
                         ) {
                             structure.children = await getContents(item.path);
                         }
 
                         return structure;
-                    })
+                    }),
                 );
 
-                const repoContent = contents.filter(
+                return contents.filter(
                     (item) =>
                         ![
                             "node_modules",
@@ -162,11 +167,7 @@ export async function analyzeRepoStructure(
                             ".github",
                             "dist",
                             "build",
-                        ].includes(item.name)
-                );
-
-                return repoContent.filter((repo) =>
-                    repo.path.includes("package.json")
+                        ].includes(item.name),
                 );
             }
         } catch (error) {
@@ -178,7 +179,7 @@ export async function analyzeRepoStructure(
     }
 
     const structure = await getContents();
-    return findFrontendDirs(repo, owner, structure);
+    return findFrontendDirs(structure);
 }
 
 interface ProjectDeploymentConfig {
@@ -211,7 +212,7 @@ export async function analyzeProjectDeploymentStructure(
     owner: string,
     repo: string,
     githubToken: string,
-    configApiUrl?: string
+    configApiUrl?: string,
 ): Promise<RepoProjectStructure[]> {
     // Fetch deployment config if available
     async function fetchProjectDeploymentConfig(): Promise<ProjectDeploymentConfig | null> {
@@ -219,7 +220,7 @@ export async function analyzeProjectDeploymentStructure(
 
         try {
             const response = await fetch(
-                `${configApiUrl}/config/${owner}/${repo}`
+                `${configApiUrl}/config/${owner}/${repo}`,
             );
             if (!response.ok) return null;
             return await response.json();
@@ -233,7 +234,7 @@ export async function analyzeProjectDeploymentStructure(
     const deploymentConfig = await fetchProjectDeploymentConfig();
 
     async function getProjectContents(
-        path = ""
+        path = "",
     ): Promise<RepoProjectStructure[]> {
         try {
             const response = await fetch(
@@ -243,7 +244,7 @@ export async function analyzeProjectDeploymentStructure(
                         Authorization: `Bearer ${githubToken}`,
                         Accept: "application/vnd.github.v3+json",
                     },
-                }
+                },
             );
 
             if (!response.ok) {
@@ -275,17 +276,17 @@ export async function analyzeProjectDeploymentStructure(
                             // Skip processing certain directories
                             if (
                                 !["node_modules", ".git", "dist"].includes(
-                                    item.name
+                                    item.name,
                                 )
                             ) {
                                 structure.children = await getProjectContents(
-                                    item.path
+                                    item.path,
                                 );
                             }
                         }
 
                         return structure;
-                    })
+                    }),
                 );
 
                 return contents.filter(
@@ -296,7 +297,7 @@ export async function analyzeProjectDeploymentStructure(
                             ".github",
                             "dist",
                             "build",
-                        ].includes(item.name)
+                        ].includes(item.name),
                 );
             }
         } catch (error) {
@@ -310,11 +311,9 @@ export async function analyzeProjectDeploymentStructure(
     return structure;
 }
 
-async function findFrontendDirs(
-    repo: string,
-    owner: string,
-    structure: DirectoryStructure[]
-): Promise<DirectoryStructure[]> {
+function findFrontendDirs(
+    structure: DirectoryStructure[],
+): DirectoryStructure[] {
     const frontendIndicators = [
         "package.json",
         "src",
@@ -327,24 +326,14 @@ async function findFrontendDirs(
         "tsconfig.json",
     ];
 
-    const output = structure.filter((item) => {
+    return structure.filter((item) => {
         if (item.type === "dir") {
             return item.children?.some((child) =>
-                frontendIndicators.includes(child.name.toLowerCase())
+                frontendIndicators.includes(child.name.toLowerCase()),
             );
         }
         return false;
     });
-
-    const repoConfigesPromises = output.map((project) => {
-        return getRepoConfig(owner, extractRepoName(repo), project.path);
-    });
-    const repoConfigs = await Promise.all(repoConfigesPromises);
-    console.log(repoConfigs);
-    console.log({
-        repo,
-    });
-    return output;
 }
 
 export function extractRepoName(url: string): string {
@@ -380,7 +369,7 @@ export function createTokenizedRepoUrl(repoUrl: string, token: string): string {
 }
 
 export const detectFrameworkImage = (
-    outputDir: string
+    outputDir: string,
 ): {
     name: string;
     svg: string;
@@ -425,6 +414,7 @@ export const detectFrameworkImage = (
             };
     }
 };
+
 export const handleFetchLogs = async ({
     projectName,
     repoUrl,
@@ -468,7 +458,7 @@ export const handleFetchLogs = async ({
     const logPoll = async () => {
         try {
             const logs = await axios.get(
-                `${BUILDER_BACKEND}/logs/${owner}/${repo}`
+                `${BUILDER_BACKEND}/logs/${owner}/${repo}`,
             );
             setLogs(logs.data.split("\n"));
         } catch (error) {
@@ -478,14 +468,14 @@ export const handleFetchLogs = async ({
                     setLogError("Waiting for logs...");
                 } else {
                     setLogError(
-                        "Deployment failed, please check logs to find the issue."
+                        "Deployment failed, please check logs to find the issue.",
                     );
                     setIsFetchingLogs(false);
                     stopPolling();
                 }
             } else {
                 setLogError(
-                    "Deployment failed or an error occured while fetching logs."
+                    "Deployment failed or an error occured while fetching logs.",
                 );
                 console.error("Error fetching logs:", error);
                 setIsFetchingLogs(false);

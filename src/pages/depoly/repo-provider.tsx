@@ -74,12 +74,14 @@ const RepoProvider = ({
     useEffect(() => {
         if (provider === "github") {
             const filtered = repositories.filter((repo) =>
-                repo.full_name.toLowerCase().includes(searchQuery.toLowerCase())
+                repo.full_name
+                    .toLowerCase()
+                    .includes(searchQuery.toLowerCase()),
             );
             setFilteredRepositories(filtered);
         } else {
             const filtered = protocolLandRepos.filter((repo) =>
-                repo.name.toLowerCase().includes(searchQuery.toLowerCase())
+                repo.name.toLowerCase().includes(searchQuery.toLowerCase()),
             );
             setFilteredProtocolRepos(filtered);
         }
@@ -162,10 +164,12 @@ const RepoProvider = ({
                 </div>
                 <div>
                     <ScrollArea className="h-80 border rounded-md">
-                        {!isProviderSelected && (
+                        {/*  this is added but not showing I will fix this don't worry  */}
+                        {!githubToken && (
                             <div className="h-[17rem] w-full flex items-center justify-center">
                                 <p className="text-center">
-                                    Please select a provider to import projects
+                                    Please select a provider from the drop down
+                                    menu
                                 </p>
                             </div>
                         )}

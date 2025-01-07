@@ -8,20 +8,16 @@ interface DeploymentCardProps {
     deployment: TDeployment;
 }
 
-const DeploymentCard = ({
-    antName,
-    deploymentUrl,
-    deployment,
-}: DeploymentCardProps) => {
+const DeploymentCard = ({ deploymentUrl, deployment }: DeploymentCardProps) => {
     return (
         <div className="mb-6 animate-in fade-in-0 bg-arlink-bg-secondary-color p-4 border border-neutral-800 rounded-lg">
             <div className="flex md:flex-row flex-col w-full gap-7">
                 {/* Preview Section */}
                 <div className="relative lg:w-2/5 md:w-1/2 w-full">
-                    {antName ? (
+                    {deployment.UnderName ? (
                         <>
                             <iframe
-                                src={`https://${antName}_arlink.arweave.net/`}
+                                src={`https://${deployment.UnderName}_arlink.arweave.net/`}
                                 className="w-full border border-neutral-700 z-20 h-[330px] relative rounded-sm"
                                 title="Deployment Preview"
                                 scrolling="no"
@@ -47,16 +43,14 @@ const DeploymentCard = ({
                                 Deployment url
                             </p>
                             <Link
-                                to={`https://arweave.net/${
-                                    deploymentUrl || deployment?.DeploymentId
-                                }`}
+                                to={`https://arweave.net/${deployment.DeploymentId}`}
                                 target="_blank"
                                 className="text-md hover:underline flex items-center"
                             >
-                                {deploymentUrl
-                                    ? `https://arweave.net/${deploymentUrl.slice(
+                                {deployment.DeploymentId
+                                    ? `https://arweave.net/${deployment.DeploymentId.slice(
                                           0,
-                                          20
+                                          20,
                                       )}...`
                                     : deployment?.DeploymentId
                                     ? `https://arweave.net/${deployment.DeploymentId}`
@@ -72,12 +66,11 @@ const DeploymentCard = ({
                             </p>
                             <div className="flex text-md items-center space-x-2">
                                 <Link
-                                    to={`https://${
-                                        deployment.UnderName}_arlink.arweave.net`}
+                                    to={`https://${deployment.UnderName}_arlink.arweave.net`}
                                     target="_blank"
                                     className="text-sm hover:underline flex items-center"
                                 >
-                                    {`${antName}_arlink.arweave.net`}
+                                    {`${deployment.UnderName}_arlink.arweave.net`}
                                     <MoveUpRight className="w-4 h-4 ml-2" />
                                 </Link>
                             </div>
@@ -88,7 +81,7 @@ const DeploymentCard = ({
                             <p className="text-sm mb-1 text-neutral-400">
                                 Status
                             </p>
-                            {antName === "" ? (
+                            {!deployment.UnderName ? (
                                 <div className="flex text-md items-center gap-2">
                                     <div className="w-3 h-3 bg-red-500 rounded-full" />
                                     <span>Not live</span>
@@ -132,7 +125,7 @@ const DeploymentCard = ({
                         <span className="font-medium text-neutral-400">
                             {deployment?.RepoUrl?.replace(
                                 "https://github.com/",
-                                ""
+                                "",
                             )}
                             {/* arlink/dumdumtower */}
                         </span>

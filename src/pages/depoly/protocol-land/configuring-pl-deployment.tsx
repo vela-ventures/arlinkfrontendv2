@@ -4,7 +4,11 @@ import { useActiveAddress } from "arweave-wallet-kit";
 import { useState } from "react";
 import { ChevronLeft } from "lucide-react";
 import NewDeploymentCard from "@/components/shared/new-deployment-card";
-import { handleFetchExistingArnsName } from "../utilts";
+import {
+    handleFetchExistingArnsName,
+    handleFetchLogs,
+    indexInMalik,
+} from "../utilts";
 import { Input } from "@/components/ui/input";
 import DomainSelection from "@/components/shared/domain-selection";
 import { BuildDeploymentSetting } from "@/components/shared/build-settings";
@@ -13,6 +17,8 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { BUILDER_BACKEND } from "@/lib/utils";
+import { runLua } from "@/lib/ao-vars";
+import DeploymentLogs from "../../../components/shared/deploying-logs";
 
 const ConfigureProtocolLandProject = ({
     setStep,
@@ -74,7 +80,7 @@ const ConfigureProtocolLandProject = ({
     async function handleArnsSelection(arnsName: ArnsName) {
         setArnsProcess(arnsName.processId);
         setArnsName(
-            arnsNames.find((arns) => arns.processId === arnsName.processId)
+            arnsNames.find((arns) => arns.processId === arnsName.processId),
         );
         setarnsDropdownModal(false);
     }
@@ -82,7 +88,7 @@ const ConfigureProtocolLandProject = ({
     const handleSettingChange = (
         setting: keyof BuildSettings,
         field: keyof BuildSettings[keyof BuildSettings],
-        value: string | boolean
+        value: string | boolean,
     ) => {
         setBuildSettings((prev) => ({
             ...prev,
@@ -132,8 +138,21 @@ const ConfigureProtocolLandProject = ({
                 customRepo = projectName;
             }
 
+            handleFetchLogs({
+                projectName,
+                repoUrl: selectedRepo.url,
+                setLogs,
+                setIsWaitingForLogs,
+                setIsFetchingLogs,
+                isWaitingForLogs,
+                setLogError,
+            });
+
             try {
-                const txid = await axios.post(
+                const txid = await axios.post<{
+                    result: string;
+                    finalUnderName: string;
+                }>(
                     `${BUILDER_BACKEND}/deploy`,
                     {
                         repository: selectedRepo.url,
@@ -150,18 +169,70 @@ const ConfigureProtocolLandProject = ({
                     {
                         timeout: 60 * 60 * 1000,
                         headers: { "Content-Type": "application/json" },
-                    }
+                    },
                 );
 
                 if (txid.status === 200) {
                     console.log("https://arweave.net/" + txid.data);
                     toast.success("Deployment successful");
 
-                    //@ts-ignore
-                    const updres = await runLua(
-                        `db:exec[[UPDATE Deployments SET DeploymentId='${txid.data}' WHERE Name='${projectName}']]`,
-                        managerProcess
+                    const alter = await runLua(
+                        `local res = db:exec[[
+                                ALTER TABLE Deployments 
+                                ADD COLUMN UnderName TEXT
+                            ]]`,
+                        managerProcess,
                     );
+                    console.log("tablealtered", alter);
+
+                    // Insert new deployment
+                    const insertQuery = `
+                        db:exec[[
+                            INSERT INTO Deployments (
+                                Name,
+                                Repository, 
+                                Branch,
+                                InstallCommand,
+                                BuildCommand,
+                                OutputDir,
+                                ArnsName,
+                                UnderName
+                            ) VALUES (
+                                '${projectName}',
+                                '${selectedRepo.url}',
+                                'main',
+                                '${buildSettings.installCommand.value}',
+                                '${buildSettings.buildCommand.value}', 
+                                '${buildSettings.outPutDir.value}',
+                                '${finalArnsProcess}',
+                                '${txid.data.finalUnderName}
+                            )
+                        ]]
+                    `;
+
+                    const res = await runLua(insertQuery, managerProcess);
+                    if (res.Error) return toast.error(res.Error);
+
+                    // Update deployment ID
+                    const updateDeploymentQuery = `
+                        db:exec[[
+                            UPDATE Deployments 
+                            SET DeploymentId = '${txid.data}'
+                            WHERE Name = '${projectName}'
+                        ]]
+                    `;
+                    await runLua(updateDeploymentQuery, managerProcess);
+
+                    await refresh();
+
+                    await indexInMalik({
+                        projectName: projectName,
+                        description: "An awesome decentralized project",
+                        txid: txid.data.finalUnderName,
+                        owner: activeAddress,
+                        link: `https://arweave.net/${txid.data}`,
+                        arlink: finalArnsProcess,
+                    });
 
                     navigate(`/deployment?repo=${projectName}`);
                 } else {
@@ -169,11 +240,18 @@ const ConfigureProtocolLandProject = ({
                     console.log(txid);
                 }
             } catch (error) {
-                toast.error("Deployment failed");
-                console.log(error);
+                throw new Error("Deplyoment failed, unexpected error");
             }
         } catch (error) {
             console.log(error);
+            toast.error("Deployment failed");
+            console.log(error);
+            setDeploymentSucceded(false);
+            setDeploymentComplete(false);
+            setDeploymentFailed(true);
+        } finally {
+            setIsDeploying(false);
+            setDeploymentComplete(true);
         }
     };
 
@@ -253,6 +331,15 @@ const ConfigureProtocolLandProject = ({
             >
                 Deploy now
             </Button>
+
+            {deploymentStarted && (
+                <DeploymentLogs
+                    logs={logs}
+                    isFetchingLogs={isFetchingLogs}
+                    isWaitingForLogs={isWaitingForLogs}
+                    logError={logError}
+                />
+            )}
         </div>
     );
 };

@@ -1,6 +1,17 @@
 "use client";
 
-import { Rocket, Trash2, RefreshCw, ArrowLeft, Loader2 } from "lucide-react";
+import {
+    Rocket,
+    Trash2,
+    RefreshCw,
+    ArrowLeft,
+    Loader2,
+    Underline,
+    ChevronDown,
+    Command,
+    ChevronsUpDown,
+    Check,
+} from "lucide-react";
 
 import { BUILDER_BACKEND, cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -20,7 +31,19 @@ import {
     AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Logs } from "@/components/ui/logs";
-import { handleFetchLogs } from "../depoly/utilts";
+import { handleFetchExistingArnsName, handleFetchLogs } from "../depoly/utilts";
+import { useActiveAddress } from "arweave-wallet-kit";
+import { Popover, PopoverContent } from "@/components/ui/popover";
+import { ArnsName } from "@/types";
+import {
+    CommandEmpty,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from "@/components/ui/command";
+import { Skeleton } from "@/components/ui/skeleton";
+import { PopoverTrigger } from "@radix-ui/react-popover";
+import { CommandGroup } from "cmdk";
 
 export default function DeploymentSetting() {
     // global states
@@ -47,7 +70,7 @@ export default function DeploymentSetting() {
     const [logs, setLogs] = useState<string[]>([]);
     const [logError, setLogError] = useState<string>("");
     const [accordionValue, setAccordionValue] = useState<string | undefined>(
-        undefined
+        undefined,
     );
 
     const toggleSidebar = () => setShowSidebar(!showSidebar);
@@ -55,6 +78,17 @@ export default function DeploymentSetting() {
         setActiveTab(tab);
         setShowSidebar(false);
     };
+
+    // arns data
+    const activeAddress = useActiveAddress();
+    const [arnsNames, setArnsNames] = useState<ArnsName[]>([]);
+    const [existingArnsLoading, setExistingArnsLoading] =
+        useState<boolean>(true);
+    const [arnsDropdownModal, setarnsDropdownModal] = useState(false);
+    const [arnsName, setArnsName] = useState<ArnsName | undefined>(undefined);
+    const [arnsProcess, setArnsProcess] = useState<string | undefined>(
+        undefined,
+    );
 
     async function deleteDeployment() {
         setIsDeleting(true);
@@ -132,7 +166,7 @@ export default function DeploymentSetting() {
 
                 await runLua(
                     `db:exec[[UPDATE Deployments SET DeploymentId='${txid.data}' WHERE Name='${projName}']]`,
-                    globalState.managerProcess
+                    globalState.managerProcess,
                 );
 
                 navigate(`/deployment?repo=${projName}`);
@@ -146,11 +180,27 @@ export default function DeploymentSetting() {
             toast.error("Deployment failed");
             console.log(error);
             setError(
-                "An error occurred during deployment. Please try again later."
+                "An error occurred during deployment. Please try again later.",
             );
         } finally {
             setIsRedeploying(false);
         }
+    }
+
+    const handleFetchArns = async () => {
+        handleFetchExistingArnsName({
+            setArnsNames,
+            activeAddress,
+            setExistingArnsLoading,
+        });
+    };
+
+    async function handleArnsSelection(arnsName: ArnsName) {
+        setArnsProcess(arnsName.processId);
+        setArnsName(
+            arnsNames.find((arns) => arns.processId === arnsName.processId),
+        );
+        setarnsDropdownModal(false);
     }
 
     useEffect(() => {
@@ -165,7 +215,7 @@ export default function DeploymentSetting() {
                 className={cn(
                     "w-full md:w-48 border-neutral-800 md:p-4",
                     showSidebar ? "block" : "hidden md:block",
-                    "md:static inset-0 z-50 py-4 bg-black md:bg-transparent"
+                    "md:static inset-0 z-50 py-4 bg-black md:bg-transparent",
                 )}
             >
                 <nav className="space-y-1">
@@ -177,7 +227,7 @@ export default function DeploymentSetting() {
                                 "flex items-center w-full md:px-3 py-2 text-sm rounded-md transition-colors",
                                 activeTab === tab
                                     ? "md:bg-neutral-800 md:text-neutral-100"
-                                    : "text-neutral-400 md:hover:bg-neutral-800/50 md:hover:text-neutral-100"
+                                    : "text-neutral-400 md:hover:bg-neutral-800/50 md:hover:text-neutral-100",
                             )}
                         >
                             {tab === "redeploy" && (
@@ -199,7 +249,7 @@ export default function DeploymentSetting() {
             <div
                 className={cn(
                     "flex-1 rounded-md mt-4 md:px-4 md:py-4 md:mt-0",
-                    showSidebar ? "hidden md:block" : "block"
+                    showSidebar ? "hidden md:block" : "block",
                 )}
             >
                 <div className="md:hidden mb-4 flex justify-between items-center">
@@ -213,6 +263,7 @@ export default function DeploymentSetting() {
                         </Button>
                     )}
                 </div>
+
                 {activeTab === "redeploy" && (
                     <>
                         <div className="space-y-1">
@@ -281,6 +332,7 @@ export default function DeploymentSetting() {
                         </div>
                     </>
                 )}
+
                 {activeTab === "delete" && (
                     <>
                         <div className="space-y-2">
@@ -309,6 +361,7 @@ export default function DeploymentSetting() {
                         </Button>
                     </>
                 )}
+
                 {activeTab === "update-arns" && (
                     <>
                         <div className="space-y-2">
@@ -325,22 +378,109 @@ export default function DeploymentSetting() {
                                     </Label>
                                     <Input
                                         id="current"
+                                        value={deployment?.UnderName}
                                         placeholder="current arns will be displayed here?"
                                         className="bg-neutral-900 border-neutral-800 text-neutral-100 text-xs md:text-sm"
                                     />
                                 </div>
                                 <div className="space-y-2">
                                     <Label
-                                        htmlFor="new"
-                                        className="text-sm text-neutral-400"
+                                        htmlFor="current"
+                                        className="text-sm pt-2 text-neutral-400"
                                     >
-                                        New ARN
+                                        Current ARN
                                     </Label>
-                                    <Input
-                                        id="new"
-                                        placeholder="Enter new ARN"
-                                        className="bg-neutral-900 border-neutral-800 text-neutral-100 placeholder:text-neutral-600 text-xs md:text-sm"
-                                    />
+                                    {existingArnsLoading ? (
+                                        <Skeleton className="w-full flex items-center justify-between gap-3 px-3 h-10 text-center focus:ring-0 focus:ring-offset-0 outline-none  bg-neutral-900 border-[#383838] text-white">
+                                            <div className="flex items-center gap-3">
+                                                Fetching existing arns
+                                                <Loader2
+                                                    size={15}
+                                                    className="animate-spin"
+                                                />
+                                            </div>
+                                            <ChevronDown size={15} />
+                                        </Skeleton>
+                                    ) : (
+                                        <>
+                                            <Popover
+                                                open={arnsDropdownModal}
+                                                onOpenChange={
+                                                    setarnsDropdownModal
+                                                }
+                                            >
+                                                <PopoverTrigger
+                                                    className="w-full bg-arlink-bg-secondary-color border-[#383838]"
+                                                    asChild
+                                                >
+                                                    <Button
+                                                        variant="outline"
+                                                        aria-expanded={
+                                                            arnsDropdownModal
+                                                        }
+                                                        className=" justify-between"
+                                                    >
+                                                        {arnsName
+                                                            ? arnsName.name
+                                                            : "Select an arns name"}
+                                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                    </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent
+                                                    className="max-w-3xl p-0 border-[#383838] bg-arlink-bg-secondary-color
+									w-[--radix-popover-trigger-width] max-h-[--radix-popover-content-available-height]
+									"
+                                                >
+                                                    <Command className="w-full">
+                                                        <CommandInput placeholder="Select an existing arns..." />
+                                                        <CommandList>
+                                                            <CommandEmpty>
+                                                                No arns found.
+                                                            </CommandEmpty>
+                                                            <CommandGroup>
+                                                                {arnsNames.map(
+                                                                    (
+                                                                        arnsObj,
+                                                                    ) => (
+                                                                        <CommandItem
+                                                                            key={
+                                                                                arnsObj.processId
+                                                                            }
+                                                                            value={
+                                                                                arnsObj.name
+                                                                            }
+                                                                            onSelect={() => {
+                                                                                handleArnsSelection(
+                                                                                    {
+                                                                                        processId:
+                                                                                            arnsObj.processId,
+                                                                                        name: arnsObj.name,
+                                                                                    },
+                                                                                );
+                                                                            }}
+                                                                        >
+                                                                            <Check
+                                                                                className={cn(
+                                                                                    "mr-2 h-4 w-4",
+                                                                                    arnsName?.name ===
+                                                                                        arnsObj.name
+                                                                                        ? "opacity-100"
+                                                                                        : "opacity-0",
+                                                                                )}
+                                                                            />
+                                                                            {
+                                                                                arnsObj.name
+                                                                            }
+                                                                        </CommandItem>
+                                                                    ),
+                                                                )}
+                                                            </CommandGroup>
+                                                        </CommandList>
+                                                    </Command>
+                                                </PopoverContent>
+                                            </Popover>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         </div>

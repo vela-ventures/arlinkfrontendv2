@@ -151,7 +151,7 @@ const ConfiguringDeploymentProject = ({
         const handleFetchRepository = async (
             defaultProjectName: string,
             owner: string,
-            repo: string
+            repo: string,
         ) => {
             // Fetch repository configuration
             const config = await getRepoConfig(owner, repo);
@@ -206,7 +206,7 @@ const ConfiguringDeploymentProject = ({
                         Authorization: `token ${githubToken}`,
                         Accept: "application/vnd.github.v3+json",
                     },
-                }
+                },
             );
 
             console.log(response.data);
@@ -220,7 +220,7 @@ const ConfiguringDeploymentProject = ({
                 setSelectedBranch("main");
             } else {
                 setBranchError(
-                    "Failed to fetch branches. Please check your repository access."
+                    "Failed to fetch branches. Please check your repository access.",
                 );
             }
         } finally {
@@ -231,7 +231,7 @@ const ConfiguringDeploymentProject = ({
     async function handleArnsSelection(arnsName: ArnsName) {
         setArnsProcess(arnsName.processId);
         setArnsName(
-            arnsNames.find((arns) => arns.processId === arnsName.processId)
+            arnsNames.find((arns) => arns.processId === arnsName.processId),
         );
         setarnsDropdownModal(false);
     }
@@ -266,20 +266,27 @@ const ConfiguringDeploymentProject = ({
 
         // this is to check if the user has selected a custom domain or not
         // if he has not selected a custom domain, then we add the custom name and build the url
-        if (arnsName?.name && activeTab === "existing") {
-            console.log("Hello from the frist blokc");
-            setCustomArnsName("");
-            finalArnsProcess = arnsName.name;
-            console.log("hello world");
-        } else if (activeTab === "arlink") {
-            if (customArnsName.length === 0) setCustomArnsName(projectName);
-            setArnsName(undefined);
-            finalArnsProcess = `${customArnsName}.arlink.arweave.net`;
-            customRepo = projectName;
+        switch (activeTab) {
+            case "existing":
+                if (arnsName?.name) {
+                    setCustomArnsName("");
+                    // adding process id as you mentioned
+                    finalArnsProcess = arnsName.processId;
+                }
+                break;
+            case "arlink":
+                if (!customArnsName) {
+                    setCustomArnsName(projectName);
+                }
+                // if we are using arlink undername feature we set the arns name to undefined
+                setArnsName(undefined);
+                finalArnsProcess = customArnsName || projectName;
+                customRepo = projectName;
+                break;
         }
 
         const tokenizedRepoUrl = createTokenizedRepoUrl(repoUrl, githubToken);
-       
+
         try {
             handleFetchLogs({
                 projectName,
@@ -290,11 +297,11 @@ const ConfiguringDeploymentProject = ({
                 isWaitingForLogs,
                 setLogError,
             });
-            // const response = await axios.get(
-            // 	`https://vmi1968527.contaboserver.net/backend/config/${owner}/${repoName}`,
-            // );
-            const response = await axios.post(
-                // 	`https://vmi1968527.contaboserver.net/backend/}`,
+
+            const response = await axios.post<{
+                result: string;
+                finalUnderName: string;
+            }>(
                 `${BUILDER_BACKEND}/deploy`,
                 {
                     repository: tokenizedRepoUrl,
@@ -303,7 +310,8 @@ const ConfiguringDeploymentProject = ({
                     outputDir: buildSettings.outPutDir.value,
                     subDirectory: rootDirectory,
                     protocolLand: false,
-                    repoName: repoName,
+                    // please check this is custom arns undername value is working from the backend side or not
+                    repoName: customArnsName,
                     branch: selectedBranch,
                     githubToken,
                     walletAddress: activeAddress,
@@ -312,12 +320,8 @@ const ConfiguringDeploymentProject = ({
                 {
                     timeout: 60 * 60 * 1000,
                     headers: { "Content-Type": "application/json" },
-                }
+                },
             );
-
-
-                
-              
 
             // after the deployment has started we call this function
             // This function is responsible for fetching logs,
@@ -332,43 +336,53 @@ const ConfiguringDeploymentProject = ({
                 console.log(response.data.finalUnderName);
 
                 // assuming we get the transaction id after this is successful
-                const alter = await runLua(`local res = db:exec[[
-                                ALTER TABLE Deployments 
-                                ADD COLUMN UnderName TEXT
-                            ]]`,mgProcess)
-                            console.log('tablealtered',alter)
+                const alter = await runLua(
+                    `local res = db:exec[[ ALTER TABLE Deployments ADD COLUMN UnderName TEXT ]]`,
+                    mgProcess,
+                );
+                console.log("tablealtered", alter);
 
-                            const query = `local res = db:exec[[
-                                INSERT INTO Deployments (Name, RepoUrl, Branch, InstallCMD, BuildCMD, OutputDIR, ArnsProcess)
-                                VALUES
-                                ('${projectName}', '${repoUrl}', '${selectedBranch}', '${buildSettings.installCommand.value}', '${buildSettings.buildCommand.value}', '${buildSettings.outPutDir.value}', '${finalArnsProcess}')
-                            ]]`;
-            console.log('manager process ',mgProcess);
-           
-            const res = await runLua(query, mgProcess);
-            const updres = await runLua(`db:exec[[UPDATE Deployments SET DeploymentId='${response.data}' WHERE Name='${projectName}']]`, mgProcess);
-            console.log('result of update id ',updres);
-            const undaname = await runLua(`local res = db:exec[[
-    UPDATE Deployments 
-    SET UnderName = '${response.data.finalUnderName}' 
-    WHERE Name = '${projectName}'
-]]`,mgProcess)
-console.log('addedundername',undaname);
-        
-            // if there was any error we show the toast
-            if (res.Error) return toast.error(res.Error);
-            console.log(res);
-            await refresh();
+                const query = `local res = db:exec[[
+                    INSERT INTO Deployments (Name, RepoUrl, Branch, InstallCMD, BuildCMD, OutputDIR, ArnsProcess) VALUES
+                        ('${projectName}', 
+                        '${repoUrl}', 
+                        '${selectedBranch}', 
+                        '${buildSettings.installCommand.value}', 
+                        '${buildSettings.buildCommand.value}', 
+                        '${buildSettings.outPutDir.value}', 
+                        '${finalArnsProcess}')
+                    ]]`;
+                console.log("manager process ", mgProcess);
 
-        
+                const res = await runLua(query, mgProcess);
+                const updres = await runLua(
+                    `db:exec[[UPDATE Deployments SET DeploymentId='${response.data}' WHERE Name='${projectName}']]`,
+                    mgProcess,
+                );
+                console.log("result of update id ", updres);
+                const undaname = await runLua(
+                    `local res = db:exec[[
+                        UPDATE Deployments 
+                        SET UnderName = '${response.data.finalUnderName}' 
+                        WHERE Name = '${projectName}'
+                    ]]`,
+                    mgProcess,
+                );
+                console.log("addedundername", undaname);
+
+                // if there was any error we show the toast
+                if (res.Error) return toast.error(res.Error);
+                console.log(res);
+                await refresh();
+
                 if (arnsName) {
                     await setUpArnsName(finalArnsProcess, response.data.result);
                 }
 
                 await indexInMalik({
-                    projectName:projectName,
+                    projectName: projectName,
                     description: "An awesome decentralized project",
-                    txid: response.data,
+                    txid: response.data.result,
                     owner: activeAddress,
                     link: `https://arweave.net/${response.data.result}`,
                     arlink: finalArnsProcess,
@@ -401,7 +415,7 @@ console.log('addedundername',undaname);
     const handleSettingChange = (
         setting: keyof BuildSettings,
         field: keyof BuildSettings[keyof BuildSettings],
-        value: string | boolean
+        value: string | boolean,
     ) => {
         setBuildSettings((prev) => ({
             ...prev,
@@ -412,30 +426,28 @@ console.log('addedundername',undaname);
         }));
     };
 
-    useEffect(() => {
+    const fetchRepoStructure = async () => {
         if (!repoUrl) return;
         if (githubToken === null) return;
 
-        const init = async () => {
-            setFetchingSubDir(true);
-            try {
-                const data = await analyzeRepoStructure(
-                    extractOwnerName(repoUrl),
-                    repoUrl,
-                    githubToken as string
-                );
+        setFetchingSubDir(true);
 
-                setSubDir(data);
-            } catch (error) {
-                console.log(error);
-            } finally {
-                setFetchingSubDir(false);
-            }
-        };
-
-        init();
-    }, []);
-
+        try {
+            const data = await analyzeRepoStructure(
+                extractOwnerName(repoUrl),
+                repoUrl,
+                githubToken as string,
+            );
+            console.log({ subDirData: data });
+            setSubDir(data);
+            setIsRootDirectoryDrawerOpen(true);
+        } catch (error) {
+            console.log(error);
+        } finally {
+            setFetchingSubDir(false);
+        }
+    };
+    
     return (
         <div className="text-white px-8 mb-20 max-w-3xl mx-auto">
             <button
@@ -520,6 +532,7 @@ console.log('addedundername',undaname);
                             </Select>
                         )}
                     </div>
+
                     {branchError && (
                         <p className="text-red-500">{branchError}</p>
                     )}
@@ -541,12 +554,14 @@ console.log('addedundername',undaname);
                             />
                             <Button
                                 className="absolute h-8 right-1 top-1/2 rounded-sm -translate-y-1/2 font-semibold"
-                                onClick={() =>
-                                    setIsRootDirectoryDrawerOpen(true)
-                                }
+                                onClick={fetchRepoStructure}
                                 disabled={fetchingSubDir}
                             >
-                                Change
+                                {fetchingSubDir ? (
+                                    <Loader2 className="animate-spin" />
+                                ) : (
+                                    "Change"
+                                )}
                             </Button>
                         </div>
                     </div>
