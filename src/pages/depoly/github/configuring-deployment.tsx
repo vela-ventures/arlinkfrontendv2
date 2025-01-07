@@ -279,7 +279,7 @@ const ConfiguringDeploymentProject = ({
         }
 
         const tokenizedRepoUrl = createTokenizedRepoUrl(repoUrl, githubToken);
-
+       
         try {
             handleFetchLogs({
                 projectName,
@@ -315,42 +315,62 @@ const ConfiguringDeploymentProject = ({
                 }
             );
 
+
+                
+              
+
             // after the deployment has started we call this function
             // This function is responsible for fetching logs,
             // it handles error and the delay we were talking about efficently
-            if (response.status === 200 && response.data) {
-                console.log(`https://arweave.net/${response.data}`);
+            if (response.status === 200 && response.data.result) {
+                console.log(`https://arweave.net/${response.data.result}`);
                 toast.success("Deployment successful");
                 setDeploymentSucceded(true);
                 setDeploymentComplete(true);
 
                 // repsonse.data.arnsProcess
-                console.log(response.data.arnsUnderName);
+                console.log(response.data.finalUnderName);
 
                 // assuming we get the transaction id after this is successful
-                const query = `local res = db:exec[[
-						INSERT INTO Deployments (Name, RepoUrl, Branch, InstallCMD, BuildCMD, OutputDIR, ArnsProcess)
-							VALUES
-						('${projectName}', '${repoUrl}', '${selectedBranch}', '${buildSettings.installCommand.value}', '${buildSettings.buildCommand.value}', '${buildSettings.outPutDir.value}', '${finalArnsProcess}')
-				]]`;
+                const alter = await runLua(`local res = db:exec[[
+                                ALTER TABLE Deployments 
+                                ADD COLUMN UnderName TEXT
+                            ]]`,mgProcess)
+                            console.log('tablealtered',alter)
 
-                const res = await runLua(query, mgProcess);
+                            const query = `local res = db:exec[[
+                                INSERT INTO Deployments (Name, RepoUrl, Branch, InstallCMD, BuildCMD, OutputDIR, ArnsProcess)
+                                VALUES
+                                ('${projectName}', '${repoUrl}', '${selectedBranch}', '${buildSettings.installCommand.value}', '${buildSettings.buildCommand.value}', '${buildSettings.outPutDir.value}', '${finalArnsProcess}')
+                            ]]`;
+            console.log('manager process ',mgProcess);
+           
+            const res = await runLua(query, mgProcess);
+            const updres = await runLua(`db:exec[[UPDATE Deployments SET DeploymentId='${response.data}' WHERE Name='${projectName}']]`, mgProcess);
+            console.log('result of update id ',updres);
+            const undaname = await runLua(`local res = db:exec[[
+    UPDATE Deployments 
+    SET UnderName = '${response.data.finalUnderName}' 
+    WHERE Name = '${projectName}'
+]]`,mgProcess)
+console.log('addedundername',undaname);
+        
+            // if there was any error we show the toast
+            if (res.Error) return toast.error(res.Error);
+            console.log(res);
+            await refresh();
 
-                // if there was any error we show the toast
-                if (res.Error) return toast.error(res.Error);
-                console.log(res);
-                await refresh();
-
+        
                 if (arnsName) {
-                    await setUpArnsName(finalArnsProcess, response.data);
+                    await setUpArnsName(finalArnsProcess, response.data.result);
                 }
 
                 await indexInMalik({
-                    projectName,
+                    projectName:projectName,
                     description: "An awesome decentralized project",
                     txid: response.data,
                     owner: activeAddress,
-                    link: `https://arweave.net/${response.data}`,
+                    link: `https://arweave.net/${response.data.result}`,
                     arlink: finalArnsProcess,
                 });
 

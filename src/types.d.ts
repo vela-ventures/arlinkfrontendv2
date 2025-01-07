@@ -48,6 +48,8 @@ export type TDeployment = {
     ArnsProcess: string;
     DeploymentId: string;
     DeploymentHash: string;
+    UnderName:string;
+
 };
 
 export type TDeployments = {
@@ -66,6 +68,7 @@ export interface Project {
     branch: string;
     outputDir: string;
     deploymentId: string;
+    UnderName:string;
 }
 
 export interface DirectoryStructure {

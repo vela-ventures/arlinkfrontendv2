@@ -61,7 +61,7 @@ export async function runLua(code: string, process: string, tags?: Tag[]) {
     });
 
     const result = await ao.result({ process, message });
-    // console.log(result);
+     console.log('result of run lua ',result);
     (result as any).id = message;
     return result;
 }

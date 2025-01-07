@@ -73,8 +73,7 @@ const DeploymentCard = ({
                             <div className="flex text-md items-center space-x-2">
                                 <Link
                                     to={`https://${
-                                        antName ? antName : ""
-                                    }_arlink.arweave.net`}
+                                        deployment.UnderName}_arlink.arweave.net`}
                                     target="_blank"
                                     className="text-sm hover:underline flex items-center"
                                 >

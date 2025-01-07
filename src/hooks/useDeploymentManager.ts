@@ -56,10 +56,10 @@ export default function useDeploymentManager() {
         if (connected && address) {
             getManagerProcessFromAddress(address).then((id) => {
                 if (id) {
-                    // console.log("deployment manager id", id);
+                     console.log("deployment manager id", id);
                     globalState.setManagerProcess(id);
                 } else {
-                    // console.log("No manager process found, spawning new one");
+                    console.log("No manager process found, spawning new one");
                     //@ts-ignore
                     spawnProcess("ARlink-Manager").then(async (newId) => {
                         await runLua(setupCommands, newId);
@@ -109,6 +109,7 @@ export default function useDeploymentManager() {
 export async function getManagerProcessFromAddress(address: string) {
     const client = new GraphQLClient(
         "https://arweave-search.goldsky.com/graphql"
+      
     );
 
     const query = gql`
