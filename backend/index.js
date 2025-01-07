@@ -229,6 +229,7 @@ app.post("/deploy", async (req, res) => {
     if (!existingConfig) {
       
       const result = await handleBuild(req, outputDist, owner, folderName);
+
       if (result === false) {
         // Read logs before cleaning up
         const logPathFolder = `./builds/${owner}/${folderName}/build.log`;
@@ -237,13 +238,30 @@ app.post("/deploy", async (req, res) => {
           // Wait a few seconds to ensure logs are readable by streaming clients
           await new Promise(resolve => setTimeout(resolve, 5000));
           await fs.promises.rm(`./builds/${owner}/${folderName}`, { recursive: true, force: true });
-          return res.status(500).json({ error: "Build failed", logs: logData });
+          return res.status(500).send(`Deployment failed: handle build failed`);
         } catch (readError) {
           console.error(`Error reading log: ${readError.message}`);
-          return res.status(500).json({ error: "Build failed", logs: "Logs not available" });
+          return res.status(500).send( "Logs not available" );
         }
       }
-      return res.status(200).send(result);
+      
+      buildConfig.url = result;
+      // if repoName is not provided, use the owner name and folder name
+      const undernamePre = buildConfig.repoName ? buildConfig.repoName : folderName;
+      const arnsUnderName = _.kebabCase(`${undernamePre}`.toLowerCase());
+      const { checkArns, finalUnderName }= await setUnderName(arnsUnderName, result, latestCommit, owner, folderName);
+      console.log("Check Arns done");
+      console.log("Final Under Name given ");
+      if (checkArns) {
+        buildConfig.arnsUnderName = finalUnderName;
+      }
+     
+      await addToRegistry(buildConfig);
+      console.log('undernsmerstepdone');
+      return res.status(200).json({
+        result: result,
+        finalUnderName: finalUnderName
+    });
     } else {
       const deployCount = await getDeployCount(owner, folderName);
       const maxDailyDeploys = buildConfig.maxDailyDeploys;
@@ -270,7 +288,10 @@ app.post("/deploy", async (req, res) => {
         await updateRegistry(owner, folderName, { lastBuiltCommit: latestCommit, url: buildResult });
         }
 
-        return res.status(200).send(buildResult);
+        return res.status(200).json({
+          result: buildResult,
+          finalUnderName: finalUnderName
+      });
       } else {
         console.log(`No new commits for ${owner}/${folderName}. Skipping build.`);
         return res.status(204).send("No new commits");
@@ -286,10 +307,10 @@ app.post("/deploy", async (req, res) => {
       // Wait a few seconds to ensure logs are readable by streaming clients
       await new Promise(resolve => setTimeout(resolve, 5000));
       await fs.promises.rm(`./builds/${owner}/${folderName}`, { recursive: true, force: true });
-      return res.status(500).json({ error: error.message, logs: logData });
+      return res.status(500).send(`Deployment failed: handle build failed`);
     } catch (readError) {
       console.error(`Error reading log: ${readError.message}`);
-      return res.status(500).json({ error: error.message, logs: "Logs not available" });
+      return res.status(500).send( "Logs not available" );
     }
   }
 });
