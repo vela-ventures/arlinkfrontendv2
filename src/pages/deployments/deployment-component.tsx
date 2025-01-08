@@ -417,11 +417,7 @@ export default function DeploymentComponent({
                 {isFetchingProject ? (
                     <DeploymentCardSkeleton />
                 ) : (
-                    <DeploymentCard
-                        antName={antName}
-                        deployment={deployment}
-                        deploymentUrl={deploymentUrl}
-                    />
+                    <DeploymentCard deployment={deployment} />
                 )}
 
                 {isFetchingProject ? (

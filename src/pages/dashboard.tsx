@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { Search, Grid, List, Plus } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Search, Grid, List, Plus, RocketIcon } from "lucide-react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useConnection, useActiveAddress } from "arweave-wallet-kit";
@@ -24,20 +24,13 @@ const Dashboardcomp = () => {
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
     const [searchTerm, setSearchTerm] = useState("");
     const [sortBy, setSortBy] = useState("activity");
-    const [noDeploymentFound, setNoDeploymentFound] = useState<boolean>(false);
-    const address = useActiveAddress();
-    const { connected } = useConnection();
-    const {
-        managerProcess: mgProcess,
-        deployments,
-        refresh,
-    } = useDeploymentManager();
-
+    const [isFetchingDeployments, setIsFetchingDeployments] =
+        useState<boolean>(true);
+    const { managerProcess, deployments } = useDeploymentManager();
     const [cardsLimit, setCardsLimit] = useState(0);
-    useEffect(() => {
-        console.log("connected", connected, address);
-        refresh();
-    }, [connected, address]);
+    const navigate = useNavigate();
+    const [managerProcessExists, setManagerProcessExists] =
+        useState<boolean>(true);
 
     const formatProjectData = (deployments: TDeployment[]) => {
         return deployments.map((dep: TDeployment) => ({
@@ -84,20 +77,39 @@ const Dashboardcomp = () => {
     }, [projects, searchTerm, sortBy]);
 
     useEffect(() => {
-        setCardsLimit(Math.min(deployments.length, 10));
+        setCardsLimit(Math.min(deployments.length, 12));
     }, [deployments]);
 
     useEffect(() => {
-        if (!noDeploymentFound) {
-            let intervalId = null;
-            intervalId = setTimeout(() => {
-                setNoDeploymentFound(true);
+        let timeOutId: NodeJS.Timeout | null = null;
+
+        if (isFetchingDeployments) {
+            if (deployments.length > 0) {
+                setIsFetchingDeployments(false);
+                return () => {
+                    if (timeOutId) {
+                        clearInterval(timeOutId);
+                    }
+                };
+            }
+
+            timeOutId = setTimeout(() => {
+                setIsFetchingDeployments(false);
             }, 10000);
+
             return () => {
-                clearInterval(intervalId);
+                if (timeOutId) clearTimeout(timeOutId);
             };
         }
-    }, [noDeploymentFound]);
+    }, [deployments]);
+
+    useEffect(() => {
+        if (managerProcess) {
+            setManagerProcessExists(true);
+        } else {
+            setManagerProcessExists(false);
+        }
+    }, [managerProcess]);
 
     return (
         <Layout>
@@ -143,40 +155,43 @@ const Dashboardcomp = () => {
                         >
                             <List className="w-4 h-4" />
                         </Button>
- 
-                       <Link to="/deploy">
-                            <Button className="font-semibold">
-                                <Plus /> Add deployment
-                            </Button>
-                        </Link>
+                        <Button
+                            onClick={() => navigate("/deploy")}
+                            className="font-semibold"
+                            disabled={!managerProcessExists}
+                        >
+                            <Plus /> Add deployment
+                        </Button>
                     </div>
                 </div>
 
-                {deployments.length === 0 && (
+                {managerProcess ? (
+                    isFetchingDeployments ? (
+                        <ProjectCardSkeleton viewMode={viewMode} />
+                    ) : deployments.length > 0 ? (
+                        <div
+                            className={`grid ${
+                                viewMode === "grid"
+                                    ? "md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3"
+                                    : "grid-cols-1"
+                            } gap-6`}
+                        >
+                            {filteredAndSortedProjects
+                                .slice(0, cardsLimit)
+                                .map((project) => (
+                                    <ProjectCard
+                                        key={project.id}
+                                        project={project}
+                                    />
+                                ))}
+                        </div>
+                    ) : (
+                        <NoDeploymentFoundCard />
+                    )
+                ) : isFetchingDeployments ? (
                     <ProjectCardSkeleton viewMode={viewMode} />
-                )}
-
-                {deployments.length === 0 && noDeploymentFound && (
+                ) : (
                     <NoDeploymentFoundCard />
-                )}
-
-                {mgProcess && deployments.length > 0 && (
-                    <div
-                        className={`grid ${
-                            viewMode === "grid"
-                                ? "md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3"
-                                : "grid-cols-1"
-                        } gap-6`}
-                    >
-                        {filteredAndSortedProjects
-                            .slice(0, cardsLimit)
-                            .map((project) => (
-                                <ProjectCard
-                                    key={project.id}
-                                    project={project}
-                                />
-                            ))}
-                    </div>
                 )}
 
                 {cardsLimit < deployments.length && (
@@ -198,12 +213,18 @@ export default Dashboardcomp;
 
 const NoDeploymentFoundCard = () => {
     return (
-        <Card className="bg-arlink-bg-secondary-color order-neutral-800">
-            <CardContent className="flex flex-col items-center justify-center p-6">
-                <p className="text-muted-foreground mb-2">No deployments yet</p>
+        <Card className="bg-arlink-bg-secondary-color border-dashed">
+            <CardContent className="flex flex-col items-center justify-center p-10 text-center">
+                <RocketIcon className="w-12 h-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">
+                    No deployments yet
+                </h3>
+                <p className="text-muted-foreground mb-6">
+                    Start your first deployment and bring your project to life!
+                </p>
                 <Link to="/deploy">
-                    <Button variant="link" className="text-muted-foreground">
-                        Click here to create one
+                    <Button variant="default" className="font-semibold">
+                        Create Your First Deployment
                     </Button>
                 </Link>
             </CardContent>

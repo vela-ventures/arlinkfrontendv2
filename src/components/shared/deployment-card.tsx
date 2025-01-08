@@ -3,8 +3,6 @@ import { ExternalLink, MoveUpRight, GitBranch, GitCommit } from "lucide-react";
 import { TDeployment } from "@/types";
 
 interface DeploymentCardProps {
-    antName: string;
-    deploymentUrl: string;
     deployment: TDeployment;
 }
 
