@@ -6,11 +6,9 @@ import {
     RefreshCw,
     ArrowLeft,
     Loader2,
-    Underline,
     ChevronDown,
-    Command,
-    ChevronsUpDown,
     Check,
+    ChevronsUpDown,
 } from "lucide-react";
 
 import { BUILDER_BACKEND, cn } from "@/lib/utils";
@@ -36,6 +34,7 @@ import { useActiveAddress } from "arweave-wallet-kit";
 import { Popover, PopoverContent } from "@/components/ui/popover";
 import { ArnsName } from "@/types";
 import {
+    Command,
     CommandEmpty,
     CommandInput,
     CommandItem,
@@ -44,6 +43,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { PopoverTrigger } from "@radix-ui/react-popover";
 import { CommandGroup } from "cmdk";
+import DomainSelection from "@/components/shared/domain-selection";
 
 export default function DeploymentSetting() {
     // global states
@@ -81,10 +81,15 @@ export default function DeploymentSetting() {
 
     // arns data
     const activeAddress = useActiveAddress();
-    const [arnsNames, setArnsNames] = useState<ArnsName[]>([]);
+    const [arnsNames, setArnsNames] = useState<ArnsName[]>([
+        { name: "my-app-1.arweave", processId: "process-123" },
+        { name: "my-app-2.arweave", processId: "process-456" },
+        { name: "test-app.arweave", processId: "process-789" },
+        { name: "demo-app.arweave", processId: "process-012" },
+    ]);
     const [existingArnsLoading, setExistingArnsLoading] =
-        useState<boolean>(true);
-    const [arnsDropdownModal, setarnsDropdownModal] = useState(false);
+        useState<boolean>(false);
+    const [arnsDropdownModal, setArnsDropDownModal] = useState(false);
     const [arnsName, setArnsName] = useState<ArnsName | undefined>(undefined);
     const [arnsProcess, setArnsProcess] = useState<string | undefined>(
         undefined,
@@ -187,20 +192,16 @@ export default function DeploymentSetting() {
         }
     }
 
-    const handleFetchArns = async () => {
-        handleFetchExistingArnsName({
-            setArnsNames,
-            activeAddress,
-            setExistingArnsLoading,
-        });
-    };
+    useEffect(() => {
+        console.log(arnsNames);
+    }, [arnsNames]);
 
     async function handleArnsSelection(arnsName: ArnsName) {
         setArnsProcess(arnsName.processId);
         setArnsName(
             arnsNames.find((arns) => arns.processId === arnsName.processId),
         );
-        setarnsDropdownModal(false);
+        setArnsDropDownModal(false);
     }
 
     useEffect(() => {
@@ -390,97 +391,80 @@ export default function DeploymentSetting() {
                                     >
                                         Current ARN
                                     </Label>
-                                    {existingArnsLoading ? (
-                                        <Skeleton className="w-full flex items-center justify-between gap-3 px-3 h-10 text-center focus:ring-0 focus:ring-offset-0 outline-none  bg-neutral-900 border-[#383838] text-white">
-                                            <div className="flex items-center gap-3">
-                                                Fetching existing arns
-                                                <Loader2
-                                                    size={15}
-                                                    className="animate-spin"
-                                                />
-                                            </div>
-                                            <ChevronDown size={15} />
-                                        </Skeleton>
-                                    ) : (
-                                        <>
-                                            <Popover
-                                                open={arnsDropdownModal}
-                                                onOpenChange={
-                                                    setarnsDropdownModal
-                                                }
+                                    <div>
+                                        <Popover
+                                            open={arnsDropdownModal}
+                                            onOpenChange={setArnsDropDownModal}
+                                        >
+                                            <PopoverTrigger
+                                                className="w-full bg-arlink-bg-secondary-color border-[#383838]"
+                                                asChild
                                             >
-                                                <PopoverTrigger
-                                                    className="w-full bg-arlink-bg-secondary-color border-[#383838]"
-                                                    asChild
+                                                <Button
+                                                    variant="outline"
+                                                    aria-expanded={
+                                                        arnsDropdownModal
+                                                    }
+                                                    className=" justify-between"
                                                 >
-                                                    <Button
-                                                        variant="outline"
-                                                        aria-expanded={
-                                                            arnsDropdownModal
-                                                        }
-                                                        className=" justify-between"
-                                                    >
-                                                        {arnsName
-                                                            ? arnsName.name
-                                                            : "Select an arns name"}
-                                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                    </Button>
-                                                </PopoverTrigger>
-                                                <PopoverContent
-                                                    className="max-w-3xl p-0 border-[#383838] bg-arlink-bg-secondary-color
+                                                    {arnsName
+                                                        ? arnsName.name
+                                                        : "Select an arns name"}
+                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent
+                                                className="max-w-3xl p-0 border-[#383838] bg-arlink-bg-secondary-color
 									w-[--radix-popover-trigger-width] max-h-[--radix-popover-content-available-height]
 									"
-                                                >
-                                                    <Command className="w-full">
-                                                        <CommandInput placeholder="Select an existing arns..." />
-                                                        <CommandList>
-                                                            <CommandEmpty>
-                                                                No arns found.
-                                                            </CommandEmpty>
-                                                            <CommandGroup>
-                                                                {arnsNames.map(
-                                                                    (
-                                                                        arnsObj,
-                                                                    ) => (
-                                                                        <CommandItem
-                                                                            key={
-                                                                                arnsObj.processId
-                                                                            }
-                                                                            value={
-                                                                                arnsObj.name
-                                                                            }
-                                                                            onSelect={() => {
-                                                                                handleArnsSelection(
-                                                                                    {
-                                                                                        processId:
-                                                                                            arnsObj.processId,
-                                                                                        name: arnsObj.name,
-                                                                                    },
-                                                                                );
-                                                                            }}
-                                                                        >
-                                                                            <Check
-                                                                                className={cn(
-                                                                                    "mr-2 h-4 w-4",
-                                                                                    arnsName?.name ===
-                                                                                        arnsObj.name
-                                                                                        ? "opacity-100"
-                                                                                        : "opacity-0",
-                                                                                )}
-                                                                            />
-                                                                            {
-                                                                                arnsObj.name
-                                                                            }
-                                                                        </CommandItem>
-                                                                    ),
-                                                                )}
-                                                            </CommandGroup>
-                                                        </CommandList>
-                                                    </Command>
-                                                </PopoverContent>
-                                            </Popover>
-                                        </>
-                                    )}
+                                            >
+                                                <Command className="w-full">
+                                                    <CommandInput placeholder="Select an existing arns..." />
+                                                    <CommandList>
+                                                        <CommandEmpty>
+                                                            No arns found.
+                                                        </CommandEmpty>
+                                                        <CommandGroup>
+                                                            {arnsNames.map(
+                                                                (arnsObj) => (
+                                                                    <CommandItem
+                                                                        key={
+                                                                            arnsObj.processId
+                                                                        }
+                                                                        value={
+                                                                            arnsObj.name
+                                                                        }
+                                                                        onSelect={() => {
+                                                                            handleArnsSelection(
+                                                                                {
+                                                                                    processId:
+                                                                                        arnsObj.processId,
+                                                                                    name: arnsObj.name,
+                                                                                },
+                                                                            );
+                                                                        }}
+                                                                    >
+                                                                        <Check
+                                                                            className={cn(
+                                                                                "mr-2 h-4 w-4",
+                                                                                arnsName?.name ===
+                                                                                    arnsObj.name
+                                                                                    ? "opacity-100"
+                                                                                    : "opacity-0",
+                                                                            )}
+                                                                        />
+                                                                        {
+                                                                            arnsObj.name
+                                                                        }
+                                                                    </CommandItem>
+                                                                ),
+                                                            )}
+                                                        </CommandGroup>
+                                                    </CommandList>
+                                                </Command>
+                                            </PopoverContent>
+                                        </Popover>
+                                    </div>
                                 </div>
                             </div>
                         </div>

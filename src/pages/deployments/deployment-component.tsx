@@ -31,7 +31,7 @@ export default function DeploymentComponent({
     const globalState = useGlobalState();
     const deploymentConfigStore = useDeploymentStore();
 
-    //@ts-ignore
+    // @ts-ignore
     const { managerProcess, deployments, refresh } = useDeploymentManager();
     const navigate = useNavigate();
     const { name } = useParams();
@@ -382,14 +382,28 @@ export default function DeploymentComponent({
     return (
         <Layout>
             <div className="md:p-10 p-4 container">
-                <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-3xl font-bold">
-                        Production Deployment
-                    </h1>
+                <div className="flex justify-between items-start mb-6">
+                    <div className="space-y-2">
+                        <h1 className="text-3xl font-semibold">
+                            {deployment.Name}
+                        </h1>
+                        <p className="text-neutral-400 text-sm">
+                            This production deployment is available to the user
+                        </p>
+                    </div>
                     <div className="space-x-2 flex items-center">
+                        <Button
+                            className="px-8 py-1 bg-arlink-bg-secondary-color hover:bg-neutral-900 border-neutral-800 text-white border"
+                            onClick={() =>
+                                window.open(deployment.RepoUrl, "_blank")
+                            }
+                        >
+                            Repository
+                        </Button>
                         <Button className="px-8 py-1 bg-arlink-bg-secondary-color hover:bg-neutral-900 border-neutral-800 text-white border">
                             logs
                         </Button>
+
                         <Button
                             className="px-8 py-1 bg-arlink-bg-secondary-color hover:bg-neutral-900 border-neutral-800 text-white border"
                             onClick={updateArns}

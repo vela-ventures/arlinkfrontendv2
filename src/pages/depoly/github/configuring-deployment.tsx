@@ -38,7 +38,6 @@ import { runLua, setArnsName as setUpArnsName } from "@/lib/ao-vars";
 import { useNavigate } from "react-router-dom";
 import DeploymentLogs from "../../../components/shared/deploying-logs";
 import {
-    analyzeProjectDeploymentStructure,
     analyzeRepoStructure,
     createTokenizedRepoUrl,
     detectFrameworkImage,
@@ -89,6 +88,19 @@ const ConfiguringDeploymentProject = ({
     const [rootDirectory, setRootDirectory] = useState("./");
     const [isRootDirectoryDrawerOpen, setIsRootDirectoryDrawerOpen] =
         useState(false);
+
+    async function handleSelectRootDir(path: string) {
+        setRootDirectory(path);
+        const configPath = path.replace("./", "");
+        const newData = await getRepoConfig(
+            extractOwnerName(repoUrl),
+            extractRepoName(repoUrl),
+            configPath,
+        );
+        console.log({
+            configData: newData,
+        });
+    }
 
     // domain states
     const [activeTab, setActiveTab] = useState<"arlink" | "existing">("arlink");
@@ -344,18 +356,17 @@ const ConfiguringDeploymentProject = ({
 
                 // insert query
                 const insertQuery = `local res = db:exec[[
-                    INSERT INTO Deployments (Name, RepoUrl, Branch, InstallCMD, BuildCMD, OutputDIR, ArnsProcess) VALUES
-                        ('${projectName}', 
-                        '${repoUrl}', 
-                        '${selectedBranch}', 
-                        '${buildSettings.installCommand.value}', 
-                        '${buildSettings.buildCommand.value}', 
-                        '${buildSettings.outPutDir.value}', 
-                        '${finalArnsProcess}')
-                    ]]`;
+                INSERT INTO Deployments (Name, RepoUrl, Branch, InstallCMD, BuildCMD, OutputDIR, ArnsProcess) VALUES
+                    ('${projectName}', 
+                    '${repoUrl}', 
+                    '${selectedBranch}', 
+                    '${buildSettings.installCommand.value}', 
+                    '${buildSettings.buildCommand.value}', 
+                    '${buildSettings.outPutDir.value}', 
+                    '${finalArnsProcess}')
+                ]]`;
                 console.log("manager process ", mgProcess);
                 const res = await runLua(insertQuery, mgProcess);
-
 
                 // update query for updating deploymentId
                 const updateIdQuery = await runLua(
@@ -364,13 +375,13 @@ const ConfiguringDeploymentProject = ({
                 );
                 console.log("result of update id ", updateIdQuery);
 
-                // update query for updating UnderName 
+                // update query for updating UnderName
                 const underNameQuery = await runLua(
                     `local res = db:exec[[
-                        UPDATE Deployments 
-                        SET UnderName = '${response.data.finalUnderName}' 
-                        WHERE Name = '${projectName}'
-                    ]]`,
+                    UPDATE Deployments 
+                    SET UnderName = '${response.data.finalUnderName}' 
+                    WHERE Name = '${projectName}'
+                ]]`,
                     mgProcess,
                 );
                 console.log("addedundername", underNameQuery);
@@ -440,11 +451,12 @@ const ConfiguringDeploymentProject = ({
         try {
             const data = await analyzeRepoStructure(
                 extractOwnerName(repoUrl),
-                repoUrl,
+                extractRepoName(repoUrl),
                 githubToken as string,
             );
             console.log({ subDirData: data });
             setSubDir(data);
+
             setIsRootDirectoryDrawerOpen(true);
         } catch (error) {
             console.log(error);
@@ -624,7 +636,7 @@ const ConfiguringDeploymentProject = ({
                 subDir={subDir}
                 isOpen={isRootDirectoryDrawerOpen}
                 onClose={() => setIsRootDirectoryDrawerOpen(false)}
-                onSelect={setRootDirectory}
+                onSelect={handleSelectRootDir}
             />
         </div>
     );

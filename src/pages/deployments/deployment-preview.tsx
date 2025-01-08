@@ -46,7 +46,7 @@ export default function DeploymentPreview({}) {
                     <h3 className="text-lg flex items-center gap-4  font-semibold mb-4 text-neutral-100">
                         <span>{deployment.Name}</span>
                         <Link
-                            to={`https://arweave.net/${deployment.DeploymentId}`}
+                            to={`https://${deployment.UnderName}_arlink.arweave.net`}
                             target="_blank"
                             className="text-sm group text-neutral-300 transition-all hover:underline flex items-center"
                         >

@@ -26,17 +26,6 @@ export default function RootDirectoryDrawer({
     onSelect,
 }: RootDirectoryDrawerProps) {
     // This is a mock list of directories. In a real application, you'd fetch this dynamically.
-    const directories: DirectoryStructure[] = [
-        {
-            name: "root",
-            path: "./",
-            type: "dir",
-            children: [],
-        },
-
-        ...subDir,
-    ];
-
     const [customDir, setCustomDir] = useState<string>("");
 
     const handleCustomDirSubmit = (e: React.FormEvent) => {
