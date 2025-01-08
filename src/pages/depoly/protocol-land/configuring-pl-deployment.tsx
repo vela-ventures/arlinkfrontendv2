@@ -34,6 +34,7 @@ const ConfigureProtocolLandProject = ({
 
     // project states
     const [projectName, setProjectName] = useState<string>(selectedRepo.name);
+    const [branch, setBranch] = useState<string>("main");
     const [buildSettings, setBuildSettings] = useState<BuildSettings>({
         buildCommand: { enabled: false, value: "npm run build" },
         installCommand: { enabled: false, value: "npm install" },
@@ -160,7 +161,7 @@ const ConfigureProtocolLandProject = ({
                         installCommand: buildSettings.installCommand.value,
                         buildCommand: buildSettings.buildCommand.value,
                         outputDir: buildSettings.outPutDir.value,
-                        branch: "main",
+                        branch: branch, // branch
                         subDirectory: "./",
                         protocolLand: true,
                         repoName: selectedRepo.name,
@@ -200,7 +201,7 @@ const ConfigureProtocolLandProject = ({
                             ) VALUES (
                                 '${projectName}',
                                 '${selectedRepo.url}',
-                                'main',
+                                '${branch}',
                                 '${buildSettings.installCommand.value}',
                                 '${buildSettings.buildCommand.value}', 
                                 '${buildSettings.outPutDir.value}',
@@ -302,6 +303,21 @@ const ConfigureProtocolLandProject = ({
                             id="name"
                             value={projectName}
                             onChange={(e) => setProjectName(e.target.value)}
+                            placeholder="Enter your project name here"
+                            className="bg-[#0D0D0D]  p-4 placeholder:text-neutral-500 rounded-md mt-3 border-[#383838] text-white"
+                        />
+                    </div>
+                    <div>
+                        <label
+                            htmlFor="branch"
+                            className="block text-neutral-400 text-sm font-medium mb-1"
+                        >
+                            Branch
+                        </label>
+                        <Input
+                            id="Branch"
+                            value={branch}
+                            onChange={(e) => setBranch(e.target.value)}
                             placeholder="Enter your project name here"
                             className="bg-[#0D0D0D]  p-4 placeholder:text-neutral-500 rounded-md mt-3 border-[#383838] text-white"
                         />
