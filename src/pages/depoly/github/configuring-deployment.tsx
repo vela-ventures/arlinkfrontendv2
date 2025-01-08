@@ -342,7 +342,8 @@ const ConfiguringDeploymentProject = ({
                 );
                 console.log("tablealtered", alter);
 
-                const query = `local res = db:exec[[
+                // insert query
+                const insertQuery = `local res = db:exec[[
                     INSERT INTO Deployments (Name, RepoUrl, Branch, InstallCMD, BuildCMD, OutputDIR, ArnsProcess) VALUES
                         ('${projectName}', 
                         '${repoUrl}', 
@@ -353,14 +354,18 @@ const ConfiguringDeploymentProject = ({
                         '${finalArnsProcess}')
                     ]]`;
                 console.log("manager process ", mgProcess);
+                const res = await runLua(insertQuery, mgProcess);
 
-                const res = await runLua(query, mgProcess);
-                const updres = await runLua(
-                    `db:exec[[UPDATE Deployments SET DeploymentId='${response.data}' WHERE Name='${projectName}']]`,
+
+                // update query for updating deploymentId
+                const updateIdQuery = await runLua(
+                    `db:exec[[UPDATE Deployments SET DeploymentId='${response.data.result}' WHERE Name='${projectName}']]`,
                     mgProcess,
                 );
-                console.log("result of update id ", updres);
-                const undaname = await runLua(
+                console.log("result of update id ", updateIdQuery);
+
+                // update query for updating UnderName 
+                const underNameQuery = await runLua(
                     `local res = db:exec[[
                         UPDATE Deployments 
                         SET UnderName = '${response.data.finalUnderName}' 
@@ -368,7 +373,7 @@ const ConfiguringDeploymentProject = ({
                     ]]`,
                     mgProcess,
                 );
-                console.log("addedundername", undaname);
+                console.log("addedundername", underNameQuery);
 
                 // if there was any error we show the toast
                 if (res.Error) return toast.error(res.Error);

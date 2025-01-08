@@ -196,7 +196,6 @@ const ConfigureProtocolLandProject = ({
                                 BuildCommand,
                                 OutputDir,
                                 ArnsName,
-                                UnderName
                             ) VALUES (
                                 '${projectName}',
                                 '${selectedRepo.url}',
@@ -205,7 +204,6 @@ const ConfigureProtocolLandProject = ({
                                 '${buildSettings.buildCommand.value}', 
                                 '${buildSettings.outPutDir.value}',
                                 '${finalArnsProcess}',
-                                '${txid.data.finalUnderName}
                             )
                         ]]
                     `;
@@ -213,18 +211,25 @@ const ConfigureProtocolLandProject = ({
                     const res = await runLua(insertQuery, managerProcess);
                     if (res.Error) return toast.error(res.Error);
 
-                    // Update deployment ID
-                    const updateDeploymentQuery = `
-                        db:exec[[
-                            UPDATE Deployments 
-                            SET DeploymentId = '${txid.data}'
-                            WHERE Name = '${projectName}'
-                        ]]
-                    `;
-                    await runLua(updateDeploymentQuery, managerProcess);
+                    // update query for updating deploymentId
+                    const updateIdQuery = await runLua(
+                        `db:exec[[UPDATE Deployments SET DeploymentId='${txid.data.result}' WHERE Name='${projectName}']]`,
+                        managerProcess,
+                    );
+                    console.log("result of update id ", updateIdQuery);
+
+                    // update query for updating UnderName
+                    const underNameQuery = await runLua(
+                        `local res = db:exec[[
+                        UPDATE Deployments 
+                        SET UnderName = '${txid.data.finalUnderName}' 
+                        WHERE Name = '${projectName}'
+                    ]]`,
+                        managerProcess,
+                    );
+                    console.log("addedundername", underNameQuery);
 
                     await refresh();
-
                     await indexInMalik({
                         projectName: projectName,
                         description: "An awesome decentralized project",
