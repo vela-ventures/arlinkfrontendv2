@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { BUILDER_BACKEND } from "@/lib/utils";
 
 import { Octokit } from "@octokit/rest";
-const GITHUB_CLIENT_ID = "Iv23lio5BbiK9CbfQFDT";
+const GITHUB_CLIENT_ID = "Iv23linjZLxHZeHfSgqB";
 
 export async function initiateGitHubAuth() {
     const BASE_URL =
