@@ -44,21 +44,21 @@ export function createOctokit(token: string): Octokit {
 }
 // Add this new function to check GitHub app installation
 export async function checkAndInstallGitHubApp(token: string) {
-    //   try {
-    //     // TODO: Change this builder backend import to the new one
-    //     // const response = await fetch(`${BUILDER_BACKEND}/check-github-app`, {
-    //     //   headers: {
-    //     //     'Authorization': `Bearer ${token}`
-    //     //   }
-    //     // });
-    //     // const data = await response.json();
-    //     // if (!data.installed) {
-    //     //   // If the app is not installed, open the installation page
-    //     // //   window.location.href = 'https://github.com/apps/arlinkapp/installations/new';
-    //     // }
-    //   } catch (error) {
-    //     console.error('Error checking GitHub app installation:', error);
-    //   }
+      try {
+       
+        const response = await fetch(`${BUILDER_BACKEND}/check-github-app`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        const data = await response.json();
+        if (!data.installed) {
+          // If the app is not installed, open the installation page
+          window.location.href = 'https://github.com/apps/arlinkapp/installations/new';
+        }
+      } catch (error) {
+        console.error('Error checking GitHub app installation:', error);
+      }
 }
 
 // dhruv
