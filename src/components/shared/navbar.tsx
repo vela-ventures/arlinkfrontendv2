@@ -57,6 +57,10 @@ export default function Navbar() {
             url: `/deployment/logs?repo=${extractRepoName(repo || "")}`,
         },
         {
+            name: "Card",
+            url: `/deployment/card?repo=${extractRepoName(repo || "")}`,
+        },
+        {
             name: "Settings",
             url: `/deployment/settings?repo=${extractRepoName(repo || "")}`,
         },

@@ -49,7 +49,6 @@ export type TDeployment = {
     DeploymentId: string;
     DeploymentHash: string;
     UnderName:string;
-
 };
 
 export type TDeployments = {

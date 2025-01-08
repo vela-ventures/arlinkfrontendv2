@@ -210,16 +210,16 @@ export default function DeploymentSetting() {
     }, [isFetchingLogs]);
 
     return (
-        <div className="flex flex-col md:py-8 md:flex-row container bg-black min-h-screen">
+        <div className="flex flex-col z-0 md:py-8 md:flex-row container bg-black min-h-[80vh]">
             <div
                 className={cn(
-                    "w-full md:w-48 border-neutral-800 md:p-4",
+                    "w-full md:w-48 z-20 border-neutral-800 md:p-4",
                     showSidebar ? "block" : "hidden md:block",
                     "md:static inset-0 z-50 py-4 bg-black md:bg-transparent",
                 )}
             >
                 <nav className="space-y-1">
-                    {["redeploy", "delete", "update-arns"].map((tab) => (
+                    {["redeploy", "delete", "configure-arns"].map((tab) => (
                         <button
                             key={tab}
                             onClick={() => handleTabClick(tab)}
@@ -236,7 +236,7 @@ export default function DeploymentSetting() {
                             {tab === "delete" && (
                                 <Trash2 className="mr-2 h-4 w-4" />
                             )}
-                            {tab === "update-arns" && (
+                            {tab === "configure-arns" && (
                                 <RefreshCw className="mr-2 h-4 w-4" />
                             )}
                             {tab.charAt(0).toUpperCase() +
@@ -362,11 +362,11 @@ export default function DeploymentSetting() {
                     </>
                 )}
 
-                {activeTab === "update-arns" && (
+                {activeTab === "configure-arns" && (
                     <>
                         <div className="space-y-2">
                             <h2 className="text-2xl md:text-3xl font-bold text-neutral-100">
-                                Update ARNs
+                                Configure Arns
                             </h2>
                             <div className="space-y-2">
                                 <div className="space-y-2">

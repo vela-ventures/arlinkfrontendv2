@@ -389,7 +389,7 @@ const ConfiguringDeploymentProject = ({
                 });
 
                 // In the deploy function within pages/deploy.tsx, update this line:
-                navigate(`/deployment?repo=${projectName}`);
+                navigate(`/deployment/card?repo=${projectName}`);
             } else {
                 throw new Error("Deployment failed: Unexpected response");
             }
@@ -447,7 +447,7 @@ const ConfiguringDeploymentProject = ({
             setFetchingSubDir(false);
         }
     };
-    
+
     return (
         <div className="text-white px-8 mb-20 max-w-3xl mx-auto">
             <button

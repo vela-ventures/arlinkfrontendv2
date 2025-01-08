@@ -231,63 +231,6 @@ export default function DeploymentComponent({
         };
     }, [redeploying, deployment?.RepoUrl, globalState.managerProcess]);
 
-    const redeploy = async () => {
-        if (!deployment) return;
-        const projName = deployment.Name;
-        const repoUrl = deployment.RepoUrl;
-        const installCommand = deployment.InstallCMD;
-        const buildCommand = deployment.BuildCMD;
-        const outputDir = deployment.OutputDIR;
-        const arnsProcess = deployment.ArnsProcess;
-        const branch = deployment.Branch || "main";
-        setRedeploying(true);
-        setBuildOutput("");
-        setError("");
-        try {
-            const txid = await axios.post(`${BUILDER_BACKEND}/deploy`, {
-                repository: repoUrl,
-                branch,
-                installCommand,
-                buildCommand,
-                outputDir,
-            });
-
-            if (txid.status === 200) {
-                toast.success("Deployment successful");
-
-                await runLua("", arnsProcess, [
-                    { name: "Action", value: "Set-Record" },
-                    { name: "Sub-Domain", value: "@" },
-                    { name: "Transaction-Id", value: txid.data },
-                    { name: "TTL-Seconds", value: "3600" },
-                ]);
-
-                await runLua(
-                    `db:exec[[UPDATE Deployments SET DeploymentId='${txid.data}' WHERE Name='${projName}']]`,
-                    globalState.managerProcess,
-                );
-
-                navigate(`/deployment?repo=${projName}`);
-                await refresh();
-                window.open(`https://arweave.net/${txid.data}`, "_blank");
-
-                setRedeploying(false);
-            } else {
-                toast.error("Deployment failed");
-                console.log(txid);
-                setRedeploying(false);
-                setError("Deployment failed. Please try again.");
-            }
-        } catch (error) {
-            toast.error("Deployment failed");
-            console.log(error);
-            setRedeploying(false);
-            setError(
-                "An error occurred during deployment. Please try again later.",
-            );
-        }
-    };
-
     useEffect(() => {
         refresh();
     }, []);
@@ -405,36 +348,6 @@ export default function DeploymentComponent({
                 );
             });
     }, [globalState.managerProcess]);
-
-    async function deleteDeployment() {
-        if (!deployment) return toast.error("Deployment not found");
-        if (!globalState.managerProcess)
-            return toast.error("Manager process not found");
-
-        const query = `local res = db:exec[[
-      DELETE FROM Deployments
-      WHERE Name = '${deployment.Name}'
-    ]]`;
-        console.log(query);
-
-        try {
-            const res = await runLua(query, globalState.managerProcess);
-            if (res.Error) {
-                toast.error(res.Error);
-                setError("Failed to delete deployment. Please try again.");
-                return;
-            }
-            console.log(res);
-            await refresh();
-
-            toast.success("Deployment deleted successfully");
-            navigate("/dashboard");
-        } catch (error) {
-            console.error("Error deleting deployment:", error);
-            toast.error("An error occurred while deleting the deployment");
-            setError("Failed to delete deployment. Please try again later.");
-        }
-    }
 
     const updateArns = async () => {
         if (!deployment || !deploymentUrl) {

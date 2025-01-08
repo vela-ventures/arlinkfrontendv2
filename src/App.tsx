@@ -67,6 +67,10 @@ const router = createBrowserRouter([
                         element: <DeploymentPreview />,
                     },
                     {
+                        path: "deployment/card",
+                        element: <DeploymentPreview />,
+                    },
+                    {
                         path: "deployment/settings",
                         element: <DeploymentSetting />,
                     },
