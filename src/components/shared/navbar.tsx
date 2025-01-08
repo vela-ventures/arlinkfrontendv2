@@ -33,13 +33,10 @@ export default function Navbar() {
             name: "Integration",
             url: "/integration",
         },
+
         {
-            name: "Feedback",
-            url: "/feedback",
-        },
-        {
-            name: "Support",
-            url: "/support",
+            name: "Discord",
+            url: "https://discord.gg/PZjQH8DVTP",
         },
         {
             name: "Docs",
@@ -177,7 +174,7 @@ const NavLink = ({
 
     return (
         <Link
-            target={name === "Docs" ? "_blank" : ""}
+            target={name === "Docs" || name === "Discord" ? "_blank" : ""}
             to={url}
             className={`px-3 border-b-2 cursor-pointer
 					transition-all py-2 text-[14px] 
