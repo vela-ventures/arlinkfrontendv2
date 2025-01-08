@@ -239,7 +239,6 @@ export default function DeploymentSetting() {
             activeAddress,
             setExistingArnsLoading,
         });
-        console.log("arns name fetched");
     };
 
     useEffect(() => {
