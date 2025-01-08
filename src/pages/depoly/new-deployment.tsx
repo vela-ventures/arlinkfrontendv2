@@ -19,7 +19,7 @@ const NewDeployment = () => {
 
     return (
         <Layout>
-            <div className="container text-white p-10">
+            <div className="md:container px-4 text-white p-10">
                 <Steps
                     step={step}
                     setSelectedRepo={setSelectedRepoUrl}
@@ -50,12 +50,12 @@ const Steps = ({
         case "importing":
             return (
                 <>
-                    <h1 className="text-4xl font-bold mb-4">
+                    <h1 className="text-2xl lg:text-4xl font-bold mb-4">
                         Let's Deploy your project
                     </h1>
-                    <p className="text-neutral-400 mb-8">
+                    <p className="text-sm lg:text-base text-neutral-400 mb-8">
                         Arlink allows you to permanently deploy and manage your
-                        <br />
+                        <br className="hidden lg:block" />
                         web apps on the PermaWeb with ease.
                     </p>
 

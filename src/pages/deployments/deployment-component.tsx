@@ -19,6 +19,7 @@ import {
 import DeploymentCard from "@/components/shared/deployment-card";
 import { extractGithubPath } from "../depoly/utilts";
 import { useDeploymentStore } from "@/store/use-deployment-store";
+import { Loader2 } from "lucide-react";
 
 interface DeploymentComponentProps {
     deployment: TDeployment;
@@ -40,7 +41,7 @@ export default function DeploymentComponent({
     const [, setBuildOutput] = useState("");
     const [antName, setAntName] = useState("");
     const [redeploying, setRedeploying] = useState(false);
-    const [deploymentUrl, setDeploymentUrl] = useState("");
+    const [deploymentUrl, setDeploymentUrl] = useState(deployment.DeploymentId);
     const [updatingArns, setUpdatingArns] = useState(false);
 
     // loading states
@@ -357,7 +358,7 @@ export default function DeploymentComponent({
 
         setUpdatingArns(true);
         try {
-            await setArnsName(deployment.ArnsProcess, deploymentUrl);
+            await setArnsName(deployment.ArnsProcess, deployment.DeploymentId);
             toast.success(
                 "ArNS update initiated successfully. This may take approximately 5 minutes to fully update.",
             );
@@ -382,34 +383,35 @@ export default function DeploymentComponent({
     return (
         <Layout>
             <div className="md:p-10 p-4 container">
-                <div className="flex justify-between items-start mb-6">
+                <div className="flex md:flex-row flex-col space-y-3 justify-between items-start mb-6">
                     <div className="space-y-2">
-                        <h1 className="text-3xl font-semibold">
+                        <h1 className="text-2xl lg:text-3xl font-semibold">
                             {deployment.Name}
                         </h1>
-                        <p className="text-neutral-400 text-sm">
+                        <p className="text-neutral-400 text-xs md:text-sm">
                             This production deployment is available to the user
                         </p>
                     </div>
                     <div className="space-x-2 flex items-center">
-                        <Button
-                            className="px-8 py-1 bg-arlink-bg-secondary-color hover:bg-neutral-900 border-neutral-800 text-white border"
-                            onClick={() =>
-                                window.open(deployment.RepoUrl, "_blank")
-                            }
-                        >
-                            Repository
-                        </Button>
-                        <Button className="px-8 py-1 bg-arlink-bg-secondary-color hover:bg-neutral-900 border-neutral-800 text-white border">
+                        <Button className="px-4 md:px-8 py-1 text-sm md:text-base bg-arlink-bg-secondary-color hover:bg-neutral-900 border-neutral-800 text-white border">
                             logs
                         </Button>
 
                         <Button
-                            className="px-8 py-1 bg-arlink-bg-secondary-color hover:bg-neutral-900 border-neutral-800 text-white border"
+                            className={`${
+                                updatingArns ? "px-2 md:px-4" : "px-4 md:px-8"
+                            } py-1 text-sm md:text-base bg-arlink-bg-secondary-color hover:bg-neutral-900 border-neutral-800 text-white border`}
                             onClick={updateArns}
                             disabled={updatingArns || !deploymentUrl}
                         >
-                            Update arns
+                            {updatingArns ? (
+                                <>
+                                    <Loader2 className="mr-2 h-3 w-3 md:h-4 md:w-4 animate-spin" />
+                                    Updating...
+                                </>
+                            ) : (
+                                "Update arns"
+                            )}
                         </Button>
                     </div>
                 </div>

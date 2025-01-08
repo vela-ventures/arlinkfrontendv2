@@ -113,12 +113,12 @@ const Dashboardcomp = () => {
 
     return (
         <Layout>
-            <div className="container mx-auto py-8 ">
+            <div className="md:container px-4 mx-auto py-8 ">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                     <div className="relative w-full md:max-w-[600px]">
-                        <Search className="absolute left-3 top-1/2 h-[20px] w-[20px] transform -translate-y-1/2 text-neutral-600" />
+                        <Search className="absolute left-3 top-1/2 h-[18px] md:h-[20px] w-[18px] md:w-[20px] transform -translate-y-1/2 text-neutral-600" />
                         <Input
-                            className="pl-10 w-full rounded-md bg-arlink-bg-secondary-color hover:border-neutral-600 transition-colors placeholder:text-neutral-400 font-light border-[#383838]  focus:ring-neutral-700 focus-visible:ring-neutral-700 "
+                            className="pl-10 w-full rounded-md bg-arlink-bg-secondary-color hover:border-neutral-600 transition-colors placeholder:text-neutral-400 font-light border-[#383838] focus:ring-neutral-700 focus-visible:ring-neutral-700 text-sm md:text-base"
                             placeholder="Search Repositories and Projects..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -126,10 +126,10 @@ const Dashboardcomp = () => {
                     </div>
                     <div className="flex items-center gap-2">
                         <Select value={sortBy} onValueChange={setSortBy}>
-                            <SelectTrigger className="w-[180px] bg-arlink-bg-secondary-color hover:border-neutral-600 border-[#383838] focus:ring-neutral-700">
+                            <SelectTrigger className="px-4 text-sm w-[180px] md:text-base bg-arlink-bg-secondary-color hover:border-neutral-600 border-[#383838] focus:ring-neutral-700">
                                 <SelectValue placeholder="Sort by" />
                             </SelectTrigger>
-                            <SelectContent className=" bg-arlink-bg-secondary-color border-[#383838]">
+                            <SelectContent className="bg-arlink-bg-secondary-color border-[#383838] text-sm md:text-base">
                                 <SelectItem value="activity">
                                     Sort by newest
                                 </SelectItem>
@@ -144,23 +144,24 @@ const Dashboardcomp = () => {
                         <Button
                             variant="outline"
                             onClick={() => setViewMode("grid")}
-                            className="border-[#383838]  bg-arlink-bg-secondary-color hover:bg-neutral-900 hover:border-neutral-600"
+                            className="border-[#383838] md:block hidden bg-arlink-bg-secondary-color hover:bg-neutral-900 hover:border-neutral-600 p-2 md:p-3"
                         >
-                            <Grid className="w-4 h-4" />
+                            <Grid className="w-3 h-3 md:w-4 md:h-4" />
                         </Button>
                         <Button
                             variant="outline"
                             onClick={() => setViewMode("list")}
-                            className="border-[#383838]  bg-arlink-bg-secondary-color hover:bg-neutral-900 hover:border-neutral-600"
+                            className="border-[#383838] md:block hidden bg-arlink-bg-secondary-color hover:bg-neutral-900 hover:border-neutral-600 p-2 md:p-3"
                         >
-                            <List className="w-4 h-4" />
+                            <List className="w-3 h-3 md:w-4 md:h-4" />
                         </Button>
                         <Button
                             onClick={() => navigate("/deploy")}
-                            className="font-semibold"
+                            className="font-semibold text-sm md:text-base px-3 py-2 md:px-4 md:py-2"
                             disabled={!managerProcessExists}
                         >
-                            <Plus /> Add deployment
+                            <Plus className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />{" "}
+                            Add deployment
                         </Button>
                     </div>
                 </div>

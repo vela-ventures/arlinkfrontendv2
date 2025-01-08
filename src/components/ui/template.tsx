@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 
 export function TemplateSelection() {
     return (
-        <Card className="bg-arlink-bg-secondary-color overflow-hidden relative p-6 rounded-lg flex flex-col">
+        <Card className="mx-auto bg-arlink-bg-secondary-color md:w-auto w-full overflow-hidden relative p-6 rounded-lg flex flex-col">
             <div className="absolute z-20 bg-neutral-950/80 font-black text-3xl flex items-center justify-center backdrop-blur-lg inset-0">
                 Coming soon.
             </div>

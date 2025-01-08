@@ -50,7 +50,7 @@ const DeploymentLogs = () => {
         		          ]])
         		          return res[1] and res[1].Logs or ''
         		        `,
-                        globalState.managerProcess
+                        globalState.managerProcess,
                     );
 
                     console.log({
@@ -71,14 +71,14 @@ const DeploymentLogs = () => {
             setIsFetchingLogs(true);
             try {
                 const res = await axios.get(
-                    `https://vmi1968527.contaboserver.net/backend/logs/${owner}/${folderName}`
+                    `https://vmi1968527.contaboserver.net/backend/logs/${owner}/${folderName}`,
                 );
                 const rawLogsData = res.data.replaceAll(/\\|\||\-/g, "");
 
                 const trimmedLogs = rawLogsData.split("\n").reduce(
                     (
                         acc: { started: boolean; logs: string[] },
-                        line: string
+                        line: string,
                     ) => {
                         if (
                             acc.started ||
@@ -89,7 +89,7 @@ const DeploymentLogs = () => {
                         }
                         return acc;
                     },
-                    { started: false, logs: [] as string[] }
+                    { started: false, logs: [] as string[] },
                 );
                 console.log({
                     trimmedLogs: res,
@@ -106,7 +106,7 @@ const DeploymentLogs = () => {
 							VALUES ('${deployment.Name}', '${safeLogsData.replace(/'/g, "''")}')
 							]])
           				`,
-                        globalState.managerProcess
+                        globalState.managerProcess,
                     );
                 }
             } catch (error) {
@@ -114,7 +114,7 @@ const DeploymentLogs = () => {
                 // If fetching latest logs fails, we'll keep using the database logs
                 // that were already set by fetchLogsFromDB
                 setLogError(
-                    "Failed to fetch latest build logs. Showing last known logs."
+                    "Failed to fetch latest build logs. Showing last known logs.",
                 );
             } finally {
                 setIsFetchingLogs(false);
@@ -153,23 +153,23 @@ const DeploymentLogs = () => {
 
     useEffect(() => {
         console.log(
-            "HEY IDIOT THE LOGS ARE HERE CHECK THEM HERE YOU PEIECE OF SHIT"
+            "HEY IDIOT THE LOGS ARE HERE CHECK THEM HERE YOU PEIECE OF SHIT",
         );
         console.log({
             buildOutput,
         });
         console.log(
-            "HEY IDIOT THE LOGS ARE HERE CHECK THEM HERE YOU PEIECE OF SHIT"
+            "HEY IDIOT THE LOGS ARE HERE CHECK THEM HERE YOU PEIECE OF SHIT",
         );
     }, [buildOutput]);
 
     return (
         <Layout>
-            <div className="container py-5 ">
+            <div className="md:container px-4 md:py-5 ">
                 <div className="rounded-lg mt-6 border-[#383838]">
-                    <h2 className="text-3xl font-semibold mb-6">
+                    <h1 className="md:text-3xl text-xl font-semibold mb-6">
                         Deployment Logs
-                    </h2>
+                    </h1>
                     <div className="space-y-2 w-full">
                         <Accordion type="single" collapsible className="w-full">
                             <AccordionItem
@@ -195,7 +195,6 @@ const DeploymentLogs = () => {
                             </AccordionItem>
                         </Accordion>
                     </div>
-
                     {logError && (
                         <div className=" border px-4 py-2 mt-3 rounded-md">
                             <p className="text-md font-medium">

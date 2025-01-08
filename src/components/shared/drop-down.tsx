@@ -122,13 +122,13 @@ export function CustomDropdown({ handleProvider }: CustomDropdownProps) {
     // }, [githubToken]);
 
     return (
-        <div className="relative w-[500px]">
+        <div className="relative md:w-[500px] w-[200px]">
             <button
                 type="button"
                 className="w-full flex items-center justify-between px-3 py-2 text-sm bg-arlink-bg-secondary-color border border-[#383838] rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-neutral-700 transition-colors focus:border-transparent"
                 onClick={() => setIsOpen(!isOpen)}
             >
-                <span>
+                <span className="md:text-md text-sm">
                     {selectedOption
                         ? selectedOption.label
                         : "Select a provider"}
@@ -152,7 +152,7 @@ export function CustomDropdown({ handleProvider }: CustomDropdownProps) {
                             <button
                                 type="button"
                                 key={option.id}
-                                className="w-full px-3 py-2 text-sm text-left hover:bg-neutral-800 focus:outline-none focus:bg-neutral-700 flex items-center justify-between"
+                                className="w-full px-3 py-2 md:text-sm text-xs text-left hover:bg-neutral-800 focus:outline-none focus:bg-neutral-700 flex items-center justify-between"
                                 onClick={() => handleSelect(option)}
                                 disabled={loadingId === option.id}
                             >

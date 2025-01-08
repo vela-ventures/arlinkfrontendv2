@@ -269,7 +269,7 @@ const ConfigureProtocolLandProject = ({
     };
 
     return (
-        <div className="text-white px-8 mb-20 max-w-3xl mx-auto">
+        <div className="text-white md:px-8 px-4 mb-20 max-w-3xl mx-auto">
             <button
                 type="button"
                 onClick={() => setStep("importing")}

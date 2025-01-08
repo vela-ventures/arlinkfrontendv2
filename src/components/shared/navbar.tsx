@@ -103,16 +103,16 @@ export default function Navbar() {
                         <img
                             src="/joose.svg"
                             alt="Joose logo"
-                            className="w-[56px] aspect-square rounded-full"
+                            className="md:w-[56px] w-[40px] aspect-square rounded-full"
                         />
                     </Link>
-                    <h2 className="bg-gradient-to-r from-neutral-50 to-neutral-300 text-transparent bg-clip-text text-[24px] tracking-tight font-bold pb-2">
+                    <h2 className="bg-gradient-to-r from-neutral-50 to-neutral-300 text-transparent bg-clip-text md:text-[24px] text-[18px] tracking-tight font-bold pb-2">
                         {displayName}
                     </h2>
                 </div>
                 <div className="flex items-center gap-6">
                     <ConnectButton accent="#0D0D0D" />
-                    <div className="w-8 h-8 bg-purple-500 rounded-full">
+                    <div className="md:w-8 md:h-8 w-6 h-6 bg-purple-500 rounded-full">
                         {avatar && (
                             <img
                                 src={avatar}
@@ -124,7 +124,7 @@ export default function Navbar() {
                 </div>
             </div>
             <div>
-                <div className="flex md:ml-[50px] ml-[16px]">
+                <div className="flex overflow-x-auto overflow-y-hidden md:ml-[50px] ml-[16px]">
                     {repo
                         ? deployPageNavlinks.map((link) => {
                               return (

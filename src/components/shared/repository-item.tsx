@@ -31,9 +31,11 @@ export function RepositoryItem({
                         className="h-full w-full"
                     />
                 </div>
-                <span className="font-medium">{fullName}</span>
+                <span className="font-medium lg:text-[16px] md:text-sm text-sm">
+                    {fullName}
+                </span>
                 {updatedAt && (
-                    <span className="text-sm text-neutral-500">
+                    <span className="lg:text-md md:block hidden  md:text-sm text-sm text-neutral-500">
                         {timeAgo(updatedAt)}
                     </span>
                 )}

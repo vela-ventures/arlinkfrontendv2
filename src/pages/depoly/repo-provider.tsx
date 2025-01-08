@@ -146,16 +146,16 @@ const RepoProvider = ({
 
     return (
         <Card className="bg-arlink-bg-secondary-color col-span-2 p-6 rounded-lg">
-            <h2 className="text-2xl font-semibold mb-4">
+            <h2 className="md:text-2xl text-md font-semibold mb-4">
                 Select a provider and import
             </h2>
             <div className="space-y-4">
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
                     <CustomDropdown handleProvider={handleProvider} />
                     <div className="relative w-full md:max-w-[600px]">
                         <Search className="absolute left-3 top-1/2 h-[20px] w-[20px] transform -translate-y-1/2 text-neutral-600" />
                         <Input
-                            className="pl-10 w-full bg-arlink-bg-secondary-color hover:border-neutral-600 transition-colors placeholder:text-neutral-400 font-light border-[#383838] focus:ring-neutral-700 focus-visible:ring-neutral-700"
+                            className="pl-10 w-full text-xs lg:text-md md:text-sm bg-arlink-bg-secondary-color hover:border-neutral-600 transition-colors placeholder:text-neutral-400 font-light border-[#383838] focus:ring-neutral-700 focus-visible:ring-neutral-700"
                             placeholder="Search Repositories and Projects..."
                             value={searchQuery}
                             onChange={handleSearch}

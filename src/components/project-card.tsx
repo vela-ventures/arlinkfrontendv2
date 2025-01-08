@@ -47,7 +47,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
             <Card className="w-full bg-[#0d0d0d] group-hover:border-neutral-600 text-white border-neutral-800 p-4 transition-all">
                 <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="w-12 flex items-center justify-center h-12 bg-neutral-800/70 border border-neutral-800 rounded-lg">
+                        <div className="md:w-12 w-10 flex items-center justify-center md:h-12 h-10 bg-neutral-800/70 border border-neutral-800 rounded-lg">
                             <img
                                 src={`/logos/${
                                     detectFrameworkImage(project.outputDir).svg
@@ -55,11 +55,11 @@ export function ProjectCard({ project }: ProjectCardProps) {
                                 alt={`${
                                     detectFrameworkImage(project.outputDir).name
                                 } logo`}
-                                className="w-8 h-8"
+                                className="md:w-8 md:h-8 w-6 h-6"
                             />
                         </div>
                         <div>
-                            <h2 className="text-lg text-white font-semibold">
+                            <h2 className="md:text-lg text-base text-white font-semibold">
                                 {project.name.length > 15
                                     ? `${project.name.substring(0, 15)}...`
                                     : project.name}
@@ -68,7 +68,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
                             {project.UnderName ? (
                                 <a
                                     href={`https://${project.UnderName}_arlink.arweave.net`}
-                                    className="text-xs text-nowrap block text-neutral-500 hover:underline hover:text-neutral-400 transition-colors"
+                                    className="md:text-xs text-[10px] text-nowrap block text-neutral-500 hover:underline hover:text-neutral-400 transition-colors"
                                     target="_blank"
                                     rel="noreferrer"
                                 >
@@ -83,7 +83,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
                             ) : (
                                 <a
                                     href={`https://${project.arnsProcess}`}
-                                    className="text-xs text-nowrap block text-neutral-500 hover:underline hover:text-neutral-400 transition-colors"
+                                    className="md:text-xs text-[10px] text-nowrap block text-neutral-500 hover:underline hover:text-neutral-400 transition-colors"
                                     target="_blank"
                                     rel="noreferrer"
                                 >
@@ -101,19 +101,19 @@ export function ProjectCard({ project }: ProjectCardProps) {
                         <Button
                             variant="ghost"
                             onClick={copyUnderName}
-                            className="text-neutral-400 transition-all hover:rotate-45  h-8 w-8 p-0 bg-neutral-900 hover:bg-neutral-800 border rounded-full hover:text-white"
+                            className="text-neutral-400 transition-all hover:rotate-45 md:h-8 md:w-8 h-7 w-7 p-0 bg-neutral-900 hover:bg-neutral-800 border rounded-full hover:text-white"
                         >
-                            <LucideLink className="h-4 w-4" />
+                            <LucideLink className="md:h-4 md:w-4 h-3 w-3" />
                         </Button>
                         <Button
                             variant="ghost"
                             size="icon"
                             onClick={handleMoreOptionsClick}
-                            className="text-neutral-400 h-8 w-8 p-0 hover:bg-neutral-900 rounded-full hover:text-white"
+                            className="text-neutral-400 md:h-8 md:w-8 h-7 w-7 p-0 hover:bg-neutral-900 rounded-full hover:text-white"
                         >
                             <Popover>
                                 <PopoverTrigger>
-                                    <MoreVertical className="h-4 w-4" />
+                                    <MoreVertical className="md:h-4 md:w-4 h-3 w-3" />
                                 </PopoverTrigger>
                                 <PopoverContent className="w-fit p-1 flex flex-col gap-1 rounded-xl bg-arlink-bg-secondary-color backdrop-blur-xl mt-2">
                                     <Button
@@ -136,19 +136,19 @@ export function ProjectCard({ project }: ProjectCardProps) {
                     </div>
                 </div>
 
-                <div className="flex mt-4 items-center justify-between gap-2 text-sm">
+                <div className="flex mt-4 items-center justify-between gap-2 md:text-sm text-xs">
                     <a
                         href={`https://github.com/${project.repo}`}
-                        className="flex w-fit gap-2 text-neutral-400 transition-all hover:text-white pr-4 p-[7px] items-center font-light bg-neutral-900  border-neutral-700/50 border rounded-full"
+                        className="flex w-fit gap-2 text-neutral-400 transition-all hover:text-white pr-4 p-[7px] items-center font-light bg-neutral-900 border-neutral-700/50 border rounded-full"
                         target="_blank"
                         rel="noreferrer"
                     >
                         <img
                             src="/github-mark-white.svg"
-                            className="h-6 w-6 aspect-square"
+                            className="md:h-6 md:w-6 h-5 w-5 aspect-square"
                             alt="GitHub logo"
                         />
-                        <span className="font-medium ">
+                        <span className="font-medium">
                             {project.repo.toLowerCase().length > 24
                                 ? `${project.repo
                                       .toLowerCase()
@@ -156,9 +156,9 @@ export function ProjectCard({ project }: ProjectCardProps) {
                                 : project.repo.toLowerCase()}
                         </span>
                     </a>
-                    <div className="flex items-center space-x-2 text-sm">
+                    <div className="flex items-center space-x-2 md:text-sm text-xs">
                         <div className="flex items-center space-x-2 rounded-full bg-neutral-800/30 px-3 py-1">
-                            <GitBranch className="w-4 h-4 text-neutral-400" />
+                            <GitBranch className="md:w-4 md:h-4 w-3 h-3 text-neutral-400" />
                         </div>
                         <div className="flex items-center space-x-2 rounded-full bg-neutral-800/30 px-3 py-1">
                             <div className="w-2 h-2 rounded-full bg-neutral-400" />
@@ -169,7 +169,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
                     </div>
                 </div>
 
-                <div className="flex text-xs mt-3 items-center gap-2 translate-x-1">
+                <div className="flex md:text-xs text-[10px] mt-3 items-center gap-2 translate-x-1">
                     <span className="text-neutral-600">Framework: </span>
                     <span className="font-medium text-neutral-600 group-hover:text-neutral-500">
                         {detectFrameworkImage(project.outputDir).name}
