@@ -19,6 +19,7 @@ import axios from "axios";
 import { BUILDER_BACKEND } from "@/lib/utils";
 import { runLua } from "@/lib/ao-vars";
 import DeploymentLogs from "../../../components/shared/deploying-logs";
+import { setArnsName as setArnsNameWithProcessId } from "@/lib/ao-vars";
 
 const ConfigureProtocolLandProject = ({
     setStep,
@@ -238,6 +239,13 @@ const ConfigureProtocolLandProject = ({
                         link: `https://arweave.net/${txid.data}`,
                         arlink: finalArnsProcess,
                     });
+
+                    if (activeTab === "existing" && arnsName) {
+                        setArnsNameWithProcessId(
+                            arnsName.processId,
+                            txid.data.result,
+                        );
+                    }
 
                     navigate(`/deployment?repo=${projectName}`);
                 } else {

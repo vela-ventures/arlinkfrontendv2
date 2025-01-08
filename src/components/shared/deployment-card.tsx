@@ -8,7 +8,7 @@ interface DeploymentCardProps {
     deployment: TDeployment;
 }
 
-const DeploymentCard = ({ deploymentUrl, deployment }: DeploymentCardProps) => {
+const DeploymentCard = ({ deployment }: DeploymentCardProps) => {
     return (
         <div className="mb-6 animate-in fade-in-0 bg-arlink-bg-secondary-color p-4 border border-neutral-800 rounded-lg">
             <div className="flex md:flex-row flex-col w-full gap-7">

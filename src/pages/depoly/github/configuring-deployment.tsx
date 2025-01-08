@@ -50,6 +50,7 @@ import {
 import NewDeploymentCard from "@/components/shared/new-deployment-card";
 import { BuildDeploymentSetting } from "@/components/shared/build-settings";
 import { NextJsProjectWarningCard } from "@/components/skeletons";
+import { setArnsName as setArnsNameWithProcessId } from "@/lib/ao-vars";
 
 const ConfiguringDeploymentProject = ({
     repoName,
@@ -282,7 +283,6 @@ const ConfiguringDeploymentProject = ({
             case "existing":
                 if (arnsName?.name) {
                     setCustomArnsName("");
-                    // adding process id as you mentioned
                     finalArnsProcess = arnsName.processId;
                 }
                 break;
@@ -404,6 +404,12 @@ const ConfiguringDeploymentProject = ({
                     arlink: finalArnsProcess,
                 });
 
+                if (activeTab === "existing" && arnsName) {
+                    setArnsNameWithProcessId(
+                        arnsName.processId,
+                        response.data.result,
+                    );
+                }
                 // In the deploy function within pages/deploy.tsx, update this line:
                 navigate(`/deployment/card?repo=${projectName}`);
             } else {
