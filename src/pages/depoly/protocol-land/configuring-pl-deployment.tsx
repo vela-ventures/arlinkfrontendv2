@@ -250,7 +250,7 @@ const ConfigureProtocolLandProject = ({
                         );
                     }
 
-                    navigate(`/deployment?repo=${projectName}`);
+                    navigate(`/deployment/card?repo=${projectName}`);
                 } else {
                     toast.error("Deployment failed");
                     console.log(txid);

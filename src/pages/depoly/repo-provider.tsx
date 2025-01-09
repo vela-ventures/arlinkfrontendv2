@@ -65,9 +65,9 @@ const RepoProvider = ({
             setIsLoading(false);
         };
         if (githubToken) {
-            console.log("github token if block", githubToken);
             setIsProviderSelected(true);
             handleRepository();
+        } else {
         }
     }, [githubToken]);
 
@@ -131,8 +131,8 @@ const RepoProvider = ({
                         githubToken,
                     });
                     setIsProviderSelected(true);
+                    setIsLoading(false);
                 }
-                setIsLoading(false);
             } else if (provider === "protocol") {
                 setIsLoading(true);
                 await fetchProtocolLandRepos({
@@ -145,10 +145,6 @@ const RepoProvider = ({
         };
         handleProviderChange();
     }, [provider]);
-
-    console.log({
-        isProviderSelected,
-    });
 
     return (
         <Card className="bg-arlink-bg-secondary-color col-span-2 p-6 rounded-lg">
@@ -175,7 +171,7 @@ const RepoProvider = ({
                     <ScrollArea className="h-80 border rounded-md">
                         {/*  this is added but not showing I will fix this don't worry  */}
                         {!isProviderSelected && (
-                            <div className="h-[17rem] text-md w-full flex items-center justify-center">
+                            <div className="h-[17rem] w-full flex items-center justify-center">
                                 <p className="text-center">
                                     Please select a provider from the drop down
                                     menu
