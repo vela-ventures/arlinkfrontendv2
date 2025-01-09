@@ -353,7 +353,12 @@ export const handleFetchLogs = async ({
             );
             setLogs(logs.data.split("\n"));
         } catch (error) {
-            if (isAxiosError(error) && error.response?.status === 404) {
+            if (isAxiosError(error) && error.response?.status === 406) {
+                setLogError(
+                    "Too many requests detected. Please try again later.",
+                );
+                stopPolling();
+            } if (isAxiosError(error) && error.response?.status === 404) {
                 const elapsedTime = Date.now() - startTime;
                 if (elapsedTime < waitTime) {
                     setLogError("Waiting for logs...");
@@ -377,7 +382,7 @@ export const handleFetchLogs = async ({
     };
 
     setIsWaitingForLogs(true);
-    await delay(10000);
+    await delay(15000);
     setIsWaitingForLogs(false);
     setIsFetchingLogs(true);
     logPoll();
