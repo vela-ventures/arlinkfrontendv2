@@ -115,7 +115,6 @@ export async function analyzeRepoStructure(
     repo: string,
     githubToken: string,
 ): Promise<DirectoryStructure[]> {
-
     // because we are caling this recursively I guess it is draining the api request for me
     // so kindly look into this
     async function getContents(path = ""): Promise<DirectoryStructure[]> {
@@ -311,6 +310,8 @@ export const handleFetchLogs = async ({
     setIsWaitingForLogs,
     setIsFetchingLogs,
     isWaitingForLogs,
+    protocolLand,
+    walletAddress,
 }: {
     projectName: string;
     repoUrl: string;
@@ -319,13 +320,15 @@ export const handleFetchLogs = async ({
     setIsWaitingForLogs: React.Dispatch<React.SetStateAction<boolean>>;
     setIsFetchingLogs: React.Dispatch<React.SetStateAction<boolean>>;
     isWaitingForLogs: boolean;
+    protocolLand?: boolean;
+    walletAddress?: string;
 }) => {
     if (!projectName || !repoUrl) return;
 
-    const owner = extractOwnerName(repoUrl);
-    const repo = extractRepoName(repoUrl);
+    const owner = protocolLand ? walletAddress : extractOwnerName(repoUrl);
+    const repo = protocolLand ? repoUrl : extractRepoName(repoUrl);
     const startTime = Date.now();
-    const waitTime = 100000;
+    const waitTime = 3000;
     let intervalId: NodeJS.Timeout | null = null;
 
     const delay = (ms: number) => {
@@ -366,6 +369,7 @@ export const handleFetchLogs = async ({
                     "Deployment failed or an error occured while fetching logs.",
                 );
                 console.error("Error fetching logs:", error);
+                console.log("hellosdljdkj");
                 setIsFetchingLogs(false);
                 stopPolling();
             }
@@ -373,7 +377,7 @@ export const handleFetchLogs = async ({
     };
 
     setIsWaitingForLogs(true);
-    await delay(2000);
+    await delay(10000);
     setIsWaitingForLogs(false);
     setIsFetchingLogs(true);
     logPoll();
@@ -430,4 +434,3 @@ export async function handleFetchExistingArnsName({
         setExistingArnsLoading(false);
     }
 }
-

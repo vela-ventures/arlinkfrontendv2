@@ -65,9 +65,9 @@ const RepoProvider = ({
             setIsLoading(false);
         };
         if (githubToken) {
+            console.log("github token if block", githubToken);
             setIsProviderSelected(true);
             handleRepository();
-        } else {
         }
     }, [githubToken]);
 
@@ -124,14 +124,16 @@ const RepoProvider = ({
     useEffect(() => {
         const handleProviderChange = async () => {
             if (provider === "github") {
-                setIsLoading(true);
-                await fetchRepositories({
-                    setRepositories,
-                    githubToken,
-                });
-                setIsProviderSelected(true);
+                if (githubToken) {
+                    setIsLoading(true);
+                    await fetchRepositories({
+                        setRepositories,
+                        githubToken,
+                    });
+                    setIsProviderSelected(true);
+                }
                 setIsLoading(false);
-            } else {
+            } else if (provider === "protocol") {
                 setIsLoading(true);
                 await fetchProtocolLandRepos({
                     address,
@@ -144,6 +146,10 @@ const RepoProvider = ({
         handleProviderChange();
     }, [provider]);
 
+    console.log({
+        isProviderSelected,
+    });
+
     return (
         <Card className="bg-arlink-bg-secondary-color col-span-2 p-6 rounded-lg">
             <h2 className="md:text-2xl text-md font-semibold mb-4">
@@ -151,7 +157,10 @@ const RepoProvider = ({
             </h2>
             <div className="space-y-4">
                 <div className="flex items-center gap-2">
-                    <CustomDropdown handleProvider={handleProvider} />
+                    <CustomDropdown
+                        isLoading={isLoading}
+                        handleProvider={handleProvider}
+                    />
                     <div className="relative w-full md:max-w-[600px]">
                         <Search className="absolute left-3 top-1/2 h-[20px] w-[20px] transform -translate-y-1/2 text-neutral-600" />
                         <Input
@@ -165,8 +174,8 @@ const RepoProvider = ({
                 <div>
                     <ScrollArea className="h-80 border rounded-md">
                         {/*  this is added but not showing I will fix this don't worry  */}
-                        {!githubToken && (
-                            <div className="h-[17rem] w-full flex items-center justify-center">
+                        {!isProviderSelected && (
+                            <div className="h-[17rem] text-md w-full flex items-center justify-center">
                                 <p className="text-center">
                                     Please select a provider from the drop down
                                     menu

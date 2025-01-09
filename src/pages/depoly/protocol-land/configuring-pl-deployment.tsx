@@ -142,12 +142,14 @@ const ConfigureProtocolLandProject = ({
 
             handleFetchLogs({
                 projectName,
-                repoUrl: selectedRepo.url,
+                repoUrl: selectedRepo.name,
                 setLogs,
                 setIsWaitingForLogs,
                 setIsFetchingLogs,
                 isWaitingForLogs,
                 setLogError,
+                protocolLand: true,
+                walletAddress: activeAddress,
             });
 
             try {
@@ -161,7 +163,7 @@ const ConfigureProtocolLandProject = ({
                         installCommand: buildSettings.installCommand.value,
                         buildCommand: buildSettings.buildCommand.value,
                         outputDir: buildSettings.outPutDir.value,
-                        branch: branch, // branch
+                        branch: branch,
                         subDirectory: "./",
                         protocolLand: true,
                         repoName: selectedRepo.name,
