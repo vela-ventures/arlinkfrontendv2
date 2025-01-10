@@ -35,9 +35,9 @@ export const BUILDER_BACKEND =
 	import.meta.env.VITE_BACKEND_URL ??
 	(import.meta.env.VITE_ENV === "test"
 		? "http://localhost:3050"
-		: "https://vmi1968527.contaboserver.net/backend");
+		: "https://vmi2322729.contaboserver.net/backend");
 
-export const TESTING_FETCH = "https://vmi1968527.contaboserver.net/backend";
+export const TESTING_FETCH = "https://vmi2322729.contaboserver.net/backend";
 
 // export const indexInMalik = async ({
 // 	title,
