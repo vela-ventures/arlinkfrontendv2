@@ -1,5 +1,5 @@
 import type { ArnsName, ProtocolLandRepo, Repository } from "@/types";
-import { BUILDER_BACKEND } from "@/lib/utils";
+import { BUILDER_BACKEND, TESTING_FETCH } from "@/lib/utils";
 import { Octokit } from "@octokit/rest";
 import { index } from "arweave-indexer";
 import axios, { isAxiosError } from "axios";
@@ -115,7 +115,6 @@ export async function analyzeRepoStructure(
     repo: string,
     githubToken: string,
 ): Promise<DirectoryStructure[]> {
-
     // because we are caling this recursively I guess it is draining the api request for me
     // so kindly look into this
     async function getContents(path = ""): Promise<DirectoryStructure[]> {
@@ -325,7 +324,7 @@ export const handleFetchLogs = async ({
     const owner = extractOwnerName(repoUrl);
     const repo = extractRepoName(repoUrl);
     const startTime = Date.now();
-    const waitTime = 100000;
+    const waitTime = 5000;
     let intervalId: NodeJS.Timeout | null = null;
 
     const delay = (ms: number) => {
@@ -346,26 +345,22 @@ export const handleFetchLogs = async ({
     const logPoll = async () => {
         try {
             const logs = await axios.get(
-                `${BUILDER_BACKEND}/logs/${owner}/${repo}`,
+                `${TESTING_FETCH}/logs/${owner}/${repo}`,
             );
             setLogs(logs.data.split("\n"));
         } catch (error) {
-            if (isAxiosError(error) && error.response?.status === 404) {
-                const elapsedTime = Date.now() - startTime;
-                if (elapsedTime < waitTime) {
-                    setLogError("Waiting for logs...");
-                } else {
+            const elapsedTime = Date.now() - startTime;
+            if (elapsedTime >= waitTime) {
+                if (isAxiosError(error) && error.response?.status === 404) {
                     setLogError(
                         "Deployment failed, please check logs to find the issue.",
                     );
-                    setIsFetchingLogs(false);
-                    stopPolling();
+                } else {
+                    setLogError(
+                        "Deployment failed or an error occured while fetching logs.",
+                    );
+                    console.error("Error fetching logs:", error);
                 }
-            } else {
-                setLogError(
-                    "Deployment failed or an error occured while fetching logs.",
-                );
-                console.error("Error fetching logs:", error);
                 setIsFetchingLogs(false);
                 stopPolling();
             }
@@ -379,6 +374,12 @@ export const handleFetchLogs = async ({
     logPoll();
 
     intervalId = setInterval(logPoll, 2000);
+
+    // Ensure polling stops after 5 seconds regardless of errors
+    setTimeout(() => {
+        setIsFetchingLogs(false);
+        stopPolling();
+    }, waitTime);
 };
 
 export async function fetchProtocolLandRepos({
@@ -430,4 +431,3 @@ export async function handleFetchExistingArnsName({
         setExistingArnsLoading(false);
     }
 }
-

@@ -12,6 +12,7 @@ import { Loader2 } from "lucide-react";
 import { Logs } from "@/components/ui/logs";
 import axios from "axios";
 import { runLua } from "@/lib/ao-vars";
+import { BUILDER_BACKEND, TESTING_FETCH } from "@/lib/utils";
 
 const DeploymentLogs = () => {
     // hooks and global state
@@ -71,7 +72,7 @@ const DeploymentLogs = () => {
             setIsFetchingLogs(true);
             try {
                 const res = await axios.get(
-                    `https://vmi1968527.contaboserver.net/backend/logs/${owner}/${folderName}`,
+                    `${TESTING_FETCH}/logs/${owner}/${folderName}`,
                 );
                 const rawLogsData = res.data.replaceAll(/\\|\||\-/g, "");
 
@@ -150,18 +151,6 @@ const DeploymentLogs = () => {
         // 		);
         // 	});
     }, [deployment, globalState.managerProcess]);
-
-    useEffect(() => {
-        console.log(
-            "HEY IDIOT THE LOGS ARE HERE CHECK THEM HERE YOU PEIECE OF SHIT",
-        );
-        console.log({
-            buildOutput,
-        });
-        console.log(
-            "HEY IDIOT THE LOGS ARE HERE CHECK THEM HERE YOU PEIECE OF SHIT",
-        );
-    }, [buildOutput]);
 
     return (
         <Layout>
