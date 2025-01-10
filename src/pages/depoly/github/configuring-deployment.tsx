@@ -18,11 +18,7 @@ import {
 import { getRepoConfig } from "@/lib/getRepoconfig";
 import { SelectGroup } from "@radix-ui/react-select";
 import axios, { isAxiosError } from "axios";
-import {
-    ChevronDown,
-    ChevronLeft,
-    Loader2,
-} from "lucide-react";
+import { ChevronDown, ChevronLeft, Loader2 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import RootDirectoryDrawer from "../../../components/rootdir-drawer";
 import { useActiveAddress } from "arweave-wallet-kit";
@@ -246,6 +242,7 @@ const ConfiguringDeploymentProject = ({
 
     // build and output settings handler commands
     const deployProject = async () => {
+        if (deploymentStarted) return;
         // deployment states
         setIsDeploying(true);
         setDeploymentStarted(true);
@@ -408,15 +405,15 @@ const ConfiguringDeploymentProject = ({
                 setDeploymentSucceded(false);
                 setDeploymentComplete(false);
                 setDeploymentFailed(true);
+                setIsWaitingForLogs(false);
                 return;
             }
             console.error("Deployment error:", error);
-            setLogError(
-                "Deployment failed.",
-            );
+            setLogError("Deployment failed.");
             setDeploymentSucceded(false);
             setDeploymentComplete(false);
             setDeploymentFailed(true);
+            setIsWaitingForLogs(false);
         } finally {
             setIsDeploying(false);
             setDeploymentComplete(true);
@@ -552,7 +549,11 @@ const ConfiguringDeploymentProject = ({
             <h1 className="md:text-2xl text-xl font-bold mb-6">
                 Set up ur deployment process
             </h1>
-            <div className="rounded-lg mb-6">
+            <div
+                className={`rounded-lg ${
+                    deploymentStarted ? "opacity-70" : "opacity-100"
+                } mb-6`}
+            >
                 <NewDeploymentCard
                     projectName={projectName}
                     framework={frameWork}
@@ -573,6 +574,7 @@ const ConfiguringDeploymentProject = ({
                             Projects name
                         </label>
                         <Input
+                            disabled={deploymentStarted}
                             id="name"
                             value={projectName}
                             onChange={(e) => setProjectName(e.target.value)}
@@ -601,6 +603,7 @@ const ConfiguringDeploymentProject = ({
                             </Skeleton>
                         ) : (
                             <Select
+                                disabled={deploymentStarted}
                                 value={selectedBranch}
                                 onValueChange={(value) =>
                                     setSelectedBranch(value)
@@ -641,13 +644,13 @@ const ConfiguringDeploymentProject = ({
                                 id="directory"
                                 value={rootDirectory}
                                 readOnly
-                                disabled={fetchingSubDir}
+                                disabled={fetchingSubDir || deploymentStarted}
                                 className="bg-[#0D0D0D] p-4 placeholder:text-neutral-500 rounded-md border-[#383838] text-white"
                             />
                             <Button
                                 className="absolute h-8 right-1 top-1/2 rounded-sm -translate-y-1/2 font-semibold"
                                 onClick={fetchRepoStructure}
-                                disabled={fetchingSubDir}
+                                disabled={fetchingSubDir || deploymentStarted}
                             >
                                 {fetchingSubDir ? (
                                     <Loader2 className="animate-spin" />
@@ -660,7 +663,13 @@ const ConfiguringDeploymentProject = ({
                 </div>
             </div>
 
-            <div className="mb-6">
+            <div
+                className={`mb-6 ${
+                    deploymentStarted
+                        ? "opacity-80 pointer-events-none"
+                        : "opacity-100"
+                }`}
+            >
                 <DomainSelection
                     activeTab={activeTab}
                     setActiveTab={setActiveTab}
@@ -678,7 +687,11 @@ const ConfiguringDeploymentProject = ({
                 />
             </div>
 
-            <div className="bg-[#0C0C0C] p-6 rounded-lg mb-6 border border-[#383838]">
+            <div
+                className={`bg-[#0C0C0C] p-6 rounded-lg mb-6 border border-[#383838] ${
+                    deploymentStarted ? "opacity-80" : "opacity-100"
+                }`}
+            >
                 <p className="text-md text-neutral-400 font-medium mb-3">
                     Build And Output Settings
                 </p>
@@ -687,6 +700,7 @@ const ConfiguringDeploymentProject = ({
                     <BuildDeploymentSetting
                         buildSettings={buildSettings}
                         onSettingChange={handleSettingChange}
+                        disabled={deploymentStarted}
                     />
                 </div>
             </div>
@@ -694,6 +708,7 @@ const ConfiguringDeploymentProject = ({
             <Button
                 className="w-full bg-white hover:bg-neutral-200 text-black"
                 onClick={deployProject}
+                disabled={deploymentStarted}
             >
                 Deploy now
             </Button>
@@ -713,6 +728,16 @@ const ConfiguringDeploymentProject = ({
                 onClose={() => setIsRootDirectoryDrawerOpen(false)}
                 onSelect={handleSelectRootDir}
             />
+
+            {deploymentFailed && (
+                <button
+                    type="button"
+                    onClick={() => setStep("importing")}
+                    className="transition-all mt-6 flex items-center gap-2 text-neutral-600 hover:text-neutral-100 text-sm cursor-pointer"
+                >
+                    <ChevronLeft size={18} /> Go back
+                </button>
+            )}
         </div>
     );
 };

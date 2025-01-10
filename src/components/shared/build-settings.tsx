@@ -18,19 +18,22 @@ interface BuildSettingsProps {
     onSettingChange: (
         setting: keyof BuildSettings,
         field: keyof BuildSetting,
-        value: string | boolean
+        value: string | boolean,
     ) => void;
     type?: "protocol" | "github";
+    disabled?: boolean;
 }
 
 export function BuildDeploymentSetting({
     buildSettings,
     onSettingChange,
     type = "github",
+    disabled,
 }: BuildSettingsProps) {
     return (
         <>
             <SettingInput
+                disabled={disabled}
                 label="Build command"
                 placeholder="npm run build"
                 value={buildSettings.buildCommand.value}
@@ -44,6 +47,7 @@ export function BuildDeploymentSetting({
                 className={`${type === "protocol" ? "bg-[#0D0D0D] " : ""}`}
             />
             <SettingInput
+                disabled={disabled}
                 label="Install command"
                 placeholder="Enter your install command"
                 value={buildSettings.installCommand.value}
@@ -56,6 +60,7 @@ export function BuildDeploymentSetting({
                 }
             />
             <SettingInput
+                disabled={disabled}
                 label="Output dir"
                 placeholder="Enter your output dir"
                 value={buildSettings.outPutDir.value}

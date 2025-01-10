@@ -95,7 +95,7 @@ const Dashboardcomp = () => {
 
             timeOutId = setTimeout(() => {
                 setIsFetchingDeployments(false);
-            }, 10000);
+            }, 200000);
 
             return () => {
                 if (timeOutId) clearTimeout(timeOutId);

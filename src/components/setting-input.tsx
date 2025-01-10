@@ -10,7 +10,8 @@ interface SettingInputProps {
     enabled: boolean;
     onValueChange: (value: string) => void;
     onEnabledChange: (enabled: boolean) => void;
-    className?: string
+    className?: string;
+    disabled?: boolean;
 }
 
 export function SettingInput({
@@ -20,7 +21,8 @@ export function SettingInput({
     enabled,
     onValueChange,
     onEnabledChange,
-    className
+    className,
+    disabled,
 }: SettingInputProps) {
     return (
         <div>
@@ -30,13 +32,14 @@ export function SettingInput({
                     <Switch
                         checked={enabled}
                         onCheckedChange={onEnabledChange}
+                        disabled={disabled}
                     />
                 </div>
                 <Input
                     placeholder={placeholder}
                     value={value}
+                    disabled={disabled || !enabled}
                     onChange={(e) => onValueChange(e.target.value)}
-                    disabled={!enabled}
                     className={`bg-[#0C0C0C] border-[#383838] text-white pr-14 ${className}`}
                 />
             </div>

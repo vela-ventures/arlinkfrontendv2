@@ -4,10 +4,7 @@ import { useActiveAddress } from "arweave-wallet-kit";
 import { useEffect, useState } from "react";
 import { ChevronLeft } from "lucide-react";
 import NewDeploymentCard from "@/components/shared/new-deployment-card";
-import {
-    handleFetchExistingArnsName,
-    indexInMalik,
-} from "../utilts";
+import { handleFetchExistingArnsName, indexInMalik } from "../utilts";
 import { Input } from "@/components/ui/input";
 import DomainSelection from "@/components/shared/domain-selection";
 import { BuildDeploymentSetting } from "@/components/shared/build-settings";
@@ -39,6 +36,7 @@ const ConfigureProtocolLandProject = ({
         installCommand: { enabled: false, value: "npm install" },
         outPutDir: { enabled: false, value: "./dist" },
     });
+    const [rootDir, setRootDir] = useState<string>("./");
 
     // domain states
     const [activeTab, setActiveTab] = useState<"arlink" | "existing">("arlink");
@@ -102,6 +100,7 @@ const ConfigureProtocolLandProject = ({
 
     const handleDeployProject = async () => {
         try {
+            if (deploymentStarted) return;
             setIsDeploying(true);
             setDeploymentStarted(true);
             setDeploymentComplete(false);
@@ -151,7 +150,7 @@ const ConfigureProtocolLandProject = ({
                         buildCommand: buildSettings.buildCommand.value,
                         outputDir: buildSettings.outPutDir.value,
                         branch: branch,
-                        subDirectory: "./",
+                        subDirectory: rootDir,
                         protocolLand: true,
                         repoName: selectedRepo.name,
                         walletAddress: activeAddress,
@@ -268,7 +267,7 @@ const ConfigureProtocolLandProject = ({
 
     const handleLogs = async () => {
         const owner = activeAddress;
-        const repo = selectedRepo.url;
+        const repo = selectedRepo.name;
 
         const POLLING_INTERVAL = 2000;
         const MAX_POLLING_TIME = 600000;
@@ -350,7 +349,13 @@ const ConfigureProtocolLandProject = ({
             <h1 className="text-2xl font-bold mb-6">
                 Set up ur deployment process
             </h1>
-            <div className="rounded-lg mb-6 my-4">
+            <div
+                className={`rounded-lg ${
+                    deploymentStarted
+                        ? "opacity-70 pointer-events-none"
+                        : "opacity-100"
+                } mb-6 my-4`}
+            >
                 <NewDeploymentCard
                     projectName={projectName}
                     activeTab={activeTab}
@@ -360,7 +365,7 @@ const ConfigureProtocolLandProject = ({
                 />
             </div>
             <div className="mt-10">
-                <div className="space-y-2">
+                <div className="space-y-4">
                     <div>
                         <label
                             htmlFor="name"
@@ -374,6 +379,7 @@ const ConfigureProtocolLandProject = ({
                             onChange={(e) => setProjectName(e.target.value)}
                             placeholder="Enter your project name here"
                             className="bg-[#0D0D0D]  p-4 placeholder:text-neutral-500 rounded-md mt-3 border-[#383838] text-white"
+                            disabled={deploymentStarted}
                         />
                     </div>
                     <div>
@@ -389,22 +395,52 @@ const ConfigureProtocolLandProject = ({
                             onChange={(e) => setBranch(e.target.value)}
                             placeholder="Enter your project name here"
                             className="bg-[#0D0D0D]  p-4 placeholder:text-neutral-500 rounded-md mt-3 border-[#383838] text-white"
+                            disabled={deploymentStarted}
+                        />
+                    </div>
+                    <div>
+                        <label
+                            htmlFor="rootdir"
+                            className="block text-neutral-400 text-sm font-medium mb-1"
+                        >
+                            Root dir
+                        </label>
+                        <Input
+                            id="rootdir"
+                            value={rootDir}
+                            onChange={(e) => setRootDir(e.target.value)}
+                            placeholder="Enter your project root directory"
+                            className="bg-[#0D0D0D]  p-4 placeholder:text-neutral-500 rounded-md mt-3 border-[#383838] text-white"
+                            disabled={deploymentStarted}
                         />
                     </div>
                     <div>
                         <p className="text-sm pt-4 text-neutral-400 font-medium mb-3">
                             Build And Output Settings
                         </p>
-                        <div className="bg-[#0C0C0C] p-6 rounded-lg mb-6 border border-[#383838]">
+                        <div
+                            className={`bg-[#0C0C0C] p-6 rounded-lg mb-6 border border-[#383838] ${
+                                deploymentStarted
+                                    ? "opacity-70 pointer-events-none"
+                                    : "opacity-100"
+                            }`}
+                        >
                             <div className="space-y-4">
                                 <BuildDeploymentSetting
                                     buildSettings={buildSettings}
                                     onSettingChange={handleSettingChange}
+                                    disabled={deploymentStarted}
                                 />
                             </div>
                         </div>
                     </div>
-                    <div className="">
+                    <div
+                        className={`${
+                            deploymentStarted
+                                ? "opacity-70 pointer-events-none"
+                                : "opacity-100"
+                        }`}
+                    >
                         <DomainSelection
                             activeTab={activeTab}
                             setActiveTab={setActiveTab}
@@ -425,6 +461,7 @@ const ConfigureProtocolLandProject = ({
             </div>
             <Button
                 className="w-full mt-10 bg-white hover:bg-neutral-200 text-black"
+                disabled={deploymentStarted}
                 onClick={handleDeployProject}
             >
                 Deploy now
@@ -437,6 +474,15 @@ const ConfigureProtocolLandProject = ({
                     isWaitingForLogs={isWaitingForLogs}
                     logError={logError}
                 />
+            )}
+            {deploymentFailed && (
+                <button
+                    type="button"
+                    onClick={() => setStep("importing")}
+                    className="transition-all mt-6 flex items-center gap-2 text-neutral-600 hover:text-neutral-100 text-sm cursor-pointer"
+                >
+                    <ChevronLeft size={18} /> Go back
+                </button>
             )}
         </div>
     );

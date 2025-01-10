@@ -39,23 +39,23 @@ export async function handleGitHubCallback(code: string): Promise<string> {
 
 export async function checkAndInstallGitHubApp(token: string) {
     // Skip the check in test environment
-    if (import.meta.env.VITE_ENV === 'test') {
-        return;
-    }
+    // if (import.meta.env.VITE_ENV === 'test') {
+    //     return;
+    // }
 
-    try {
-        const response = await fetch(`${BUILDER_BACKEND}/check-github-app`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
-        const data = await response.json();
-        if (!data.installed) {
-            // If the app is not installed, open the installation page
-            window.location.href =
-                "https://github.com/apps/arlinkapp/installations/new";
-        }
-    } catch (error) {
-        console.error("Error checking GitHub app installation:", error);
-    }
+    // try {
+    //     const response = await fetch(`${BUILDER_BACKEND}/check-github-app`, {
+    //         headers: {
+    //             Authorization: `Bearer ${token}`,
+    //         },
+    //     });
+    //     const data = await response.json();
+    //     if (!data.installed) {
+    //         // If the app is not installed, open the installation page
+    //         window.location.href =
+    //             "https://github.com/apps/arlinkapp/installations/new";
+    //     }
+    // } catch (error) {
+    //     console.error("Error checking GitHub app installation:", error);
+    // }
 }
