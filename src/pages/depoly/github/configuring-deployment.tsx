@@ -417,7 +417,7 @@ const ConfiguringDeploymentProject = ({
             }
             console.error("Deployment error:", error);
             setLogError(
-                "Deployment failed, please check logs to find the issue.",
+                "Deployment failed.",
             );
             setDeploymentSucceded(false);
             setDeploymentComplete(false);
@@ -467,7 +467,7 @@ const ConfiguringDeploymentProject = ({
                 );
                 setLogs(logs.data.split("\n"));
             } catch (error) {
-                console.error("Error fetching logs:", error);
+                // I don't want to see red red spams in the logs xD
             }
         };
 

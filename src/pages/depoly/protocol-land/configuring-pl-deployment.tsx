@@ -1,7 +1,7 @@
 import useDeploymentManager from "@/hooks/useDeploymentManager";
 import { ArnsName, BuildSettings, Steps } from "@/types";
 import { useActiveAddress } from "arweave-wallet-kit";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronLeft } from "lucide-react";
 import NewDeploymentCard from "@/components/shared/new-deployment-card";
 import {
@@ -15,7 +15,7 @@ import { BuildDeploymentSetting } from "@/components/shared/build-settings";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import axios, { isAxiosError } from "axios";
 import { BUILDER_BACKEND } from "@/lib/utils";
 import { runLua } from "@/lib/ao-vars";
 import DeploymentLogs from "../../../components/shared/deploying-logs";
@@ -140,18 +140,6 @@ const ConfigureProtocolLandProject = ({
                 customRepo = projectName;
             }
 
-            handleFetchLogs({
-                projectName,
-                repoUrl: selectedRepo.name,
-                setLogs,
-                setIsWaitingForLogs,
-                setIsFetchingLogs,
-                isWaitingForLogs,
-                setLogError,
-                protocolLand: true,
-                walletAddress: activeAddress,
-            });
-
             try {
                 const txid = await axios.post<{
                     result: string;
@@ -259,9 +247,17 @@ const ConfigureProtocolLandProject = ({
                 throw new Error("Deplyoment failed, unexpected error");
             }
         } catch (error) {
-            console.log(error);
-            toast.error("Deployment failed");
-            console.log(error);
+            if (isAxiosError(error) && error.response?.status === 406) {
+                setLogError(
+                    "Too many requests detected. Please try again later.",
+                );
+                setDeploymentSucceded(false);
+                setDeploymentComplete(false);
+                setDeploymentFailed(true);
+                return;
+            }
+            console.error("Deployment error:", error);
+            setLogError("Deployment failed");
             setDeploymentSucceded(false);
             setDeploymentComplete(false);
             setDeploymentFailed(true);
@@ -270,6 +266,78 @@ const ConfigureProtocolLandProject = ({
             setDeploymentComplete(true);
         }
     };
+
+    const handleLogs = async () => {
+        const owner = activeAddress;
+        const repo = selectedRepo.url;
+
+        const POLLING_INTERVAL = 2000;
+        const MAX_POLLING_TIME = 600000;
+
+        let intervalId: NodeJS.Timeout | null = null;
+        let startTime = Date.now();
+
+        const clearIntervalPolling = () => {
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
+        };
+
+        const delay = (ms: number) => {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    resolve("resolved");
+                }, ms);
+            });
+        };
+
+        const fetchLogs = async () => {
+            if (Date.now() - startTime > MAX_POLLING_TIME) {
+                console.log("Max polling time reached");
+                clearIntervalPolling();
+                setDeploymentFailed(true);
+                toast.error("Deployment timed out");
+                return;
+            }
+
+            try {
+                const logs = await axios.get(
+                    `${BUILDER_BACKEND}/logs/${owner}/${repo}`,
+                );
+                setLogs(logs.data.split("\n"));
+            } catch (error) {
+                // I don't want to see red red spams in the logs xD
+            }
+        };
+
+        setIsWaitingForLogs(true);
+        await delay(10000);
+        setIsWaitingForLogs(false);
+        setIsFetchingLogs(true);
+        intervalId = setInterval(fetchLogs, POLLING_INTERVAL);
+
+        return () => {
+            clearIntervalPolling();
+        };
+    };
+
+    useEffect(() => {
+        let cleanup: (() => void) | undefined;
+
+        if (deploymentStarted && !deploymentFailed) {
+            const setupPolling = async () => {
+                cleanup = await handleLogs();
+            };
+            setupPolling();
+        }
+
+        return () => {
+            if (cleanup) {
+                setIsFetchingLogs(false);
+                cleanup();
+            }
+        };
+    }, [deploymentStarted, deploymentFailed]);
 
     return (
         <div className="text-white md:px-8 px-4 mb-20 max-w-3xl mx-auto">

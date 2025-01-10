@@ -5,7 +5,7 @@ import {
     AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Logs } from "@/components/ui/logs";
-import { Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const DeployingLogs = ({
@@ -20,7 +20,7 @@ const DeployingLogs = ({
     isWaitingForLogs: boolean;
 }) => {
     const [accordionValue, setAccordionValue] = useState<string | undefined>(
-        undefined
+        undefined,
     );
 
     useEffect(() => {
@@ -31,7 +31,19 @@ const DeployingLogs = ({
 
     return (
         <div className="bg-arlink-bg-secondary-color p-6 rounded-lg mt-6 border border-[#383838]">
-            <h2 className="text-xl font-semibold mb-4">Deployment Process</h2>
+            <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold">
+                    Deployment Process
+                </h2>
+            </div>
+            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 mb-6">
+                <p className="text-sm flex items-center gap-3 text-yellow-200">
+                    <AlertTriangle className="text-yellow-400 flex-shrink-0 animate-pulse" />
+                    <span>
+                        Please keep this tab open during deployment. We're experiencing high traffic and deployments may take longer than usual.
+                    </span>
+                </p>
+            </div>
             <div className="space-y-2 w-full">
                 <Accordion
                     type="single"
