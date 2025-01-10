@@ -38,6 +38,11 @@ export async function handleGitHubCallback(code: string): Promise<string> {
 }
 
 export async function checkAndInstallGitHubApp(token: string) {
+    // Skip the check in test environment
+    if (import.meta.env.VITE_ENV === 'test') {
+        return;
+    }
+
     try {
         const response = await fetch(`${BUILDER_BACKEND}/check-github-app`, {
             headers: {
