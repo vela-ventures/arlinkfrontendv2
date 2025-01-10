@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
     Select,
@@ -18,12 +17,10 @@ import {
 } from "@/types";
 import { getRepoConfig } from "@/lib/getRepoconfig";
 import { SelectGroup } from "@radix-ui/react-select";
-import axios, { AxiosError, isAxiosError } from "axios";
+import axios, { isAxiosError } from "axios";
 import {
-    AlertTriangle,
     ChevronDown,
     ChevronLeft,
-    ExternalLink,
     Loader2,
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
@@ -44,7 +41,6 @@ import {
     extractOwnerName,
     extractRepoName,
     handleFetchExistingArnsName,
-    handleFetchLogs,
     indexInMalik,
 } from "../utilts";
 import NewDeploymentCard from "@/components/shared/new-deployment-card";
@@ -53,7 +49,6 @@ import { NextJsProjectWarningCard } from "@/components/skeletons";
 import { setArnsName as setArnsNameWithProcessId } from "@/lib/ao-vars";
 
 const ConfiguringDeploymentProject = ({
-    repoName,
     repoUrl,
     setStep,
 }: {
@@ -63,7 +58,7 @@ const ConfiguringDeploymentProject = ({
 }) => {
     // global state and primary hooks
     const { githubToken, managerProcess: mgProcess } = useGlobalState();
-    const { managerProcess, refresh, deployments } = useDeploymentManager();
+    const { refresh, deployments } = useDeploymentManager();
     const navigate = useNavigate();
 
     const activeAddress = useActiveAddress();

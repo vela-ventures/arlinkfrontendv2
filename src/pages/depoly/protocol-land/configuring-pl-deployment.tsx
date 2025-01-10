@@ -6,7 +6,6 @@ import { ChevronLeft } from "lucide-react";
 import NewDeploymentCard from "@/components/shared/new-deployment-card";
 import {
     handleFetchExistingArnsName,
-    handleFetchLogs,
     indexInMalik,
 } from "../utilts";
 import { Input } from "@/components/ui/input";
