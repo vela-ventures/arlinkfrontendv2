@@ -328,7 +328,7 @@ export const handleFetchLogs = async ({
     const owner = protocolLand ? walletAddress : extractOwnerName(repoUrl);
     const repo = protocolLand ? repoUrl : extractRepoName(repoUrl);
     const startTime = Date.now();
-    const waitTime = 3000;
+    const waitTime = 6000000;
     let intervalId: NodeJS.Timeout | null = null;
 
     const delay = (ms: number) => {
@@ -349,16 +349,22 @@ export const handleFetchLogs = async ({
     const logPoll = async () => {
         try {
             const logs = await axios.get(
-                `${BUILDER_BACKEND}/logs/${owner}/${repo}`,
+                `${BUILDER_BACKEND}/backend/logs/${owner}/${repo}`,
             );
             setLogs(logs.data.split("\n"));
         } catch (error) {
+            if (isAxiosError(error) && error.response?.status === 500) {
+                setLogError("Deployment failed, please try again");
+                setIsFetchingLogs(false);
+                stopPolling();
+            }
             if (isAxiosError(error) && error.response?.status === 406) {
                 setLogError(
                     "Too many requests detected. Please try again later.",
                 );
                 stopPolling();
-            } if (isAxiosError(error) && error.response?.status === 404) {
+            }
+            if (isAxiosError(error) && error.response?.status === 404) {
                 const elapsedTime = Date.now() - startTime;
                 if (elapsedTime < waitTime) {
                     setLogError("Waiting for logs...");
@@ -370,11 +376,7 @@ export const handleFetchLogs = async ({
                     stopPolling();
                 }
             } else {
-                setLogError(
-                    "Deployment failed or an error occured while fetching logs.",
-                );
-                console.error("Error fetching logs:", error);
-                console.log("hellosdljdkj");
+                setLogError("Deployment failed, please try again");
                 setIsFetchingLogs(false);
                 stopPolling();
             }
@@ -382,7 +384,7 @@ export const handleFetchLogs = async ({
     };
 
     setIsWaitingForLogs(true);
-    await delay(2000);
+    await delay(10000);
     setIsWaitingForLogs(false);
     setIsFetchingLogs(true);
     logPoll();

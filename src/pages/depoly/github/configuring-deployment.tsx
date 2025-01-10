@@ -18,7 +18,7 @@ import {
 } from "@/types";
 import { getRepoConfig } from "@/lib/getRepoconfig";
 import { SelectGroup } from "@radix-ui/react-select";
-import axios, { isAxiosError } from "axios";
+import axios, { AxiosError, isAxiosError } from "axios";
 import {
     AlertTriangle,
     ChevronDown,
@@ -300,16 +300,6 @@ const ConfiguringDeploymentProject = ({
         const tokenizedRepoUrl = createTokenizedRepoUrl(repoUrl, githubToken);
 
         try {
-            handleFetchLogs({
-                projectName,
-                repoUrl,
-                setLogs,
-                setIsWaitingForLogs,
-                setIsFetchingLogs,
-                isWaitingForLogs,
-                setLogError,
-            });
-
             const response = await axios.post<{
                 result: string;
                 finalUnderName: string;
@@ -416,7 +406,19 @@ const ConfiguringDeploymentProject = ({
                 throw new Error("Deployment failed: Unexpected response");
             }
         } catch (error) {
+            if (isAxiosError(error) && error.response?.status === 406) {
+                setLogError(
+                    "Too many requests detected. Please try again later.",
+                );
+                setDeploymentSucceded(false);
+                setDeploymentComplete(false);
+                setDeploymentFailed(true);
+                return;
+            }
             console.error("Deployment error:", error);
+            setLogError(
+                "Deployment failed, please check logs to find the issue.",
+            );
             setDeploymentSucceded(false);
             setDeploymentComplete(false);
             setDeploymentFailed(true);
@@ -425,6 +427,78 @@ const ConfiguringDeploymentProject = ({
             setDeploymentComplete(true);
         }
     };
+
+    const handleLogs = async () => {
+        const owner = extractOwnerName(repoUrl);
+        const repo = extractRepoName(repoUrl);
+
+        const POLLING_INTERVAL = 2000;
+        const MAX_POLLING_TIME = 600000;
+
+        let intervalId: NodeJS.Timeout | null = null;
+        let startTime = Date.now();
+
+        const clearIntervalPolling = () => {
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
+        };
+
+        const delay = (ms: number) => {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    resolve("resolved");
+                }, ms);
+            });
+        };
+
+        const fetchLogs = async () => {
+            if (Date.now() - startTime > MAX_POLLING_TIME) {
+                console.log("Max polling time reached");
+                clearIntervalPolling();
+                setDeploymentFailed(true);
+                toast.error("Deployment timed out");
+                return;
+            }
+
+            try {
+                const logs = await axios.get(
+                    `${BUILDER_BACKEND}/logs/${owner}/${repo}`,
+                );
+                setLogs(logs.data.split("\n"));
+            } catch (error) {
+                console.error("Error fetching logs:", error);
+            }
+        };
+
+        setIsWaitingForLogs(true);
+        await delay(10000);
+        setIsWaitingForLogs(false);
+        setIsFetchingLogs(true);
+        intervalId = setInterval(fetchLogs, POLLING_INTERVAL);
+
+        return () => {
+            clearIntervalPolling();
+        };
+    };
+
+    useEffect(() => {
+        let cleanup: (() => void) | undefined;
+
+        if (deploymentStarted && !deploymentFailed) {
+            const setupPolling = async () => {
+                cleanup = await handleLogs();
+            };
+            setupPolling();
+        }
+
+        return () => {
+            if (cleanup) {
+                setIsFetchingLogs(false);
+                cleanup();
+            }
+        };
+    }, [deploymentStarted, deploymentFailed, repoUrl]);
 
     const handleFetchArns = async () => {
         handleFetchExistingArnsName({
