@@ -2,12 +2,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, Check, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import {
-    checkAndInstallGitHubApp,
-    handleGitHubCallback,
-    initiateGitHubAuth,
-} from "@/components/Githubloginbutton";
 import { useGlobalState } from "@/store/useGlobalState";
+import { checkAndInstallGitHubApp, handleGitHubCallback, initiateGitHubAuth } from "@/actions/github";
 
 type Option = {
     id: string;
@@ -21,6 +17,7 @@ const options: Option[] = [
 
 interface CustomDropdownProps {
     handleProvider: (provider: "github" | "protocol") => void;
+    isLoading: boolean;
 }
 
 export function CustomDropdown({ handleProvider }: CustomDropdownProps) {

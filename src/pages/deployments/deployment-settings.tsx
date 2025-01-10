@@ -50,7 +50,7 @@ import { Logs } from "@/components/ui/logs";
 import { handleFetchExistingArnsName, handleFetchLogs } from "../depoly/utilts";
 import { useActiveAddress } from "arweave-wallet-kit";
 import { Popover, PopoverContent } from "@/components/ui/popover";
-import { ArnsName } from "@/types";
+import { ArnsName, TDeployment } from "@/types";
 import {
     Command,
     CommandEmpty,
@@ -61,7 +61,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { PopoverTrigger } from "@radix-ui/react-popover";
 import { CommandGroup } from "cmdk";
-import DomainSelection from "@/components/shared/domain-selection";
+import { performDeleteDeployment } from "@/actions/deploy";
+// import { deleteDeployment } from "@/actions/deploy";
 
 export default function DeploymentSetting() {
     // global states
@@ -120,25 +121,23 @@ export default function DeploymentSetting() {
 
     async function deleteDeployment() {
         setIsDeleting(true);
-        if (!deployment) return toast.error("Deployment not found");
-        if (!globalState.managerProcess)
-            return toast.error("Manager process not found");
-
-        const query = `local res = db:exec[[
-          DELETE FROM Deployments
-          WHERE Name = '${deployment.Name}'
-        ]]`;
+        if (!deployment) {
+            toast.error("Deployment not found");
+            setIsDeleting(false);
+            return;
+        }
+        if (!globalState.managerProcess) {
+            toast.error("Manager process not found");
+            setIsDeleting(false);
+            return;
+        }
 
         try {
-            const res = await runLua(query, globalState.managerProcess);
-            if (res.Error) {
-                toast.error(res.Error);
-                setError("Failed to delete deployment. Please try again.");
-                return;
-            }
-            console.log(res);
-            await refresh();
-
+            await performDeleteDeployment(
+                deployment.Name,
+                globalState.managerProcess,
+                refresh,
+            );
             toast.success("Deployment deleted successfully");
             navigate("/dashboard");
         } catch (error) {

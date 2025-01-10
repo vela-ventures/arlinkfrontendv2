@@ -1,5 +1,5 @@
 import type { ArnsName, ProtocolLandRepo, Repository } from "@/types";
-import { BUILDER_BACKEND, TESTING_FETCH } from "@/lib/utils";
+import { BUILDER_BACKEND } from "@/lib/utils";
 import { Octokit } from "@octokit/rest";
 import { index } from "arweave-indexer";
 import axios, { isAxiosError } from "axios";
@@ -310,6 +310,8 @@ export const handleFetchLogs = async ({
     setIsWaitingForLogs,
     setIsFetchingLogs,
     isWaitingForLogs,
+    protocolLand,
+    walletAddress,
 }: {
     projectName: string;
     repoUrl: string;
@@ -318,13 +320,15 @@ export const handleFetchLogs = async ({
     setIsWaitingForLogs: React.Dispatch<React.SetStateAction<boolean>>;
     setIsFetchingLogs: React.Dispatch<React.SetStateAction<boolean>>;
     isWaitingForLogs: boolean;
+    protocolLand?: boolean;
+    walletAddress?: string;
 }) => {
     if (!projectName || !repoUrl) return;
 
-    const owner = extractOwnerName(repoUrl);
-    const repo = extractRepoName(repoUrl);
+    const owner = protocolLand ? walletAddress : extractOwnerName(repoUrl);
+    const repo = protocolLand ? repoUrl : extractRepoName(repoUrl);
     const startTime = Date.now();
-    const waitTime = 5000;
+    const waitTime = 3000;
     let intervalId: NodeJS.Timeout | null = null;
 
     const delay = (ms: number) => {
@@ -345,22 +349,32 @@ export const handleFetchLogs = async ({
     const logPoll = async () => {
         try {
             const logs = await axios.get(
-                `${TESTING_FETCH}/logs/${owner}/${repo}`,
+                `${BUILDER_BACKEND}/logs/${owner}/${repo}`,
             );
             setLogs(logs.data.split("\n"));
         } catch (error) {
-            const elapsedTime = Date.now() - startTime;
-            if (elapsedTime >= waitTime) {
-                if (isAxiosError(error) && error.response?.status === 404) {
+            if (isAxiosError(error) && error.response?.status === 406) {
+                setLogError(
+                    "Too many requests detected. Please try again later.",
+                );
+                stopPolling();
+            } if (isAxiosError(error) && error.response?.status === 404) {
+                const elapsedTime = Date.now() - startTime;
+                if (elapsedTime < waitTime) {
+                    setLogError("Waiting for logs...");
+                } else {
                     setLogError(
                         "Deployment failed, please check logs to find the issue.",
                     );
-                } else {
-                    setLogError(
-                        "Deployment failed or an error occured while fetching logs.",
-                    );
-                    console.error("Error fetching logs:", error);
+                    setIsFetchingLogs(false);
+                    stopPolling();
                 }
+            } else {
+                setLogError(
+                    "Deployment failed or an error occured while fetching logs.",
+                );
+                console.error("Error fetching logs:", error);
+                console.log("hellosdljdkj");
                 setIsFetchingLogs(false);
                 stopPolling();
             }

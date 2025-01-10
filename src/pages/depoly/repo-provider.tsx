@@ -124,14 +124,16 @@ const RepoProvider = ({
     useEffect(() => {
         const handleProviderChange = async () => {
             if (provider === "github") {
-                setIsLoading(true);
-                await fetchRepositories({
-                    setRepositories,
-                    githubToken,
-                });
-                setIsProviderSelected(true);
-                setIsLoading(false);
-            } else {
+                if (githubToken) {
+                    setIsLoading(true);
+                    await fetchRepositories({
+                        setRepositories,
+                        githubToken,
+                    });
+                    setIsProviderSelected(true);
+                    setIsLoading(false);
+                }
+            } else if (provider === "protocol") {
                 setIsLoading(true);
                 await fetchProtocolLandRepos({
                     address,
@@ -151,7 +153,10 @@ const RepoProvider = ({
             </h2>
             <div className="space-y-4">
                 <div className="flex items-center gap-2">
-                    <CustomDropdown handleProvider={handleProvider} />
+                    <CustomDropdown
+                        isLoading={isLoading}
+                        handleProvider={handleProvider}
+                    />
                     <div className="relative w-full md:max-w-[600px]">
                         <Search className="absolute left-3 top-1/2 h-[20px] w-[20px] transform -translate-y-1/2 text-neutral-600" />
                         <Input
@@ -165,7 +170,7 @@ const RepoProvider = ({
                 <div>
                     <ScrollArea className="h-80 border rounded-md">
                         {/*  this is added but not showing I will fix this don't worry  */}
-                        {!githubToken && (
+                        {!isProviderSelected && (
                             <div className="h-[17rem] w-full flex items-center justify-center">
                                 <p className="text-center">
                                     Please select a provider from the drop down

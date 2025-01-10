@@ -3,26 +3,34 @@ import { Card } from "@/components/ui/card";
 import { detectFrameworkImage } from "@/pages/depoly/utilts";
 import type { Project } from "@/types";
 import {
+    ExternalLink,
     GitBranch,
+    Loader2,
     LucideLink,
     MoreVertical,
     RefreshCcw,
     Trash2,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
 import { toast } from "sonner";
-import React from "react";
+import React, { useState } from "react";
+import { useGlobalState } from "@/store/useGlobalState";
+import { performDeleteDeployment } from "@/actions/deploy";
+import useDeploymentManager from "@/hooks/useDeploymentManager";
 
 interface ProjectCardProps {
     project: Project;
 }
 
 export function ProjectCard({ project }: ProjectCardProps) {
+    const globalState = useGlobalState();
+    const { refresh } = useDeploymentManager();
+    const navigate = useNavigate();
     const copyUnderName = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
@@ -33,11 +41,37 @@ export function ProjectCard({ project }: ProjectCardProps) {
         }
         toast.success("Copied to clipboard!");
     };
+    const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
     const handleMoreOptionsClick = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
     };
+
+    async function deleteDeployment() {
+        setIsDeleting(true);
+
+        if (!globalState.managerProcess) {
+            toast.error("Manager process not found");
+            setIsDeleting(false);
+            return;
+        }
+
+        try {
+            await performDeleteDeployment(
+                project.name,
+                globalState.managerProcess,
+                refresh,
+            );
+            toast.success("Deployment deleted successfully");
+            navigate("/dashboard");
+        } catch (error) {
+            console.error("Error deleting deployment:", error);
+            toast.error("An error occurred while deleting the deployment");
+        } finally {
+            setIsDeleting(false);
+        }
+    }
 
     return (
         <Link
@@ -118,16 +152,32 @@ export function ProjectCard({ project }: ProjectCardProps) {
                                 <PopoverContent className="w-fit p-1 flex flex-col gap-1 rounded-xl bg-arlink-bg-secondary-color backdrop-blur-xl mt-2">
                                     <Button
                                         variant={"outline"}
-                                        className="px-4 group flex justify-start border-none rounded-lg bg-arlink-bg-secondary-color"
+                                        className="px-3 group gap-3 flex justify-start border-none rounded-lg bg-arlink-bg-secondary-color"
+                                        onClick={() => {
+                                            navigate(
+                                                `/deployment?repo=${project.name}`,
+                                            );
+                                        }}
                                     >
-                                        <RefreshCcw className="group-hover:-rotate-45 transition-all mr-2" />
-                                        Redeploy
+                                        <ExternalLink />
+                                        View
                                     </Button>
                                     <Button
                                         variant={"outline"}
-                                        className="px-4 transition-all flex justify-start border-none bg-arlink-bg-secondary-color hover:bg-red-700 rounded-lg"
+                                        className="px-3  transition-all flex justify-start border-none bg-arlink-bg-secondary-color hover:bg-red-700 rounded-lg"
+                                        onClick={deleteDeployment}
+                                        disabled={isDeleting}
                                     >
-                                        <Trash2 className="mr-2" /> Delete
+                                        {isDeleting ? (
+                                            <div className="flex items-center gap-3">
+                                                <Loader2 className="animate-spin" />
+                                                deleting...
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-3">
+                                                <Trash2 /> Delete
+                                            </div>
+                                        )}
                                     </Button>
                                 </PopoverContent>
                             </Popover>
