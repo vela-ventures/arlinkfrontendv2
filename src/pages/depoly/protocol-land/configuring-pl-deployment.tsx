@@ -97,7 +97,6 @@ const ConfigureProtocolLandProject = ({
             },
         }));
     };
-
     const handleDeployProject = async () => {
         try {
             if (deploymentStarted) return;
@@ -137,6 +136,49 @@ const ConfigureProtocolLandProject = ({
                 finalArnsProcess = `${customArnsName}.arlink.arweave.net`;
                 customRepo = projectName;
             }
+
+            // Start log polling before deployment
+            const owner = activeAddress;
+            const repo = selectedRepo.name;
+            const POLLING_INTERVAL = 2000;
+            const MAX_POLLING_TIME = 600000;
+            const startTime = Date.now();
+            let intervalId: NodeJS.Timeout | null = null;
+
+            const clearIntervalPolling = () => {
+                if (intervalId) {
+                    clearInterval(intervalId);
+                }
+            };
+
+            // Start the log polling in parallel
+            const logPollingPromise = async () => {
+                setIsWaitingForLogs(true);
+                await new Promise((resolve) => setTimeout(resolve, 10000));
+                setIsWaitingForLogs(false);
+                setIsFetchingLogs(true);
+
+                const fetchLogs = async () => {
+                    if (Date.now() - startTime > MAX_POLLING_TIME) {
+                        clearIntervalPolling();
+                        setDeploymentFailed(true);
+                        return;
+                    }
+
+                    try {
+                        const logs = await axios.get(
+                            `${BUILDER_BACKEND}/logs/${owner}/${repo}`,
+                        );
+                        setLogs(logs.data.split("\n"));
+                    } catch (error) {
+                        // I don't want to see red red spams in the logs xD
+                    }
+                };
+
+                intervalId = setInterval(fetchLogs, POLLING_INTERVAL);
+            };
+
+            logPollingPromise();
 
             try {
                 const txid = await axios.post<{
@@ -242,6 +284,9 @@ const ConfigureProtocolLandProject = ({
                     console.log(txid);
                 }
             } catch (error) {
+                clearIntervalPolling();
+                setIsFetchingLogs(false);
+                setIsWaitingForLogs(false);
                 throw new Error("Deplyoment failed, unexpected error");
             }
         } catch (error) {
@@ -249,6 +294,7 @@ const ConfigureProtocolLandProject = ({
                 setLogError(
                     "Too many requests detected. Please try again later.",
                 );
+
                 setDeploymentSucceded(false);
                 setDeploymentComplete(false);
                 setDeploymentFailed(true);
@@ -264,78 +310,6 @@ const ConfigureProtocolLandProject = ({
             setDeploymentComplete(true);
         }
     };
-
-    const handleLogs = async () => {
-        const owner = activeAddress;
-        const repo = selectedRepo.name;
-
-        const POLLING_INTERVAL = 2000;
-        const MAX_POLLING_TIME = 600000;
-
-        let intervalId: NodeJS.Timeout | null = null;
-        let startTime = Date.now();
-
-        const clearIntervalPolling = () => {
-            if (intervalId) {
-                clearInterval(intervalId);
-            }
-        };
-
-        const delay = (ms: number) => {
-            return new Promise((resolve) => {
-                setTimeout(() => {
-                    resolve("resolved");
-                }, ms);
-            });
-        };
-
-        const fetchLogs = async () => {
-            if (Date.now() - startTime > MAX_POLLING_TIME) {
-                console.log("Max polling time reached");
-                clearIntervalPolling();
-                setDeploymentFailed(true);
-                toast.error("Deployment timed out");
-                return;
-            }
-
-            try {
-                const logs = await axios.get(
-                    `${BUILDER_BACKEND}/logs/${owner}/${repo}`,
-                );
-                setLogs(logs.data.split("\n"));
-            } catch (error) {
-                // I don't want to see red red spams in the logs xD
-            }
-        };
-
-        setIsWaitingForLogs(true);
-        await delay(10000);
-        setIsWaitingForLogs(false);
-        setIsFetchingLogs(true);
-        intervalId = setInterval(fetchLogs, POLLING_INTERVAL);
-
-        return () => {
-            clearIntervalPolling();
-        };
-    };
-
-    useEffect(() => {
-        let cleanup: (() => void) | undefined;
-
-        if (deploymentStarted && !deploymentFailed) {
-            const setupPolling = async () => {
-                cleanup = await handleLogs();
-            };
-            setupPolling();
-        }
-
-        return () => {
-            if (cleanup) {
-                setIsFetchingLogs(false);
-                cleanup();
-            }
-        };
-    }, [deploymentStarted, deploymentFailed]);
 
     return (
         <div className="text-white md:px-8 px-4 mb-20 max-w-3xl mx-auto">

@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { useActiveAddress } from "arweave-wallet-kit";
 import { RepoSkeleton } from "@/components/skeletons";
 import { RepositoryItem } from "@/components/shared/repository-item";
+import useDeploymentManager from "@/hooks/useDeploymentManager";
 
 type GitAuthRepoSelectorTypesProps = {
     setSelectedRepo: React.Dispatch<
@@ -38,6 +39,8 @@ const RepoProvider = ({
     const [filteredRepositories, setFilteredRepositories] = useState<
         Repository[]
     >([]);
+
+    const { managerProcess } = useDeploymentManager();
 
     // search query state
     const [searchQuery, setSearchQuery] = useState("");
@@ -179,7 +182,7 @@ const RepoProvider = ({
                             </div>
                         )}
 
-                        {isLoading && isProviderSelected
+                        {(isLoading && isProviderSelected) || !managerProcess
                             ? [1, 2, 3, 4, 5].map((arrayValue) => (
                                   <RepoSkeleton key={arrayValue} />
                               ))

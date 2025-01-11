@@ -291,6 +291,46 @@ const ConfiguringDeploymentProject = ({
 
         const tokenizedRepoUrl = createTokenizedRepoUrl(repoUrl, githubToken);
 
+        const owner = extractOwnerName(repoUrl);
+        const repo = extractRepoName(repoUrl);
+        const POLLING_INTERVAL = 2000;
+        const MAX_POLLING_TIME = 600000;
+        const startTime = Date.now();
+        let intervalId: NodeJS.Timeout | null = null;
+        const clearIntervalPolling = () => {
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
+        };
+
+        const logPollingPromise = async () => {
+            setIsWaitingForLogs(true);
+            await new Promise((resolve) => setTimeout(resolve, 10000));
+            setIsWaitingForLogs(false);
+            setIsFetchingLogs(true);
+
+            const fetchLogs = async () => {
+                if (Date.now() - startTime > MAX_POLLING_TIME) {
+                    clearIntervalPolling();
+                    setDeploymentFailed(true);
+                    return;
+                }
+
+                try {
+                    const logs = await axios.get(
+                        `${BUILDER_BACKEND}/logs/${owner}/${repo}`,
+                    );
+                    setLogs(logs.data.split("\n"));
+                } catch (error) {
+                    // I don't want to see red red spams in the logs xD
+                }
+            };
+
+            intervalId = setInterval(fetchLogs, POLLING_INTERVAL);
+        };
+
+        logPollingPromise();
+
         try {
             const response = await axios.post<{
                 result: string;
@@ -398,6 +438,11 @@ const ConfiguringDeploymentProject = ({
                 throw new Error("Deployment failed: Unexpected response");
             }
         } catch (error) {
+            clearIntervalPolling();
+            setIsFetchingLogs(false);
+            setIsWaitingForLogs(false);
+
+            // Handle rate limiting errors
             if (isAxiosError(error) && error.response?.status === 406) {
                 setLogError(
                     "Too many requests detected. Please try again later.",
@@ -405,94 +450,50 @@ const ConfiguringDeploymentProject = ({
                 setDeploymentSucceded(false);
                 setDeploymentComplete(false);
                 setDeploymentFailed(true);
-                setIsWaitingForLogs(false);
                 return;
             }
+
+            // Handle network errors
+            if (isAxiosError(error) && !error.response) {
+                setLogError(
+                    "Network error. Please check your connection and try again.",
+                );
+                setDeploymentSucceded(false);
+                setDeploymentComplete(false);
+                setDeploymentFailed(true);
+                return;
+            }
+
+            // Handle other HTTP errors
+            if (isAxiosError(error) && error.response) {
+                let errorMessage = "Deployment failed: ";
+
+                errorMessage += "Server error. Please try again later.";
+
+                setLogError(errorMessage);
+                setDeploymentSucceded(false);
+                setDeploymentComplete(false);
+                setDeploymentFailed(true);
+                return;
+            }
+
+            // Handle all other errors
             console.error("Deployment error:", error);
-            setLogError("Deployment failed.");
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : "An unexpected error occurred";
+            setLogError(`Deployment failed: ${errorMessage}`);
             setDeploymentSucceded(false);
             setDeploymentComplete(false);
             setDeploymentFailed(true);
-            setIsWaitingForLogs(false);
         } finally {
             setIsDeploying(false);
             setDeploymentComplete(true);
         }
     };
 
-    const handleLogs = async () => {
-        const owner = extractOwnerName(repoUrl);
-        const repo = extractRepoName(repoUrl);
-
-        const POLLING_INTERVAL = 2000;
-        const MAX_POLLING_TIME = 600000;
-
-        let intervalId: NodeJS.Timeout | null = null;
-        let startTime = Date.now();
-
-        const clearIntervalPolling = () => {
-            if (intervalId) {
-                clearInterval(intervalId);
-            }
-        };
-
-        const delay = (ms: number) => {
-            return new Promise((resolve) => {
-                setTimeout(() => {
-                    resolve("resolved");
-                }, ms);
-            });
-        };
-
-        const fetchLogs = async () => {
-            if (Date.now() - startTime > MAX_POLLING_TIME) {
-                console.log("Max polling time reached");
-                clearIntervalPolling();
-                setDeploymentFailed(true);
-                toast.error("Deployment timed out");
-                return;
-            }
-
-            try {
-                const logs = await axios.get(
-                    `${BUILDER_BACKEND}/logs/${owner}/${repo}`,
-                );
-                setLogs(logs.data.split("\n"));
-            } catch (error) {
-                // I don't want to see red red spams in the logs xD
-            }
-        };
-
-        setIsWaitingForLogs(true);
-        await delay(10000);
-        setIsWaitingForLogs(false);
-        setIsFetchingLogs(true);
-        intervalId = setInterval(fetchLogs, POLLING_INTERVAL);
-
-        return () => {
-            clearIntervalPolling();
-        };
-    };
-
-    useEffect(() => {
-        let cleanup: (() => void) | undefined;
-
-        if (deploymentStarted && !deploymentFailed) {
-            const setupPolling = async () => {
-                cleanup = await handleLogs();
-            };
-            setupPolling();
-        }
-
-        return () => {
-            if (cleanup) {
-                setIsFetchingLogs(false);
-                cleanup();
-            }
-        };
-    }, [deploymentStarted, deploymentFailed, repoUrl]);
-
-    const handleFetchArns = async () => {
+     const handleFetchArns = async () => {
         handleFetchExistingArnsName({
             setArnsNames,
             activeAddress,
