@@ -1,7 +1,7 @@
 import Layout from "@/layouts/layout";
 import { TemplateSelection } from "../../components/ui/template";
 import ConfiguringDeploymentProject from "./github/configuring-deployment";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Steps } from "@/types";
 import RepoProvider from "./repo-provider";
 import ConfigureProtocolLandProject from "./protocol-land/configuring-pl-deployment";
@@ -16,6 +16,11 @@ const NewDeployment = () => {
     });
 
     const [step, setStep] = useState<Steps>("importing");
+
+    useEffect(() => {
+        console.log(selectedRepoUrl);
+    }, [selectedRepoUrl]);
+
 
     return (
         <Layout>

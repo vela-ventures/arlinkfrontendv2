@@ -10,6 +10,7 @@ import {
     Check,
     ChevronsUpDown,
     ExternalLink,
+    XCircle,
 } from "lucide-react";
 import {
     AlertDialog,
@@ -37,9 +38,9 @@ import { useGlobalState } from "@/store/useGlobalState";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { runLua, setArnsName as setArnsNameWithProcessId } from "@/lib/ao-vars";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import useDeploymentManager from "@/hooks/useDeploymentManager";
-import axios from "axios";
+import axios, { isAxiosError } from "axios";
 import {
     Accordion,
     AccordionContent,
@@ -47,7 +48,12 @@ import {
     AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Logs } from "@/components/ui/logs";
-import { handleFetchExistingArnsName, handleFetchLogs } from "../depoly/utilts";
+import {
+    extractOwnerName,
+    extractRepoName,
+    handleFetchExistingArnsName,
+    handleFetchLogs,
+} from "../depoly/utilts";
 import { useActiveAddress } from "arweave-wallet-kit";
 import { Popover, PopoverContent } from "@/components/ui/popover";
 import { ArnsName, TDeployment } from "@/types";
@@ -82,8 +88,11 @@ export default function DeploymentSetting() {
     const [isDeleting, setIsDeleting] = useState<boolean>(false);
     const [isRedeploying, setIsRedeploying] = useState<boolean>(false);
     const [buildOutput, setBuildOutput] = useState<string[]>([]);
+    const deploymentFailedRef = useRef(false);
     const [isWaitingForLogs, setIsWaitingForLogs] = useState<boolean>(false);
     const [isFetchingLogs, setIsFetchingLogs] = useState<boolean>(false);
+    const [deploymentFailed, setDeploymentFailed] = useState<boolean>(false);
+    const [showRedployWarning, setRedeployWarning] = useState<boolean>(true);
 
     //logs
     const [logs, setLogs] = useState<string[]>([]);
@@ -151,6 +160,10 @@ export default function DeploymentSetting() {
 
     async function redeploy() {
         if (!deployment) return;
+        const isGithub = deployment.RepoUrl.includes("github.com");
+        if (!isGithub) toast.error("protocol land is not supported");
+        if (isRedeploying) return;
+
         const projName = deployment.Name;
         const repoUrl = deployment.RepoUrl;
         const installCommand = deployment.InstallCMD;
@@ -162,16 +175,65 @@ export default function DeploymentSetting() {
         setBuildOutput([]);
         setError("");
 
+        const ownerName = extractOwnerName(repoUrl);
+        const repoName = extractRepoName(repoUrl);
+
+        const POLLING_INTERVAL = 2000;
+        const MAX_POLLING_TIME = 600000;
+        const startTime = Date.now();
+        let intervalId: NodeJS.Timeout | null = null;
+
+        const clearIntervalPolling = () => {
+            console.log("stopping polling");
+            if (intervalId) {
+                setIsFetchingLogs(false);
+                setIsWaitingForLogs(false);
+                clearInterval(intervalId);
+            }
+        };
+
+        // Start the log polling in parallel
+        const logPollingPromise = async () => {
+            setIsWaitingForLogs(true);
+            await new Promise((resolve) => setTimeout(resolve, 10000));
+            setIsWaitingForLogs(false);
+            setIsFetchingLogs(true);
+
+            const fetchLogs = async () => {
+                console.log("started polling");
+                if (deploymentFailedRef.current) {
+                    clearIntervalPolling();
+                }
+                if (Date.now() - startTime > MAX_POLLING_TIME) {
+                    clearIntervalPolling();
+                    setDeploymentFailed(true);
+                    return;
+                }
+
+                try {
+                    const logs = await axios.get(
+                        `${BUILDER_BACKEND}/logs/${ownerName}/${repoName}`,
+                    );
+                    setLogs(logs.data.split("\n"));
+                } catch (error) {
+                    console.log(deploymentFailed);
+                    if (isAxiosError(error)) {
+                        if (deploymentFailed) {
+                            clearIntervalPolling();
+                        }
+                    }
+                    // I don't want to see red red spams in the logs xD
+                }
+            };
+
+            intervalId = setInterval(fetchLogs, POLLING_INTERVAL);
+        };
+
+        if (!deploymentFailedRef.current) {
+            logPollingPromise();
+        }
+
         try {
-            handleFetchLogs({
-                projectName: projName,
-                repoUrl,
-                setLogs,
-                setIsWaitingForLogs,
-                setIsFetchingLogs,
-                isWaitingForLogs,
-                setLogError,
-            });
             const txid = await axios.post(`${BUILDER_BACKEND}/deploy`, {
                 repository: repoUrl,
                 branch,
@@ -199,14 +261,26 @@ export default function DeploymentSetting() {
                 navigate(`/deployment?repo=${projName}`);
                 await refresh();
             } else {
-                toast.error("Deployment failed");
+                setIsFetchingLogs(false);
+                setIsWaitingForLogs(false);
                 console.log(txid);
+                deploymentFailedRef.current = true;
+                setDeploymentFailed(true);
                 setError("Deployment failed. Please try again.");
+                setLogError("Deployment failed. Please try again.");
+                clearIntervalPolling();
             }
         } catch (error) {
+            setIsFetchingLogs(false);
+            setDeploymentFailed(true);
+            deploymentFailedRef.current = true;
+            clearIntervalPolling();
             toast.error("Deployment failed");
             console.log(error);
             setError(
+                "An error occurred during deployment. Please try again later.",
+            );
+            setLogError(
                 "An error occurred during deployment. Please try again later.",
             );
         } finally {
@@ -214,9 +288,19 @@ export default function DeploymentSetting() {
         }
     }
 
+    useEffect(() => {});
+
     useEffect(() => {
-        console.log(arnsNames);
-    }, [arnsNames]);
+        console.log({
+            ref: deploymentFailedRef.current,
+            deploymentFailed,
+        });
+    }, [deploymentFailed]);
+
+    useEffect(() => {
+        setIsFetchingLogs(false);
+        setIsWaitingForLogs(false);
+    }, [deploymentFailedRef.current]);
 
     async function handleArnsSelection(arnsName: ArnsName) {
         setArnsProcess(arnsName.processId);
@@ -227,7 +311,7 @@ export default function DeploymentSetting() {
     }
 
     useEffect(() => {
-        if (isFetchingLogs) {
+        if (isFetchingLogs && !deploymentFailedRef.current) {
             setAccordionValue("item-1");
         }
     }, [isFetchingLogs]);
@@ -369,14 +453,50 @@ export default function DeploymentSetting() {
 
                 {activeTab === "redeploy" && (
                     <>
-                        <div className="space-y-1">
-                            <h2 className="text-2xl md:text-3xl font-bold text-neutral-100">
-                                Redeploy
-                            </h2>
-                            <p className="text-sm text-neutral-400">
-                                Are you sure you want to redeploy your
-                                application?
-                            </p>
+                        <div className="space-y-4">
+                            {showRedployWarning && (
+                                <div className="bg-yellow-900/20 border border-yellow-900/50 rounded-lg p-4 flex flex-col">
+                                    <div className="font-semibold pb-2 text-yellow-500 ">
+                                        Warning
+                                    </div>
+                                    <div className="flex items-start gap-3">
+                                        <div>
+                                            <ul className="text-sm text-yellow-500 leading-relaxed list-disc pl-4">
+                                                <li>
+                                                    This feature will only work
+                                                    if you have a new commit in
+                                                    your repo
+                                                </li>
+                                                <li>
+                                                    This feature is not
+                                                    available for the protocol
+                                                    land
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-start mt-3">
+                                        <button
+                                            onClick={() =>
+                                                setRedeployWarning(false)
+                                            }
+                                            className="px-3 py-1.5 text-sm font-medium text-yellow-500 hover:text-yellow-400 bg-yellow-900/30 transition-colors rounded-md hover:bg-yellow-900/50 focus:outline-none focus:ring-2 focus:ring-yellow-500/40"
+                                        >
+                                            Dismiss
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="space-y-1">
+                                <h2 className="text-2xl md:text-3xl font-bold text-neutral-100">
+                                    Redeploy
+                                </h2>
+                                <p className="text-sm text-neutral-400">
+                                    Are you sure you want to redeploy your
+                                    application?
+                                </p>
+                            </div>
                         </div>
                         <Button
                             className="bg-neutral-800 mt-4 text-neutral-100 hover:bg-neutral-700"
@@ -432,6 +552,18 @@ export default function DeploymentSetting() {
                                     </AccordionContent>
                                 </AccordionItem>
                             </Accordion>
+
+                            {logError && (
+                                <div className="flex items-center gap-2 p-4 rounded-lg bg-red-950/50 border border-red-900">
+                                    <XCircle
+                                        className="text-red-500"
+                                        size={20}
+                                    />
+                                    <p className="text-red-400 text-sm">
+                                        {logError}
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </>
                 )}

@@ -39,7 +39,6 @@ export default function DeploymentPage() {
 
         setDeployment(foundDeployment);
     }, [repo, deployments, navigate]);
-
     if (!deployment) {
         return (
             <Layout>
