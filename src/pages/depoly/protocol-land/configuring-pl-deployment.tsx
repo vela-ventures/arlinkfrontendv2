@@ -99,12 +99,6 @@ const ConfigureProtocolLandProject = ({
     };
     const handleDeployProject = async () => {
         try {
-            if (deploymentStarted) return;
-            setIsDeploying(true);
-            setDeploymentStarted(true);
-            setDeploymentComplete(false);
-            setDeploymentSucceded(false);
-
             if (!projectName) return toast.error("Project Name is required");
             if (!selectedRepo.url)
                 return toast.error("Repository URL is required");
@@ -121,8 +115,13 @@ const ConfigureProtocolLandProject = ({
             if (deployments.find((dep) => dep.Name === projectName))
                 return toast.error("Project name already exists");
 
-            let finalArnsProcess = arnsProcess;
+            if (deploymentStarted) return;
+            setIsDeploying(true);
+            setDeploymentStarted(true);
+            setDeploymentComplete(false);
+            setDeploymentSucceded(false);
 
+            let finalArnsProcess = arnsProcess;
             //@ts-ignore
             let customRepo = null;
             if (arnsName?.name && activeTab === "existing") {

@@ -242,13 +242,6 @@ const ConfiguringDeploymentProject = ({
 
     // build and output settings handler commands
     const deployProject = async () => {
-        if (deploymentStarted) return;
-        // deployment states
-        setIsDeploying(true);
-        setDeploymentStarted(true);
-        setDeploymentComplete(false);
-        setDeploymentSucceded(false);
-
         if (!projectName) return toast.error("Project name is required");
         if (!repoUrl) return toast.error("repository is required");
         if (!selectedBranch) return toast.error("branch is required");
@@ -265,6 +258,14 @@ const ConfiguringDeploymentProject = ({
             return toast.error("github token not found", {
                 description: "",
             });
+
+        if (deploymentStarted) return;
+        // deployment states
+        setIsDeploying(true);
+        setDeploymentStarted(true);
+        setDeploymentComplete(false);
+        setDeploymentSucceded(false);
+
 
         let finalArnsProcess = arnsProcess;
         let customRepo = null;
