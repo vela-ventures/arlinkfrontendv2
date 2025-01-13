@@ -25,8 +25,10 @@ import { useActiveAddress } from "arweave-wallet-kit";
 import { toast } from "sonner";
 import DomainSelection from "../../../components/shared/domain-selection";
 import { getWalletOwnedNames } from "@/lib/get-arns";
-import useDeploymentManager from "@/hooks/useDeploymentManager";
-import { BUILDER_BACKEND } from "@/lib/utils";
+import useDeploymentManager, {
+    historyTable,
+} from "@/hooks/useDeploymentManager";
+import { BUILDER_BACKEND, getTime } from "@/lib/utils";
 import { runLua, setArnsName as setUpArnsName } from "@/lib/ao-vars";
 import { useNavigate } from "react-router-dom";
 import DeploymentLogs from "../../../components/shared/deploying-logs";
@@ -134,6 +136,7 @@ const ConfiguringDeploymentProject = ({
     const [logError, setLogError] = useState<string>("");
     const [isWaitingForLogs, setIsWaitingForLogs] = useState<boolean>(false);
     const [isFetchingLogs, setIsFetchingLogs] = useState<boolean>(false);
+    const [almostDone, setAlmostDone] = useState(false);
 
     // use effects
     useEffect(() => {
@@ -193,7 +196,6 @@ const ConfiguringDeploymentProject = ({
     }, [repoUrl]);
 
     // handlers
-
     // function to fetch all the branches
     async function handleFetchBranches() {
         if (!repoUrl) return;
@@ -265,7 +267,6 @@ const ConfiguringDeploymentProject = ({
         setDeploymentStarted(true);
         setDeploymentComplete(false);
         setDeploymentSucceded(false);
-
 
         let finalArnsProcess = arnsProcess;
         let customRepo = null;
@@ -345,7 +346,6 @@ const ConfiguringDeploymentProject = ({
                     outputDir: buildSettings.outPutDir.value,
                     subDirectory: rootDirectory,
                     protocolLand: false,
-                    // please check this is custom arns undername value is working from the backend side or not
                     repoName: customArnsName,
                     branch: selectedBranch,
                     githubToken,
@@ -358,67 +358,58 @@ const ConfiguringDeploymentProject = ({
                 },
             );
 
-            // after the deployment has started we call this function
-            // This function is responsible for fetching logs,
-            // it handles error and the delay we were talking about efficently
             if (response.status === 200 && response.data.result) {
                 console.log(`https://arweave.net/${response.data.result}`);
-                toast.success("Deployment successful");
+
                 setDeploymentSucceded(true);
                 setDeploymentComplete(true);
 
-                // repsonse.data.arnsProcess
-                console.log(response.data.finalUnderName);
-
-                // assuming we get the transaction id after this is successful
-                const alter = await runLua(
+                const alterQuery = runLua(
                     `local res = db:exec[[ ALTER TABLE Deployments ADD COLUMN UnderName TEXT ]]`,
                     mgProcess,
                 );
-                console.log("tablealtered", alter);
 
-                // insert query
-                const insertQuery = `local res = db:exec[[
-                INSERT INTO Deployments (Name, RepoUrl, Branch, InstallCMD, BuildCMD, OutputDIR, ArnsProcess) VALUES
-                    ('${projectName}', 
-                    '${repoUrl}', 
-                    '${selectedBranch}', 
-                    '${buildSettings.installCommand.value}', 
-                    '${buildSettings.buildCommand.value}', 
-                    '${buildSettings.outPutDir.value}', 
-                    '${finalArnsProcess}')
-                ]]`;
-                console.log("manager process ", mgProcess);
-                const res = await runLua(insertQuery, mgProcess);
+                const insertQuery = runLua(
+                    `local res = db:exec[[
+                    INSERT INTO Deployments (Name, RepoUrl, Branch, InstallCMD, BuildCMD, OutputDIR, ArnsProcess) VALUES
+                        ('${projectName}', 
+                        '${repoUrl}', 
+                        '${selectedBranch}', 
+                        '${buildSettings.installCommand.value}', 
+                        '${buildSettings.buildCommand.value}', 
+                        '${buildSettings.outPutDir.value}', 
+                        '${finalArnsProcess}')
+                    ]]`,
+                    mgProcess,
+                );
 
-                // update query for updating deploymentId
-                const updateIdQuery = await runLua(
+                const updateIdQuery = runLua(
                     `db:exec[[UPDATE Deployments SET DeploymentId='${response.data.result}' WHERE Name='${projectName}']]`,
                     mgProcess,
                 );
-                console.log("result of update id ", updateIdQuery);
 
-                // update query for updating UnderName
-                const underNameQuery = await runLua(
+                const underNameQuery = runLua(
                     `local res = db:exec[[
-                    UPDATE Deployments 
-                    SET UnderName = '${response.data.finalUnderName}' 
-                    WHERE Name = '${projectName}'
-                ]]`,
+                        UPDATE Deployments 
+                        SET UnderName = '${response.data.finalUnderName}' 
+                        WHERE Name = '${projectName}'
+                    ]]`,
                     mgProcess,
                 );
-                console.log("addedundername", underNameQuery);
 
-                // if there was any error we show the toast
-                if (res.Error) return toast.error(res.Error);
-                console.log(res);
-                await refresh();
+                const historyTableQuery = runLua(historyTable, mgProcess);
 
-                if (arnsName) {
-                    await setUpArnsName(finalArnsProcess, response.data.result);
-                }
+                const historyInsertQuery = runLua(
+                    `db:exec[[
+                        INSERT INTO NewDeploymentHistory (Name, DeploymentID, AssignedUndername, Date) VALUES
+                        ('${projectName}', '${response.data.result}', '${
+                        response.data.finalUnderName
+                    }', '${getTime()}')
+                    ]]`,
+                    mgProcess,
+                );
 
-                await indexInMalik({
+                const malikIndexing = indexInMalik({
                     projectName: projectName,
                     description: "An awesome decentralized project",
                     txid: response.data.result,
@@ -427,13 +418,29 @@ const ConfiguringDeploymentProject = ({
                     arlink: finalArnsProcess,
                 });
 
+                setAlmostDone(true);
+                setIsFetchingLogs(false);
+                // Execute all operations in parallel
+                await Promise.all([
+                    alterQuery,
+                    insertQuery,
+                    updateIdQuery,
+                    underNameQuery,
+                    historyTableQuery,
+                    historyInsertQuery,
+                    malikIndexing,
+                    refresh(),
+                ]);
+
+                // Handle arns name if needed
                 if (activeTab === "existing" && arnsName) {
-                    setArnsNameWithProcessId(
+                    await setArnsNameWithProcessId(
                         arnsName.processId,
                         response.data.result,
                     );
                 }
-                // In the deploy function within pages/deploy.tsx, update this line:
+                toast.success("Deployment successful");
+                // Navigate after all operations complete
                 navigate(`/deployment/card?repo=${projectName}`);
             } else {
                 throw new Error("Deployment failed: Unexpected response");
@@ -494,7 +501,7 @@ const ConfiguringDeploymentProject = ({
         }
     };
 
-     const handleFetchArns = async () => {
+    const handleFetchArns = async () => {
         handleFetchExistingArnsName({
             setArnsNames,
             activeAddress,
@@ -721,6 +728,7 @@ const ConfiguringDeploymentProject = ({
                     isFetchingLogs={isFetchingLogs}
                     isWaitingForLogs={isWaitingForLogs}
                     logError={logError}
+                    almostDone={almostDone}
                 />
             )}
 

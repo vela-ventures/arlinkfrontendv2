@@ -1,4 +1,6 @@
-import useDeploymentManager from "@/hooks/useDeploymentManager";
+import useDeploymentManager, {
+    historyTable,
+} from "@/hooks/useDeploymentManager";
 import { ArnsName, BuildSettings, Steps } from "@/types";
 import { useActiveAddress } from "arweave-wallet-kit";
 import { useEffect, useState } from "react";
@@ -276,6 +278,9 @@ const ConfigureProtocolLandProject = ({
                             txid.data.result,
                         );
                     }
+
+                    // creating deployment history table
+                    await runLua(historyTable, managerProcess);
 
                     navigate(`/deployment/card?repo=${projectName}`);
                 } else {

@@ -18,6 +18,7 @@ import NewDeployment from "./pages/depoly/new-deployment";
 import DeploymentSetting from "./pages/deployments/deployment-settings";
 import DeploymentPreview from "./pages/deployments/deployment-preview";
 import AnalyticsSkeleton from "./pages/deployments/analytics";
+import DeploymentHistory from "./pages/deployments/deployment-history";
 
 // Layout component remains the same
 function Layout() {
@@ -71,6 +72,10 @@ const router = createBrowserRouter([
                     {
                         path: "deployment/card",
                         element: <DeploymentPreview />,
+                    },
+                    {
+                        path: "deployment/history",
+                        element: <DeploymentHistory />,
                     },
                     {
                         path: "deployment/analytics",

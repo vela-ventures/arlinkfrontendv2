@@ -6,8 +6,10 @@ import { toast } from "sonner";
 import Layout from "@/layouts/layout";
 import { Button } from "@/components/ui/button";
 import { useGlobalState } from "@/store/useGlobalState";
-import useDeploymentManager from "@/hooks/useDeploymentManager";
-import { BUILDER_BACKEND, TESTING_FETCH } from "@/lib/utils";
+import useDeploymentManager, {
+    historyTable,
+} from "@/hooks/useDeploymentManager";
+import { getTime, TESTING_FETCH } from "@/lib/utils";
 import { runLua } from "@/lib/ao-vars";
 import { setArnsName } from "@/lib/ao-vars";
 import { DeploymentConfig, type TDeployment } from "@/types";
@@ -24,6 +26,7 @@ import { Loader2 } from "lucide-react";
 interface DeploymentComponentProps {
     deployment: TDeployment;
 }
+``;
 
 export default function DeploymentComponent({
     deployment,
@@ -34,7 +37,6 @@ export default function DeploymentComponent({
 
     // @ts-ignore
     const { managerProcess, deployments, refresh } = useDeploymentManager();
-    const navigate = useNavigate();
     const { name } = useParams();
 
     // states
@@ -67,7 +69,7 @@ export default function DeploymentComponent({
                 managerProcess,
             );
             // console.log("UnderName updated:", updateQuery);
-            refresh();
+
             return { success: true };
         } catch (error) {
             console.error("Error updating UnderName:", error);
@@ -77,7 +79,9 @@ export default function DeploymentComponent({
 
     // checking for any deploymentConfig
     useEffect(() => {
-        if (!deployment?.RepoUrl) return;
+        // Early return should prevent double firing, but React 18 Strict Mode
+        // will still double-invoke effects in development
+        if (!deployment?.RepoUrl || !globalState.managerProcess) return;
 
         const extractRepoInfo = (repoUrl: string) => {
             const parts = repoUrl.split("/").reverse();
@@ -127,35 +131,44 @@ export default function DeploymentComponent({
                 setIsFetchingProject(true);
                 const { owner, repoName } = extractRepoInfo(deployment.RepoUrl);
 
-                /*
-                    I mean let's think about this for a second
-                    if we already have all the data in the on chain why would we need to fetch from the backend
-                    let's only call this for the people who don't have undername field in their table
-                    if they don't have the undername we call this axios, add the column and update the column with the undername
-                */
+                // fetchning data from the axios
+                const response = await axios.get<DeploymentConfig>(
+                    `${TESTING_FETCH}/config/${owner}/${repoName}`,
+                );
+                const { url: newDeploymentUrl, arnsUnderName } = response.data;
 
-                /*
-                    By the way if the user has the undername already, this is page loads blazingly fast 
-                */
+                // if the onChain data is not up to date we will update the deploymentInDb
+                if (response.data.url !== deployment.DeploymentId) {
+                    await updateDeploymentInDB(newDeploymentUrl);
+                    // if the guy has done ci/cd at late midnight 3am and he opens the webapp during the afternoon of next day at 4:00pm
+                    // the guy will have a date of 4 instead of midnight 3am
+                    await runLua(
+                        `db:exec[[
+                                INSERT INTO NewDeploymentHistory (Name, DeploymentID, AssignedUndername, Date) VALUES
+                                ('${
+                                    deployment.Name
+                                }', '${newDeploymentUrl}', '${arnsUnderName}', '${getTime()}')
+                            ]]`,
+                        globalState.managerProcess,
+                    );
+                }
+
+                // updating in global store
+                deploymentConfigStore.addDeployment(response.data);
+                deploymentConfigStore.updateDeployment(
+                    githubUserPath,
+                    response.data,
+                );
+
+                // if the user doesn't have the undername in his table, this will add it
                 if (!deployment.UnderName) {
-                    const response = await axios.get<DeploymentConfig>(
-                        `${TESTING_FETCH}/config/${owner}/${repoName}`,
-                    );
-
-                    const { url: newDeploymentUrl, arnsUnderName } =
-                        response.data;
-                    deploymentConfigStore.addDeployment(response.data);
-                    deploymentConfigStore.updateDeployment(
-                        githubUserPath,
-                        response.data,
-                    );
-
                     await updateUnderName(arnsUnderName);
-
                     setDeploymentUrl(newDeploymentUrl);
                     setAntName(arnsUnderName);
-                    await updateDeploymentInDB(newDeploymentUrl);
                 }
+
+                // lastly calling referesh to update the data
+                refresh();
             } catch (error) {
                 handleError(error);
             } finally {
@@ -163,6 +176,7 @@ export default function DeploymentComponent({
             }
         };
 
+        // Add deployment and refresh as dependencies to prevent unnecessary re-runs
         fetchDeploymentUrl();
     }, [globalState.managerProcess]);
 

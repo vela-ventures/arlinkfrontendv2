@@ -1,3 +1,17 @@
+export type DeploymentRecord = {
+    Name: string;
+    DeploymentID: string;
+    ID: number;
+    Date: string;
+    AssignedUndername?: string; // Optional, as it's not present in all records
+};
+
+export type GetDemploymentHistoryReturnType = {
+    messageId: null | string;
+    history: [] | DeploymentRecord[];
+    error: Error | null;
+};
+
 export interface Repository {
     id: number;
     name: string;
@@ -48,7 +62,7 @@ export type TDeployment = {
     ArnsProcess: string;
     DeploymentId: string;
     DeploymentHash: string;
-    UnderName:string;
+    UnderName: string;
 };
 
 export type TDeployments = {
@@ -67,7 +81,7 @@ export interface Project {
     branch: string;
     outputDir: string;
     deploymentId: string;
-    UnderName:string;
+    UnderName: string;
 }
 
 export interface DirectoryStructure {
@@ -103,10 +117,10 @@ export interface DeploymentStore {
     removeDeployment: (githubPath: string) => void;
     updateDeployment: (
         githubPath: string,
-        updates: Partial<DeploymentConfig>
+        updates: Partial<DeploymentConfig>,
     ) => { success: boolean; error?: string };
     getDeploymentByGithubPath: (
-        githubPath: string
+        githubPath: string,
     ) => DeploymentConfig | undefined;
 }
 
@@ -147,6 +161,6 @@ interface BuildSettingsProps {
     onSettingChange: (
         setting: keyof BuildSettings,
         field: keyof BuildSetting,
-        value: string | boolean
+        value: string | boolean,
     ) => void;
 }

@@ -46,12 +46,16 @@ export default function Navbar() {
 
     const deployPageNavlinks = [
         {
-            name: "Deployment",
+            name: "Overview",
             url: `/deployment?repo=${extractRepoName(repo || "")}`,
         },
         {
             name: "Logs",
             url: `/deployment/logs?repo=${extractRepoName(repo || "")}`,
+        },
+        {
+            name: "Deployments",
+            url: `/deployment/history?repo=${extractRepoName(repo || "")}`,
         },
         {
             name: "Analytics",

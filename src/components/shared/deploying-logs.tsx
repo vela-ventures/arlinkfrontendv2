@@ -13,11 +13,13 @@ const DeployingLogs = ({
     logError,
     isFetchingLogs,
     isWaitingForLogs,
+    almostDone,
 }: {
     logs: string[];
     logError: string;
     isFetchingLogs: boolean;
     isWaitingForLogs: boolean;
+    almostDone?: boolean;
 }) => {
     const [accordionValue, setAccordionValue] = useState<string | undefined>(
         undefined,
@@ -32,15 +34,15 @@ const DeployingLogs = ({
     return (
         <div className="bg-arlink-bg-secondary-color p-6 rounded-lg mt-6 border border-[#383838]">
             <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold">
-                    Deployment Process
-                </h2>
+                <h2 className="text-xl font-semibold">Deployment Process</h2>
             </div>
             <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 mb-6">
                 <p className="text-sm flex items-center gap-3 text-yellow-200">
                     <AlertTriangle className="text-yellow-400 flex-shrink-0 animate-pulse" />
                     <span>
-                        Please keep this tab open during deployment. We're experiencing high traffic and deployments may take longer than usual.
+                        Please keep this tab open during deployment. We're
+                        experiencing high traffic and deployments may take
+                        longer than usual.
                     </span>
                 </p>
             </div>
@@ -72,6 +74,14 @@ const DeployingLogs = ({
                                         <Loader2 className="text-neutral-600 animate-spin" />
                                         <span className="text-neutral-200">
                                             Fetching logs
+                                        </span>
+                                    </div>
+                                )}
+                                {almostDone && (
+                                    <div className="text-xs flex items-center pr-4 gap-2">
+                                        <Loader2 className="text-neutral-600 animate-spin" />
+                                        <span className="text-neutral-200">
+                                            Almost completed..
                                         </span>
                                     </div>
                                 )}
