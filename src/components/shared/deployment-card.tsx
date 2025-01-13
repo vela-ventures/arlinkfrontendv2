@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { ExternalLink, MoveUpRight, GitBranch, GitCommit } from "lucide-react";
 import { TDeployment } from "@/types";
-import { extractRepoName } from "@/pages/depoly/utilts";
 
 interface DeploymentCardProps {
     deployment: TDeployment;

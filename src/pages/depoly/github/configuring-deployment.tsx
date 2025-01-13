@@ -29,7 +29,7 @@ import useDeploymentManager, {
     historyTable,
 } from "@/hooks/useDeploymentManager";
 import { BUILDER_BACKEND, getTime } from "@/lib/utils";
-import { runLua, setArnsName as setUpArnsName } from "@/lib/ao-vars";
+import { runLua, setArnsName as setArnsNameWithProcessId } from "@/lib/ao-vars";
 import { useNavigate } from "react-router-dom";
 import DeploymentLogs from "../../../components/shared/deploying-logs";
 import {
@@ -44,7 +44,7 @@ import {
 import NewDeploymentCard from "@/components/shared/new-deployment-card";
 import { BuildDeploymentSetting } from "@/components/shared/build-settings";
 import { NextJsProjectWarningCard } from "@/components/skeletons";
-import { setArnsName as setArnsNameWithProcessId } from "@/lib/ao-vars";
+import {} from "@/lib/ao-vars";
 
 const ConfiguringDeploymentProject = ({
     repoUrl,
@@ -99,7 +99,7 @@ const ConfiguringDeploymentProject = ({
     // domain states
     const [activeTab, setActiveTab] = useState<"arlink" | "existing">("arlink");
     const [customArnsName, setCustomArnsName] = useState<string>("");
-    const [arnsProcess, setArnsProcess] = useState<string>("");
+    const [arnsProcess, setArnsProcess] = useState<string | null>(null);
 
     // for the arns domain from wallet
     const [arnsNames, setArnsNames] = useState<ArnsName[]>([]);
@@ -269,7 +269,6 @@ const ConfiguringDeploymentProject = ({
         setDeploymentSucceded(false);
 
         let finalArnsProcess = arnsProcess;
-        let customRepo = null;
 
         // this is to check if the user has selected a custom domain or not
         // if he has not selected a custom domain, then we add the custom name and build the url
@@ -286,8 +285,8 @@ const ConfiguringDeploymentProject = ({
                 }
                 // if we are using arlink undername feature we set the arns name to undefined
                 setArnsName(undefined);
-                finalArnsProcess = customArnsName || projectName;
-                customRepo = projectName;
+                // if the user is not using their own arns we will keep the arns process null
+                finalArnsProcess = null;
                 break;
         }
 
@@ -378,7 +377,7 @@ const ConfiguringDeploymentProject = ({
                         '${buildSettings.installCommand.value}', 
                         '${buildSettings.buildCommand.value}', 
                         '${buildSettings.outPutDir.value}', 
-                        '${finalArnsProcess}')
+                        ${finalArnsProcess ? `'${finalArnsProcess}'` : "NULL"})
                     ]]`,
                     mgProcess,
                 );
@@ -405,10 +404,10 @@ const ConfiguringDeploymentProject = ({
                     txid: response.data.result,
                     owner: activeAddress,
                     link: `https://arweave.net/${response.data.result}`,
-                    arlink: finalArnsProcess,
+                    arlink: finalArnsProcess ? finalArnsProcess : null,
                 });
 
-                let userArns: null | string = null;
+                let userArns: string | null = null;
                 if (activeTab === "existing" && arnsName) {
                     userArns = await setArnsNameWithProcessId(
                         arnsName.processId,

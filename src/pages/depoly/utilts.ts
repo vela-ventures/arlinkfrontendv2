@@ -49,7 +49,7 @@ export const indexInMalik = async ({
     txid: string;
     owner: string | undefined;
     link: string;
-    arlink: string;
+    arlink: string | null;
 }) => {
     await index(
         // @ts-ignore

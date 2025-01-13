@@ -44,7 +44,7 @@ const ConfigureProtocolLandProject = ({
     // domain states
     const [activeTab, setActiveTab] = useState<"arlink" | "existing">("arlink");
     const [customArnsName, setCustomArnsName] = useState<string>("");
-    const [arnsProcess, setArnsProcess] = useState<string>("");
+    const [arnsProcess, setArnsProcess] = useState<string | null>(null);
 
     // for the arns domain from wallet
     const [arnsNames, setArnsNames] = useState<ArnsName[]>([]);
@@ -128,16 +128,22 @@ const ConfigureProtocolLandProject = ({
             let finalArnsProcess = arnsProcess;
             //@ts-ignore
             let customRepo = null;
-            if (arnsName?.name && activeTab === "existing") {
-                console.log("Hello from the frist blokc");
-                setCustomArnsName("");
-                finalArnsProcess = arnsName.name;
-                console.log("hello world");
-            } else if (activeTab === "arlink") {
-                if (customArnsName.length === 0) setCustomArnsName(projectName);
-                setArnsName(undefined);
-                finalArnsProcess = `${customArnsName}.arlink.arweave.net`;
-                customRepo = projectName;
+            switch (activeTab) {
+                case "existing":
+                    if (arnsName?.name) {
+                        setCustomArnsName("");
+                        finalArnsProcess = arnsName.processId;
+                    }
+                    break;
+                case "arlink":
+                    if (!customArnsName) {
+                        setCustomArnsName(projectName);
+                    }
+                    // if we are using arlink undername feature we set the arns name to undefined
+                    setArnsName(undefined);
+                    // if the user is not using their own arns we will keep the arns process null
+                    finalArnsProcess = null;
+                    break;
             }
 
             // Start log polling before deployment
@@ -227,7 +233,7 @@ const ConfigureProtocolLandProject = ({
                                 InstallCommand,
                                 BuildCommand,
                                 OutputDir,
-                                ArnsName,
+                                ArnsName
                             ) VALUES (
                                 '${projectName}',
                                 '${selectedRepo.url}',
@@ -235,7 +241,11 @@ const ConfigureProtocolLandProject = ({
                                 '${buildSettings.installCommand.value}',
                                 '${buildSettings.buildCommand.value}', 
                                 '${buildSettings.outPutDir.value}',
-                                '${finalArnsProcess}',
+                                 ${
+                                     finalArnsProcess
+                                         ? `'${finalArnsProcess}'`
+                                         : "NULL"
+                                 }
                             )
                         ]]`,
                         managerProcess,
