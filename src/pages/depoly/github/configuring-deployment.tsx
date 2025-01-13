@@ -418,9 +418,9 @@ const ConfiguringDeploymentProject = ({
                 const historyInsertQuery = runLua(
                     `db:exec[[
                         INSERT INTO NewDeploymentHistory (Name, DeploymentID, AssignedUndername, Date) VALUES
-                        ('${projectName}', '${response.data.result}', '${
-                        userArns ? userArns : "NULL"
-                    }', '${getTime()}')
+                        ('${projectName}', '${response.data.result}', 
+                        ${userArns ? `'${userArns}'` : "NULL"}
+                        , '${getTime()}')
                     ]]`,
                     mgProcess,
                 );

@@ -296,9 +296,8 @@ const ConfigureProtocolLandProject = ({
                     const historyInsertQuery = runLua(
                         `db:exec[[
                                 INSERT INTO NewDeploymentHistory (Name, DeploymentID, AssignedUndername, Date) VALUES
-                                ('${projectName}', '${txid.data.result}', '${
-                            userArns ? userArns : "NULL"
-                        }', '${getTime()}')
+                                ('${projectName}', '${txid.data.result}', 
+                                ${userArns ? `'${userArns}'` : "NULL"}, '${getTime()}')
                             ]]`,
                         managerProcess,
                     );
