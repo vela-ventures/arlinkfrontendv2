@@ -14,10 +14,11 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import axios, { isAxiosError } from "axios";
-import { BUILDER_BACKEND } from "@/lib/utils";
+import { BUILDER_BACKEND, getTime } from "@/lib/utils";
 import { runLua } from "@/lib/ao-vars";
 import DeploymentLogs from "../../../components/shared/deploying-logs";
 import { setArnsName as setArnsNameWithProcessId } from "@/lib/ao-vars";
+import { setDefaultHighWaterMark } from "stream";
 
 const ConfigureProtocolLandProject = ({
     setStep,
@@ -54,6 +55,7 @@ const ConfigureProtocolLandProject = ({
     const [isDeploying, setIsDeploying] = useState<boolean>(false);
     const [existingArnsLoading, setExistingArnsLoading] =
         useState<boolean>(true);
+    const [almostDone, setAlmostDone] = useState<boolean>(false);
 
     // deployment status states
     const [deploymentStarted, setDeploymentStarted] = useState<boolean>(false);
@@ -209,18 +211,15 @@ const ConfigureProtocolLandProject = ({
                     console.log("https://arweave.net/" + txid.data);
                     toast.success("Deployment successful");
 
-                    const alter = await runLua(
-                        `local res = db:exec[[
-                                ALTER TABLE Deployments 
-                                ADD COLUMN UnderName TEXT
-                            ]]`,
+                    // alter query for adding the Undername column
+                    const alterQuery = runLua(
+                        `local res = db:exec[[ ALTER TABLE Deployments ADD COLUMN UnderName TEXT ]]`,
                         managerProcess,
                     );
-                    console.log("tablealtered", alter);
 
                     // Insert new deployment
-                    const insertQuery = `
-                        db:exec[[
+                    const insertQuery = runLua(
+                        `db:exec[[
                             INSERT INTO Deployments (
                                 Name,
                                 Repository, 
@@ -238,32 +237,46 @@ const ConfigureProtocolLandProject = ({
                                 '${buildSettings.outPutDir.value}',
                                 '${finalArnsProcess}',
                             )
-                        ]]
-                    `;
-
-                    const res = await runLua(insertQuery, managerProcess);
-                    if (res.Error) return toast.error(res.Error);
+                        ]]`,
+                        managerProcess,
+                    );
 
                     // update query for updating deploymentId
-                    const updateIdQuery = await runLua(
-                        `db:exec[[UPDATE Deployments SET DeploymentId='${txid.data.result}' WHERE Name='${projectName}']]`,
+                    const updateIdQuery = runLua(
+                        `db:exec[[
+                            UPDATE Deployments SET DeploymentId='${txid.data.result}' WHERE Name='${projectName}'
+                        ]]`,
                         managerProcess,
                     );
-                    console.log("result of update id ", updateIdQuery);
 
                     // update query for updating UnderName
-                    const underNameQuery = await runLua(
-                        `local res = db:exec[[
-                        UPDATE Deployments 
-                        SET UnderName = '${txid.data.finalUnderName}' 
-                        WHERE Name = '${projectName}'
-                    ]]`,
+                    const underNameQuery = runLua(
+                        `db:exec[[
+                            UPDATE Deployments 
+                            SET UnderName = '${txid.data.finalUnderName}' 
+                            WHERE Name = '${projectName}'
+                        ]]`,
                         managerProcess,
                     );
-                    console.log("addedundername", underNameQuery);
 
-                    await refresh();
-                    await indexInMalik({
+                    // insert query for the history table
+                    const createHistoryTableQuery = runLua(
+                        historyTable,
+                        managerProcess,
+                    );
+
+                    // history table query
+                    const historyInsertQuery = runLua(
+                        `db:exec[[
+                            INSERT INTO NewDeploymentHistory (Name, DeploymentID, AssignedUndername, Date) VALUES
+                            ('${projectName}', '${txid.data.result}', '${
+                            txid.data.finalUnderName
+                        }', '${getTime()}')
+                        ]]`,
+                        managerProcess,
+                    );
+
+                    const malikIndexing = indexInMalik({
                         projectName: projectName,
                         description: "An awesome decentralized project",
                         txid: txid.data.finalUnderName,
@@ -272,6 +285,20 @@ const ConfigureProtocolLandProject = ({
                         arlink: finalArnsProcess,
                     });
 
+                    setIsFetchingLogs(false);
+                    setAlmostDone(true);
+                    const dbOperations = [
+                        alterQuery,
+                        insertQuery,
+                        updateIdQuery,
+                        underNameQuery,
+                        createHistoryTableQuery,
+                        historyInsertQuery,
+                        malikIndexing,
+                    ];
+
+                    await Promise.all(dbOperations);
+
                     if (activeTab === "existing" && arnsName) {
                         setArnsNameWithProcessId(
                             arnsName.processId,
@@ -279,9 +306,7 @@ const ConfigureProtocolLandProject = ({
                         );
                     }
 
-                    // creating deployment history table
-                    await runLua(historyTable, managerProcess);
-
+                    await refresh();
                     navigate(`/deployment/card?repo=${projectName}`);
                 } else {
                     toast.error("Deployment failed");
@@ -451,6 +476,7 @@ const ConfigureProtocolLandProject = ({
                     isFetchingLogs={isFetchingLogs}
                     isWaitingForLogs={isWaitingForLogs}
                     logError={logError}
+                    almostDone={true}
                 />
             )}
             {deploymentFailed && (

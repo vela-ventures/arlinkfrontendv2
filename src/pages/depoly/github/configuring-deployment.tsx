@@ -429,7 +429,6 @@ const ConfiguringDeploymentProject = ({
                     historyTableQuery,
                     historyInsertQuery,
                     malikIndexing,
-                    refresh(),
                 ]);
 
                 // Handle arns name if needed
@@ -439,6 +438,7 @@ const ConfiguringDeploymentProject = ({
                         response.data.result,
                     );
                 }
+                await refresh(),
                 toast.success("Deployment successful");
                 // Navigate after all operations complete
                 navigate(`/deployment/card?repo=${projectName}`);

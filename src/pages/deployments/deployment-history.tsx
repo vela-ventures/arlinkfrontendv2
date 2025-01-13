@@ -173,34 +173,30 @@ export default function DeploymentHistory() {
                                     {/* Left Section */}
                                     <div className="space-y-1 sm:space-y-0.5">
                                         <div className="flex items-center justify-between sm:justify-start sm:space-x-2">
-                                            <span className="font-medium text-neutral-100">
+                                            <span className="font-semibold text-neutral-100">
                                                 {deployment.Name}
                                             </span>
                                         </div>
-                                        <div className="flex items-center space-x-2 text-sm text-neutral-400">
-                                            <span className="flex items-center space-x-1">
-                                                <span className="h-2 w-2 rounded-full bg-green-500" />
-                                                <span>Ready</span>
-                                            </span>
-                                            <span className="hidden sm:inline">
-                                                •
-                                            </span>
-                                            <span className="hidden sm:inline">
-                                                {format(
-                                                    new Date(deployment.Date),
-                                                    "MMM d, yyyy",
-                                                )}
-                                            </span>
+                                        <div className="flex items-center space-x-2 text-sm">
+                                            <div className="flex items-center space-x-2 text-sm text-neutral-500">
+                                                <GitBranchIcon className="size-3" />
+                                                <span>main</span>
+                                            </div>
                                         </div>
                                     </div>
 
                                     <div className="space-y-1 sm:flex-1">
-                                        <div className="flex items-center space-x-2 text-sm text-neutral-300">
-                                            <GitBranchIcon className="h-4 w-4" />
-                                            <span>main</span>
-                                        </div>
+                                        <span className="hidden text-xs sm:inline">
+                                            {format(
+                                                new Date(deployment.Date),
+                                                "MMM d, yyyy",
+                                            )}
+                                        </span>
                                         <div className="flex items-center space-x-2 text-sm">
-                                            <span className="font-mono text-neutral-300">
+                                            <span className="font-semibold">
+                                                Transaction id:&nbsp;
+                                            </span>
+                                            <span className="font-mono text-neutral-400">
                                                 {deployment.DeploymentID}
                                             </span>
                                         </div>
@@ -215,7 +211,6 @@ export default function DeploymentHistory() {
                                                 )}
                                             </div>
                                             <div>
-                                                by{" "}
                                                 {deployment.AssignedUndername}
                                             </div>
                                         </div>

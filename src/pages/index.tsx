@@ -1,5 +1,3 @@
-"use client";
-
 import { Button } from "@/components/ui/button";
 import { ConnectButton, useConnection } from "arweave-wallet-kit";
 import { useEffect, useRef } from "react";
