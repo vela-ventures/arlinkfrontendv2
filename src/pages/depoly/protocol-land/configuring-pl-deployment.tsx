@@ -265,17 +265,6 @@ const ConfigureProtocolLandProject = ({
                         managerProcess,
                     );
 
-                    // history table query
-                    const historyInsertQuery = runLua(
-                        `db:exec[[
-                            INSERT INTO NewDeploymentHistory (Name, DeploymentID, AssignedUndername, Date) VALUES
-                            ('${projectName}', '${txid.data.result}', '${
-                            txid.data.finalUnderName
-                        }', '${getTime()}')
-                        ]]`,
-                        managerProcess,
-                    );
-
                     const malikIndexing = indexInMalik({
                         projectName: projectName,
                         description: "An awesome decentralized project",
@@ -284,6 +273,25 @@ const ConfigureProtocolLandProject = ({
                         link: `https://arweave.net/${txid.data}`,
                         arlink: finalArnsProcess,
                     });
+
+                    let userArns: null | string = null;
+                    if (activeTab === "existing" && arnsName) {
+                        userArns = await setArnsNameWithProcessId(
+                            arnsName.processId,
+                            txid.data.result,
+                        );
+                    }
+
+                    // history table query
+                    const historyInsertQuery = runLua(
+                        `db:exec[[
+                                INSERT INTO NewDeploymentHistory (Name, DeploymentID, AssignedUndername, Date) VALUES
+                                ('${projectName}', '${txid.data.result}', '${
+                            userArns ? userArns : "NULL"
+                        }', '${getTime()}')
+                            ]]`,
+                        managerProcess,
+                    );
 
                     setIsFetchingLogs(false);
                     setAlmostDone(true);
@@ -298,13 +306,6 @@ const ConfigureProtocolLandProject = ({
                     ];
 
                     await Promise.all(dbOperations);
-
-                    if (activeTab === "existing" && arnsName) {
-                        setArnsNameWithProcessId(
-                            arnsName.processId,
-                            txid.data.result,
-                        );
-                    }
 
                     await refresh();
                     navigate(`/deployment/card?repo=${projectName}`);

@@ -399,16 +399,6 @@ const ConfiguringDeploymentProject = ({
 
                 const historyTableQuery = runLua(historyTable, mgProcess);
 
-                const historyInsertQuery = runLua(
-                    `db:exec[[
-                        INSERT INTO NewDeploymentHistory (Name, DeploymentID, AssignedUndername, Date) VALUES
-                        ('${projectName}', '${response.data.result}', '${
-                        response.data.finalUnderName
-                    }', '${getTime()}')
-                    ]]`,
-                    mgProcess,
-                );
-
                 const malikIndexing = indexInMalik({
                     projectName: projectName,
                     description: "An awesome decentralized project",
@@ -417,6 +407,24 @@ const ConfiguringDeploymentProject = ({
                     link: `https://arweave.net/${response.data.result}`,
                     arlink: finalArnsProcess,
                 });
+
+                let userArns: null | string = null;
+                if (activeTab === "existing" && arnsName) {
+                    userArns = await setArnsNameWithProcessId(
+                        arnsName.processId,
+                        response.data.result,
+                    );
+                }
+
+                const historyInsertQuery = runLua(
+                    `db:exec[[
+                        INSERT INTO NewDeploymentHistory (Name, DeploymentID, AssignedUndername, Date) VALUES
+                        ('${projectName}', '${response.data.result}', '${
+                        userArns ? userArns : "NULL"
+                    }', '${getTime()}')
+                    ]]`,
+                    mgProcess,
+                );
 
                 setAlmostDone(true);
                 setIsFetchingLogs(false);
@@ -431,14 +439,7 @@ const ConfiguringDeploymentProject = ({
                     malikIndexing,
                 ]);
 
-                // Handle arns name if needed
-                if (activeTab === "existing" && arnsName) {
-                    await setArnsNameWithProcessId(
-                        arnsName.processId,
-                        response.data.result,
-                    );
-                }
-                await refresh(),
+                await refresh();
                 toast.success("Deployment successful");
                 // Navigate after all operations complete
                 navigate(`/deployment/card?repo=${projectName}`);
