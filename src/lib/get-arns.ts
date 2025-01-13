@@ -1,6 +1,6 @@
 export async function getWalletOwnedNames(walletAddress: string): Promise<{ name: string; processId: string }[]> {
     const registryUrl = 'https://cu138.ao-testnet.xyz/dry-run?process-id=i_le_yKKPVstLTDSmkHRqf-wYphMnwB9OhleiTgMkWc';
-    const namesUrl = 'https://cu.ar-io.dev/dry-run?process-id=agYcCFJtrMG6cqMuZfskIkFTGvUPddICmtQSBIoPdiA';
+    const namesUrl = 'https://cu.ardrive.io/dry-run?process-id=agYcCFJtrMG6cqMuZfskIkFTGvUPddICmtQSBIoPdiA';
     
     const headers = {
       'accept': '*/*',
