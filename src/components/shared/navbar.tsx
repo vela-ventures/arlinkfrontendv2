@@ -7,6 +7,7 @@ import {
 import { useState, useEffect } from "react";
 import { getProfileByWalletAddress, type ProfileHeaderType } from "@/lib/Bazar";
 import { extractRepoName } from "@/pages/depoly/utilts";
+import ProfileCard from "../profile-card";
 
 export default function Navbar() {
     //@ts-ignore
@@ -99,29 +100,25 @@ export default function Navbar() {
     return (
         <nav className="bg-[#0D0D0D]/80 arlink-navbar z-50 sticky top-0 backdrop-blur-lg border-b-2 border-neutral-800  box-border">
             <div className="md:px-[40px] px-[16px] pt-4 w-full flex items-center justify-between">
-                <div className="flex gap-1 items-center">
+                <div className="flex gap-2  items-center">
                     <Link to="/dashboard">
                         <img
-                            src="/joose.svg"
+                            src="https://pbs.twimg.com/profile_images/1879428276101562368/E5S81_R3_400x400.jpg"
                             alt="Joose logo"
-                            className="md:w-[56px] w-[40px] aspect-square rounded-full"
+                            className="size-10 aspect-square rounded-full"
                         />
                     </Link>
-                    <h2 className="bg-gradient-to-r from-neutral-50 to-neutral-300 text-transparent bg-clip-text md:text-[24px] text-[18px] tracking-tight font-bold pb-2">
-                        {displayName}
+                    <h2 className="bg-gradient-to-r  translate-y-[0.5px] leading-none from-neutral-50 to-neutral-300 text-transparent bg-clip-text md:text-[24px] text-[18px] tracking-tight font-bold pb-2">
+                        Arlink
                     </h2>
                 </div>
-                <div className="flex items-center gap-6">
+                <div className="flex items-center gap-1">
                     <ConnectButton accent="#0D0D0D" />
-                    <div className="md:w-8 md:h-8 w-6 h-6 bg-purple-500 rounded-full">
-                        {avatar && (
-                            <img
-                                src={avatar}
-                                alt="Profile"
-                                className="w-full h-full rounded-full object-cover"
-                            />
-                        )}
-                    </div>
+                    <ProfileCard
+                        name={"Arlink"}
+                        avatarUrl="https://pbs.twimg.com/profile_images/1879428276101562368/E5S81_R3_400x400.jpg"
+                        initials="A"
+                    />
                 </div>
             </div>
             <div>

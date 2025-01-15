@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { index } from "arweave-indexer";
+import { connect, createDataItemSigner } from "@permaweb/aoconnect";
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -49,4 +49,31 @@ export function getTime() {
     const seconds = String(now.getSeconds()).padStart(2, "0");
 
     return `${year}-${month}-${date} ${hours}:${minutes}:${seconds}`;
+}
+
+export async function setUndername(
+    antProcess: string,
+    manifestId: string,
+    undername: string,
+) {
+    const ao = connect();
+    const msgtags = [
+        { name: "Action", value: "Set-Record" },
+        { name: "Sub-Domain", value: undername },
+        { name: "Transaction-Id", value: manifestId },
+        { name: "TTL-Seconds", value: "3600" },
+    ];
+    try {
+        const result = await ao.message({
+            process: antProcess,
+            tags: msgtags,
+            signer: createDataItemSigner(window.arweaveWallet),
+            data: "",
+        });
+        console.log("set arns message officially sent out ", result);
+        return result;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
 }

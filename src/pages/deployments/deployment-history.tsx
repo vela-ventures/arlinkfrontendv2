@@ -58,8 +58,8 @@ import {
     CommandItem,
     CommandList,
 } from "@/components/ui/command";
-import { cn } from "@/lib/utils";
-import { setArnsName } from "@/lib/ao-vars";
+import { cn, setUndername } from "@/lib/utils";
+import { runLua, setArnsName } from "@/lib/ao-vars";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
@@ -402,6 +402,9 @@ const DeploymentHistoryCard = ({
                                             fetchingUserArns={fetchingUserArns}
                                             arnsNames={arnsNames}
                                             deployment={deployment}
+                                            currentDeployment={
+                                                currentDeployment
+                                            }
                                         />
                                     </DialogDescription>
                                 </DialogHeader>
@@ -456,17 +459,24 @@ const ArnsTabSelector = ({
     fetchingUserArns,
     arnsNames,
     deployment,
+    currentDeployment,
 }: {
     fetchingUserArns: boolean;
     arnsNames: ArnsName[];
     deployment: DeploymentRecord;
+    currentDeployment: TDeployment;
 }) => {
     const [selectedArns, setSelectedArns] = useState<ArnsName | undefined>(
         undefined,
     );
+    const globalState = useGlobalState();
     const [arnsDropDownOpen, setArnsDropDownOpen] = useState<boolean>(false);
     const [transactionId, setTransactionId] = useState<string | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [currentArns, setCurrentArns] = useState<ArnsName | undefined>(
+        undefined,
+    );
+    const [newUndername, setNewUndername] = useState<string>("");
 
     const handleCloseDialog = () => {
         setTransactionId(null);
@@ -479,7 +489,8 @@ const ArnsTabSelector = ({
     };
 
     const handleSwitchToAnotherArns = async () => {
-        if (!selectedArns) return;
+        setNewUndername("");
+        if (!selectedArns) return toast.error("please select an arns");
         const txid = await setArnsName(
             selectedArns.processId,
             deployment.DeploymentID,
@@ -501,6 +512,41 @@ const ArnsTabSelector = ({
         }
     }, [transactionId]);
 
+    useEffect(() => {
+        setCurrentArns(
+            arnsNames.find(
+                (arns) => arns.processId === currentDeployment.ArnsProcess,
+            ),
+        );
+    }, [arnsNames]);
+
+    const [assigningANewUndername, setAssigningANewUndername] =
+        useState<boolean>(false);
+    const changeUndername = async () => {
+        if (newUndername.trim().length === 0)
+            return toast.error("please enter an undername value");
+        if (!selectedArns) return toast.error("please select an arns");
+        if (!currentArns) return toast.error("not an arns user");
+
+        setAssigningANewUndername(true);
+        const txid = await setUndername(
+            selectedArns.processId,
+            currentDeployment.DeploymentId,
+            newUndername,
+        );
+        if (txid) {
+            setTransactionId(currentDeployment.DeploymentId);
+            await runLua(
+                `db:exec[[UPDATE Deployments SET UnderName='${newUndername}' WHERE Name='${currentDeployment.Name}']]`,
+                globalState.managerProcess,
+            );
+            setAssigningANewUndername(false);
+        } else {
+            setAssigningANewUndername(false);
+            setNewUndername("");
+        }
+    };
+
     return (
         <>
             {transactionId && (
@@ -509,7 +555,9 @@ const ArnsTabSelector = ({
                     setIsOpen={setIsDialogOpen}
                     transactionId={transactionId}
                     onClose={handleCloseDialog}
-                    title={" Your anrs will be switched soon"}
+                    title={`Your ${
+                        newUndername ? "undername" : "arns"
+                    } will be switched soon`}
                 />
             )}
             <Tabs defaultValue="account" className="w-full mt-4">
@@ -626,14 +674,97 @@ const ArnsTabSelector = ({
                         </CardHeader>
                         <CardContent className="space-y-2 px-2">
                             <div className="space-y-1">
-                                <Label htmlFor="current">
-                                    Current undername
-                                </Label>
-                                <Input
-                                    className="bg-arlink-bg-secondary-color"
-                                    id="current"
-                                    type="text"
-                                />
+                                <Label htmlFor="current">Current arns</Label>
+                                {fetchingUserArns || !currentArns ? (
+                                    <Skeleton className="h-[37px] w-full" />
+                                ) : (
+                                    <Input
+                                        className="bg-arlink-bg-secondary-color"
+                                        id="current"
+                                        type="text"
+                                        readOnly
+                                        value={currentArns?.name}
+                                    />
+                                )}
+                            </div>
+                            <div className="space-y-1">
+                                <Label htmlFor="current">Change arns</Label>
+                                {fetchingUserArns ? (
+                                    <Skeleton className="w-full flex items-center justify-between gap-3 px-3 h-10 text-center focus:ring-0 focus:ring-offset-0 outline-none bg-neutral-900 border-[#383838] text-white">
+                                        <div className="flex items-center gap-3">
+                                            Fetching existing arns
+                                            <Loader2
+                                                size={15}
+                                                className="animate-spin"
+                                            />
+                                        </div>
+                                        <ChevronsUpDown size={15} />
+                                    </Skeleton>
+                                ) : (
+                                    <Popover
+                                        open={arnsDropDownOpen}
+                                        onOpenChange={setArnsDropDownOpen}
+                                    >
+                                        <PopoverTrigger
+                                            className="w-full bg-arlink-bg-secondary-color border-[#383838]"
+                                            asChild
+                                        >
+                                            <Button
+                                                variant="outline"
+                                                role="combobox"
+                                                aria-expanded={arnsDropDownOpen}
+                                                className="justify-between"
+                                            >
+                                                {selectedArns
+                                                    ? selectedArns.name
+                                                    : "Select an arns name"}
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="max-w-3xl p-0 border-[#383838] bg-arlink-bg-secondary-color w-[--radix-popover-trigger-width] max-h-[--radix-popover-content-available-height]">
+                                            <Command>
+                                                <CommandInput placeholder="Select an existing arns..." />
+                                                <CommandList>
+                                                    <CommandEmpty>
+                                                        No arns found.
+                                                    </CommandEmpty>
+                                                    <CommandGroup>
+                                                        {arnsNames.map(
+                                                            (arnsObj) => (
+                                                                <CommandItem
+                                                                    key={
+                                                                        arnsObj.processId
+                                                                    }
+                                                                    value={
+                                                                        arnsObj.name
+                                                                    }
+                                                                    onSelect={() =>
+                                                                        handleArnsSelection(
+                                                                            arnsObj,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Check
+                                                                        className={cn(
+                                                                            "mr-2 h-4 w-4",
+                                                                            selectedArns?.name ===
+                                                                                arnsObj.name
+                                                                                ? "opacity-100"
+                                                                                : "opacity-0",
+                                                                        )}
+                                                                    />
+                                                                    {
+                                                                        arnsObj.name
+                                                                    }
+                                                                </CommandItem>
+                                                            ),
+                                                        )}
+                                                    </CommandGroup>
+                                                </CommandList>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
+                                )}
                             </div>
                             <div className="space-y-1">
                                 <Label htmlFor="new">New undername</Label>
@@ -641,11 +772,21 @@ const ArnsTabSelector = ({
                                     className="bg-arlink-bg-secondary-color"
                                     id="new"
                                     type="text"
+                                    value={newUndername}
+                                    placeholder="add a new undername"
+                                    onChange={(e) =>
+                                        setNewUndername(e.target.value)
+                                    }
                                 />
                             </div>
                         </CardContent>
                         <CardFooter className="px-2">
-                            <Button>Save password</Button>
+                            <Button onClick={changeUndername}>
+                                {assigningANewUndername
+                                    ? "Assigning"
+                                    : "Assign"}{" "}
+                                undername
+                            </Button>
                         </CardFooter>
                     </Card>
                 </TabsContent>
