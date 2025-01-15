@@ -1,6 +1,8 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { connect, createDataItemSigner } from "@permaweb/aoconnect";
+import { ANT, ARIO, ArconnectSigner } from "@ar.io/sdk/web";
+import Arweave from "arweave";
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -75,5 +77,53 @@ export async function setUndername(
     } catch (e) {
         console.error(e);
         return null;
+    }
+}
+
+export async function getPrimaryname(walletaddy: string) {
+    try {
+        // Initialize Arweave
+        const arweave = Arweave.init({});
+
+        // step 1 init ario
+        const ario = ARIO.init({
+            signer: new ArconnectSigner(window.arweaveWallet),
+        });
+
+        // step 2 get primary name from wallet
+        const nameResponse = await ario.getPrimaryName({
+            address: walletaddy,
+        });
+
+        // Check if name exists
+        if (!nameResponse?.name) {
+            throw new Error("No primary name found");
+        }
+
+        const primaryname = nameResponse.name;
+
+        // step 3 get process id from primaryname
+        const recordResponse = await ario.getArNSRecord({ name: primaryname });
+
+        // Check if record exists and has processId
+        if (!recordResponse?.processId) {
+            throw new Error("No process ID found");
+        }
+
+        const pid = recordResponse.processId;
+
+        // step 4 get logo from process id
+        const ant = ANT.init({
+            signer: new ArconnectSigner(window.arweaveWallet),
+            processId: pid,
+        });
+
+        const logoTxId = await ant.getLogo();
+        const logo = logoTxId;
+
+        return { primaryname, logo };
+    } catch (error) {
+        console.error("Error in getPrimaryname:", error);
+        throw error;
     }
 }

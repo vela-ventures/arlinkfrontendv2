@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import { getProfileByWalletAddress, type ProfileHeaderType } from "@/lib/Bazar";
 import { extractRepoName } from "@/pages/depoly/utilts";
 import ProfileCard from "../profile-card";
+import { getPrimaryname } from "@/lib/utils";
 
 export default function Navbar() {
     //@ts-ignore
@@ -17,6 +18,8 @@ export default function Navbar() {
     //@ts-ignore
     const [isNewDeployment, setIsNewDeployment] = useState(false);
     const [profile, setProfile] = useState<ProfileHeaderType | null>(null);
+    const [primaryName, setPrimaryName] = useState<string | null>(null);
+    const [primaryLogo, setPrimaryLogo] = useState<string | null>(null);
     const [searchParams] = useSearchParams();
     const repo = searchParams.get("repo");
 
@@ -88,14 +91,27 @@ export default function Navbar() {
         fetchProfile();
     }, [address]);
 
-    const displayName =
-        profile?.displayName ||
-        profile?.username ||
-        address?.slice(0, 8) ||
-        "anonymous";
-    const avatar = profile?.avatar
-        ? `https://arweave.net/${profile.avatar}`
-        : "";
+    useEffect(() => {
+        async function fetchPrimaryName() {
+            if (address) {
+                try {
+                    const primaryNameData = await getPrimaryname(address);
+                    if (primaryNameData) {
+                        setPrimaryName(primaryNameData.primaryname);
+                        setPrimaryLogo(primaryNameData.logo);
+                    }
+                } catch (error) {
+                    console.error("Error fetching primary name:", error);
+                }
+            }
+        }
+
+        fetchPrimaryName();
+    }, [address]);
+
+    const displayName = primaryName || address?.slice(0, 8) || "anonymous";
+
+    const avatarUrl = primaryLogo ? `https://arweave.net/${primaryLogo}` : "";
 
     return (
         <nav className="bg-[#0D0D0D]/80 arlink-navbar z-50 sticky top-0 backdrop-blur-lg border-b-2 border-neutral-800  box-border">
@@ -108,16 +124,16 @@ export default function Navbar() {
                             className="size-10 aspect-square rounded-full"
                         />
                     </Link>
-                    <h2 className="bg-gradient-to-r  translate-y-[0.5px] leading-none from-neutral-50 to-neutral-300 text-transparent bg-clip-text md:text-[24px] text-[18px] tracking-tight font-bold pb-2">
-                        Arlink
+                    <h2 className="bg-gradient-to-r from-neutral-50 to-neutral-300 text-transparent bg-clip-text md:text-[24px] text-[18px] tracking-tight font-bold pb-2">
+                        {displayName}
                     </h2>
                 </div>
                 <div className="flex items-center gap-1">
                     <ConnectButton accent="#0D0D0D" />
                     <ProfileCard
                         name={"Arlink"}
-                        avatarUrl="https://pbs.twimg.com/profile_images/1879428276101562368/E5S81_R3_400x400.jpg"
-                        initials="A"
+                        avatarUrl={avatarUrl}
+                        initials={"A"}
                     />
                 </div>
             </div>
