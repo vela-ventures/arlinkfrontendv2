@@ -326,91 +326,101 @@ const DeploymentHistoryCard = ({
                             </div>
                         </div>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                        {index !== 0 && (
+                    {currentDeployment.ArnsProcess && (
+                        <div className="flex flex-wrap items-center gap-2">
+                            {index !== 0 && (
+                                <Dialog>
+                                    <DialogTrigger>
+                                        <Button
+                                            size={"sm"}
+                                            className="flex items-center -transparent text-sm gap-2 px-4 font-semibold rounded-xl"
+                                            disabled={
+                                                rollBackTransactionIdFetched
+                                            }
+                                        >
+                                            <RefreshCcw />
+                                            Roll back
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="bg-neutral-950 border-neutral-900 ">
+                                        <DialogHeader>
+                                            <DialogTitle>
+                                                {rollBackTransactionIdFetched
+                                                    ? "Your roll back is in process"
+                                                    : "Roll back your changes"}
+                                            </DialogTitle>
+                                            <DialogDescription>
+                                                {rollBackTransactionIdFetched
+                                                    ? "Roll back is in progress you can close this"
+                                                    : "Do you want to roll back to this deployment? "}
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <DialogFooter>
+                                            <div className="w-full ">
+                                                {!rollBackTransactionIdFetched ? (
+                                                    <Button
+                                                        className="font-semibold tracking-tight rounded-lg"
+                                                        size={"sm"}
+                                                        disabled={
+                                                            rollBackStarted
+                                                        }
+                                                        onClick={() => {
+                                                            handleRollBack(
+                                                                deployment.DeploymentID,
+                                                            );
+                                                        }}
+                                                    >
+                                                        {rollBackStarted && (
+                                                            <Loader2 className="animate-spin" />
+                                                        )}
+                                                        {rollBackStarted
+                                                            ? "Saving"
+                                                            : "Save"}{" "}
+                                                        changes
+                                                    </Button>
+                                                ) : (
+                                                    <DialogClose>
+                                                        Close
+                                                    </DialogClose>
+                                                )}
+                                            </div>
+                                        </DialogFooter>
+                                    </DialogContent>
+                                </Dialog>
+                            )}
                             <Dialog>
                                 <DialogTrigger>
                                     <Button
                                         size={"sm"}
-                                        className="flex items-center -transparent text-sm gap-2 px-4 font-semibold rounded-xl"
-                                        disabled={rollBackTransactionIdFetched}
+                                        variant={"outline"}
+                                        className="flex items-center bg-transparent text-sm gap-2 px-4 font-semibold rounded-xl"
                                     >
-                                        <RefreshCcw />
-                                        Roll back
+                                        <Cog />
+                                        Manage arns
                                     </Button>
                                 </DialogTrigger>
-                                <DialogContent className="bg-neutral-950 border-neutral-900 ">
+                                <DialogContent className="bg-neutral-950 border-neutral-900">
                                     <DialogHeader>
                                         <DialogTitle>
-                                            {rollBackTransactionIdFetched
-                                                ? "Your roll back is in process"
-                                                : "Roll back your changes"}
+                                            Manage your arns here
                                         </DialogTitle>
                                         <DialogDescription>
-                                            {rollBackTransactionIdFetched
-                                                ? "Roll back is in progress you can close this"
-                                                : "Do you want to roll back to this deployment? "}
+                                            <ArnsTabSelector
+                                                fetchingUserArns={
+                                                    fetchingUserArns
+                                                }
+                                                arnsNames={arnsNames}
+                                                deployment={deployment}
+                                                currentDeployment={
+                                                    currentDeployment
+                                                }
+                                            />
                                         </DialogDescription>
                                     </DialogHeader>
-                                    <DialogFooter>
-                                        <div className="w-full ">
-                                            {!rollBackTransactionIdFetched ? (
-                                                <Button
-                                                    className="font-semibold tracking-tight rounded-lg"
-                                                    size={"sm"}
-                                                    disabled={rollBackStarted}
-                                                    onClick={() => {
-                                                        handleRollBack(
-                                                            deployment.DeploymentID,
-                                                        );
-                                                    }}
-                                                >
-                                                    {rollBackStarted && (
-                                                        <Loader2 className="animate-spin" />
-                                                    )}
-                                                    {rollBackStarted
-                                                        ? "Saving"
-                                                        : "Save"}{" "}
-                                                    changes
-                                                </Button>
-                                            ) : (
-                                                <DialogClose>Close</DialogClose>
-                                            )}
-                                        </div>
-                                    </DialogFooter>
                                 </DialogContent>
                             </Dialog>
-                        )}
-                        <Dialog>
-                            <DialogTrigger>
-                                <Button
-                                    size={"sm"}
-                                    variant={"outline"}
-                                    className="flex items-center bg-transparent text-sm gap-2 px-4 font-semibold rounded-xl"
-                                >
-                                    <Cog />
-                                    Manage arns
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className="bg-neutral-950 border-neutral-900">
-                                <DialogHeader>
-                                    <DialogTitle>
-                                        Manage your arns here
-                                    </DialogTitle>
-                                    <DialogDescription>
-                                        <ArnsTabSelector
-                                            fetchingUserArns={fetchingUserArns}
-                                            arnsNames={arnsNames}
-                                            deployment={deployment}
-                                            currentDeployment={
-                                                currentDeployment
-                                            }
-                                        />
-                                    </DialogDescription>
-                                </DialogHeader>
-                            </DialogContent>
-                        </Dialog>
-                    </div>
+                        </div>
+                    )}
                 </div>
                 {/* right - column */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8 mt-4 sm:mt-0">
