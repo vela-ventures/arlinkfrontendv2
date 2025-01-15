@@ -118,10 +118,10 @@ export default function Navbar() {
             <div className="md:px-[40px] px-[16px] pt-4 w-full flex items-center justify-between">
                 <div className="flex gap-2  items-center">
                     <Link to="/dashboard">
-                        <img
-                            src="https://pbs.twimg.com/profile_images/1879428276101562368/E5S81_R3_400x400.jpg"
+                    <img
+                            src="/joose.svg"
                             alt="Joose logo"
-                            className="size-10 aspect-square rounded-full"
+                            className="md:w-[56px] w-[40px] aspect-square rounded-full"
                         />
                     </Link>
                     <h2 className="bg-gradient-to-r from-neutral-50 to-neutral-300 text-transparent bg-clip-text md:text-[24px] text-[18px] tracking-tight font-bold pb-2">

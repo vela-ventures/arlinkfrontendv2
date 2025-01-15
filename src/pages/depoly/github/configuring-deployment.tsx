@@ -387,7 +387,7 @@ const ConfiguringDeploymentProject = ({
             const response = await axios.post<{
                 result: string;
                 finalUnderName: string;
-            }>(`${TESTING_FETCH}/deploy`, deploymentData, {
+            }>(`${BUILDER_BACKEND}/deploy`, deploymentData, {
                 timeout: 60 * 60 * 1000,
                 headers: { "Content-Type": "application/json" },
             });
