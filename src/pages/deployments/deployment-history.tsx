@@ -523,10 +523,10 @@ const ArnsTabSelector = ({
     const [assigningANewUndername, setAssigningANewUndername] =
         useState<boolean>(false);
     const changeUndername = async () => {
+        if (!currentArns) return toast.error("not an arns user");
+        if (!selectedArns) return toast.error("please select an arns");
         if (newUndername.trim().length === 0)
             return toast.error("please enter an undername value");
-        if (!selectedArns) return toast.error("please select an arns");
-        if (!currentArns) return toast.error("not an arns user");
 
         setAssigningANewUndername(true);
         const txid = await setUndername(
