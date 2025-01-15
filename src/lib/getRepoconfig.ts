@@ -122,8 +122,8 @@ function detectFramework(packageJson: any): FrameworkConfig {
 export async function getRepoConfig(
     owner: string,
     repo: string,
-    path?: string
-): Promise<PackageConfig> {
+    path?: string,
+): Promise<PackageConfig & { error: boolean }> {
     try {
         const branches = ["main", "master"];
         let packageJson = null;
@@ -156,11 +156,18 @@ export async function getRepoConfig(
                 installCommand: packageJson.scripts?.install || "npm install",
                 buildCommand: packageJson.scripts?.build || "npm run build",
                 outputDir: outputDir,
+                error: false,
             };
         }
-        return getDefaultConfig(repo);
+        return {
+            ...getDefaultConfig(repo),
+            error: true,
+        };
     } catch (error) {
         console.error("Error fetching repo config:", error);
-        return getDefaultConfig(repo);
+        return {
+            ...getDefaultConfig(repo),
+            error: true,
+        };
     }
 }

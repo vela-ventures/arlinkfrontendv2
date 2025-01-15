@@ -18,7 +18,7 @@ import {
 import { getRepoConfig } from "@/lib/getRepoconfig";
 import { SelectGroup } from "@radix-ui/react-select";
 import axios, { isAxiosError } from "axios";
-import { ChevronDown, ChevronLeft, Loader2 } from "lucide-react";
+import { AlertTriangle, ChevronDown, ChevronLeft, Loader2 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import RootDirectoryDrawer from "../../../components/rootdir-drawer";
 import { useActiveAddress } from "arweave-wallet-kit";
@@ -129,6 +129,7 @@ const ConfiguringDeploymentProject = ({
         useState<boolean>(false);
     const [deploymentSucceded, setDeploymentSucceded] =
         useState<boolean>(false);
+    const [configFailed, setConfigFailed] = useState<boolean>(false);
 
     const [deploymentFailed, setDeploymentFailed] = useState<boolean>(false);
 
@@ -162,11 +163,6 @@ const ConfiguringDeploymentProject = ({
         ) => {
             // Fetch repository configuration
             const config = await getRepoConfig(owner, repo);
-
-            console.log({
-                config,
-            });
-
             setProjectName(defaultProjectName);
             setCustomArnsName(defaultProjectName);
             setBuildSettings((prev) => ({
@@ -188,6 +184,24 @@ const ConfiguringDeploymentProject = ({
                     enabled: false,
                 },
             }));
+            if (config.error) {
+                setConfigFailed(true);
+                setBuildSettings((prev) => ({
+                    ...prev,
+                    buildCommand: {
+                        value: config.buildCommand,
+                        enabled: true,
+                    },
+                    installCommand: {
+                        value: config.installCommand,
+                        enabled: true,
+                    },
+                    outPutDir: {
+                        value: config.outputDir,
+                        enabled: true,
+                    },
+                }));
+            }
 
             setFrameWork(detectFrameworkImage(config.outputDir));
         };
@@ -320,7 +334,7 @@ const ConfiguringDeploymentProject = ({
             const startTime = Date.now();
             pollingIntervalId = setInterval(async () => {
                 if (
-                    !isPollingActive || 
+                    !isPollingActive ||
                     Date.now() - startTime > MAX_POLLING_TIME
                 ) {
                     if (pollingIntervalId) {
@@ -705,6 +719,16 @@ const ConfiguringDeploymentProject = ({
                 </p>
 
                 <div className="space-y-4">
+                    {configFailed && (
+                        <div className="bg-neutral-900 p-4 rounded-lg shadow-md">
+                            <p className="text-sm flex-center gap-2 font-medium text-neutral-200">
+                                <AlertTriangle size={14} />
+                                Please review deployment commands before
+                                deploying
+                            </p>
+                        </div>
+                    )}
+
                     <BuildDeploymentSetting
                         buildSettings={buildSettings}
                         onSettingChange={handleSettingChange}
