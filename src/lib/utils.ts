@@ -39,17 +39,6 @@ export const BUILDER_BACKEND =
 
 export const TESTING_FETCH = "https://vmi2322729.contaboserver.net";
 
-// export const indexInMalik = async ({
-// 	title,
-// description,
-// 						txid,
-// 						link,
-// 						owner,
-// 						arlink
-// }) => {
-
-// }
-
 export function getTime() {
     const now = new Date();
     const year = now.getFullYear();

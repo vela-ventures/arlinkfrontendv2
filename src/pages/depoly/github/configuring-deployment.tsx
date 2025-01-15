@@ -28,7 +28,7 @@ import { getWalletOwnedNames } from "@/lib/get-arns";
 import useDeploymentManager, {
     historyTable,
 } from "@/hooks/useDeploymentManager";
-import { BUILDER_BACKEND, getTime } from "@/lib/utils";
+import { BUILDER_BACKEND, getTime, TESTING_FETCH } from "@/lib/utils";
 import { runLua, setArnsName as setArnsNameWithProcessId } from "@/lib/ao-vars";
 import { useNavigate } from "react-router-dom";
 import DeploymentLogs from "../../../components/shared/deploying-logs";
@@ -244,25 +244,39 @@ const ConfiguringDeploymentProject = ({
 
     // build and output settings handler commands
     const deployProject = async () => {
-        if (!projectName) return toast.error("Project name is required");
-        if (!repoUrl) return toast.error("repository is required");
-        if (!selectedBranch) return toast.error("branch is required");
-        if (!buildSettings.installCommand.value)
-            return toast.error("install command is required");
-        if (!buildSettings.buildCommand.value)
-            return toast.error("build command is required");
-        if (!buildSettings.outPutDir.value)
-            return toast.error("output dir is specified");
-        if (!mgProcess) return toast.error("manager process not found");
-        if (deployments.find((dep) => dep.Name === projectName))
-            return toast.error("Project name already exists");
-        if (!githubToken)
-            return toast.error("github token not found", {
-                description: "",
-            });
+        if (!githubToken) return;
+        // Validation checks
+        const validationErrors = [
+            { condition: !projectName, message: "Project name is required" },
+            { condition: !repoUrl, message: "Repository is required" },
+            { condition: !selectedBranch, message: "Branch is required" },
+            {
+                condition: !buildSettings.installCommand.value,
+                message: "Install command is required",
+            },
+            {
+                condition: !buildSettings.buildCommand.value,
+                message: "Build command is required",
+            },
+            {
+                condition: !buildSettings.outPutDir.value,
+                message: "Output directory is required",
+            },
+            { condition: !mgProcess, message: "Manager process not found" },
+            {
+                condition: deployments.find((dep) => dep.Name === projectName),
+                message: "Project name already exists",
+            },
+            { condition: !githubToken, message: "GitHub token not found" },
+        ];
+
+        const error = validationErrors.find(({ condition }) => condition);
+        if (error) {
+            return toast.error(error.message);
+        }
 
         if (deploymentStarted) return;
-        // deployment states
+
         setIsDeploying(true);
         setDeploymentStarted(true);
         setDeploymentComplete(false);
@@ -270,234 +284,219 @@ const ConfiguringDeploymentProject = ({
 
         let finalArnsProcess = arnsProcess;
 
-        // this is to check if the user has selected a custom domain or not
-        // if he has not selected a custom domain, then we add the custom name and build the url
-        switch (activeTab) {
-            case "existing":
-                if (arnsName?.name) {
-                    setCustomArnsName("");
-                    finalArnsProcess = arnsName.processId;
-                }
-                break;
-            case "arlink":
-                if (!customArnsName) {
-                    setCustomArnsName(projectName);
-                }
-                // if we are using arlink undername feature we set the arns name to undefined
-                setArnsName(undefined);
-                // if the user is not using their own arns we will keep the arns process null
-                finalArnsProcess = null;
-                break;
+        // Handle ARNS process
+        if (activeTab === "existing" && arnsName?.name) {
+            setCustomArnsName("");
+            finalArnsProcess = arnsName.processId;
+        } else if (activeTab === "arlink") {
+            if (!customArnsName) {
+                setCustomArnsName((prev) =>
+                    prev.length === 0 ? projectName : prev,
+                );
+            }
+            setArnsName(undefined);
+            finalArnsProcess = null;
         }
 
         const tokenizedRepoUrl = createTokenizedRepoUrl(repoUrl, githubToken);
-
         const owner = extractOwnerName(repoUrl);
         const repo = extractRepoName(repoUrl);
+
+        // Constants for polling
         const POLLING_INTERVAL = 2000;
         const MAX_POLLING_TIME = 600000;
-        const startTime = Date.now();
-        let intervalId: NodeJS.Timeout | null = null;
-        const clearIntervalPolling = () => {
-            if (intervalId) {
-                clearInterval(intervalId);
-            }
-        };
+        const INITIAL_LOG_DELAY = 10000;
+        let isPollingActive = true;
+        let pollingIntervalId: NodeJS.Timeout | null = null;
 
-        const logPollingPromise = async () => {
+        const startLogPolling = async () => {
             setIsWaitingForLogs(true);
-            await new Promise((resolve) => setTimeout(resolve, 10000));
+            await new Promise((resolve) =>
+                setTimeout(resolve, INITIAL_LOG_DELAY),
+            );
             setIsWaitingForLogs(false);
             setIsFetchingLogs(true);
 
-            const fetchLogs = async () => {
-                if (Date.now() - startTime > MAX_POLLING_TIME) {
-                    clearIntervalPolling();
-                    setDeploymentFailed(true);
+            const startTime = Date.now();
+            pollingIntervalId = setInterval(async () => {
+                if (
+                    !isPollingActive || 
+                    Date.now() - startTime > MAX_POLLING_TIME
+                ) {
+                    if (pollingIntervalId) {
+                        clearInterval(pollingIntervalId);
+                        pollingIntervalId = null;
+                    }
+                    setIsFetchingLogs(false);
+                    if (!isPollingActive) {
+                        setDeploymentFailed(true);
+                    }
                     return;
                 }
 
                 try {
-                    const logs = await axios.get(
-                        `${BUILDER_BACKEND}/logs/${owner}/${repo}`,
+                    const response = await axios.get(
+                        `${TESTING_FETCH}/logs/${owner}/${repo}`,
                     );
-                    setLogs(logs.data.split("\n"));
+                    if (response.status === 200) {
+                        setLogs(response.data.split("\n"));
+                    }
                 } catch (error) {
-                    // I don't want to see red red spams in the logs xD
+                    // Continue polling even on 404
+                    if (
+                        axios.isAxiosError(error) &&
+                        error.response?.status !== 404
+                    ) {
+                        console.warn("Log fetching error:", error);
+                    }
                 }
-            };
-
-            intervalId = setInterval(fetchLogs, POLLING_INTERVAL);
+            }, POLLING_INTERVAL);
         };
 
-        logPollingPromise();
+        startLogPolling();
 
         try {
+            const deploymentData = {
+                repository: tokenizedRepoUrl,
+                installCommand: buildSettings.installCommand.value,
+                buildCommand: buildSettings.buildCommand.value,
+                outputDir: buildSettings.outPutDir.value,
+                subDirectory: rootDirectory,
+                protocolLand: false,
+                repoName: customArnsName,
+                branch: selectedBranch,
+                githubToken,
+                walletAddress: activeAddress,
+                customArnsName: customArnsName || "",
+            };
+
             const response = await axios.post<{
                 result: string;
                 finalUnderName: string;
-            }>(
-                `${BUILDER_BACKEND}/deploy`,
-                {
-                    repository: tokenizedRepoUrl,
-                    installCommand: buildSettings.installCommand.value,
-                    buildCommand: buildSettings.buildCommand.value,
-                    outputDir: buildSettings.outPutDir.value,
-                    subDirectory: rootDirectory,
-                    protocolLand: false,
-                    repoName: customArnsName,
-                    branch: selectedBranch,
-                    githubToken,
-                    walletAddress: activeAddress,
-                    customArnsName: customArnsName || "",
-                },
-                {
-                    timeout: 60 * 60 * 1000,
-                    headers: { "Content-Type": "application/json" },
-                },
-            );
+            }>(`${TESTING_FETCH}/deploy`, deploymentData, {
+                timeout: 60 * 60 * 1000,
+                headers: { "Content-Type": "application/json" },
+            });
 
             if (response.status === 200 && response.data.result) {
-                console.log(`https://arweave.net/${response.data.result}`);
-
+                isPollingActive = false;
                 setDeploymentSucceded(true);
                 setDeploymentComplete(true);
 
-                const alterQuery = runLua(
-                    `local res = db:exec[[ ALTER TABLE Deployments ADD COLUMN UnderName TEXT ]]`,
-                    mgProcess,
-                );
+                // Database operations
+                const dbOperations = [
+                    runLua(
+                        `db:exec[[ALTER TABLE Deployments ADD COLUMN UnderName TEXT]]`,
+                        mgProcess,
+                    ),
+                    runLua(
+                        `db:exec[[
+                            INSERT INTO Deployments (
+                                Name,
+                                RepoUrl,
+                                Branch,
+                                InstallCMD,
+                                BuildCMD,
+                                OutputDIR,
+                                ArnsProcess
+                            ) 
+                            VALUES (
+                                '${projectName}',
+                                '${repoUrl}',
+                                '${selectedBranch}',
+                                '${buildSettings.installCommand.value}',
+                                '${buildSettings.buildCommand.value}',
+                                '${buildSettings.outPutDir.value}',
+                                ${
+                                    finalArnsProcess
+                                        ? `'${finalArnsProcess}'`
+                                        : "NULL"
+                                }
+                            )
+                        ]]`,
+                        mgProcess,
+                    ),
+                    runLua(
+                        `db:exec[[UPDATE Deployments SET DeploymentId='${response.data.result}' WHERE Name='${projectName}']]`,
+                        mgProcess,
+                    ),
+                    runLua(
+                        `db:exec[[UPDATE Deployments SET UnderName='${response.data.finalUnderName}' WHERE Name='${projectName}']]`,
+                        mgProcess,
+                    ),
+                    runLua(historyTable, mgProcess),
+                    indexInMalik({
+                        projectName,
+                        description: "An awesome decentralized project",
+                        txid: response.data.result,
+                        owner: activeAddress,
+                        link: `https://arweave.net/${response.data.result}`,
+                        arlink: finalArnsProcess || null,
+                    }),
+                ];
 
-                const insertQuery = runLua(
-                    `local res = db:exec[[
-                    INSERT INTO Deployments (Name, RepoUrl, Branch, InstallCMD, BuildCMD, OutputDIR, ArnsProcess) VALUES
-                        ('${projectName}', 
-                        '${repoUrl}', 
-                        '${selectedBranch}', 
-                        '${buildSettings.installCommand.value}', 
-                        '${buildSettings.buildCommand.value}', 
-                        '${buildSettings.outPutDir.value}', 
-                        ${finalArnsProcess ? `'${finalArnsProcess}'` : "NULL"})
-                    ]]`,
-                    mgProcess,
-                );
-
-                const updateIdQuery = runLua(
-                    `db:exec[[UPDATE Deployments SET DeploymentId='${response.data.result}' WHERE Name='${projectName}']]`,
-                    mgProcess,
-                );
-
-                const underNameQuery = runLua(
-                    `local res = db:exec[[
-                        UPDATE Deployments 
-                        SET UnderName = '${response.data.finalUnderName}' 
-                        WHERE Name = '${projectName}'
-                    ]]`,
-                    mgProcess,
-                );
-
-                const historyTableQuery = runLua(historyTable, mgProcess);
-
-                const malikIndexing = indexInMalik({
-                    projectName: projectName,
-                    description: "An awesome decentralized project",
-                    txid: response.data.result,
-                    owner: activeAddress,
-                    link: `https://arweave.net/${response.data.result}`,
-                    arlink: finalArnsProcess ? finalArnsProcess : null,
-                });
-
-                let userArns: string | null = null;
                 if (activeTab === "existing" && arnsName) {
-                    userArns = await setArnsNameWithProcessId(
+                    const userArns = await setArnsNameWithProcessId(
                         arnsName.processId,
                         response.data.result,
                     );
+                    dbOperations.push(
+                        runLua(
+                            `db:exec[[
+                            INSERT INTO NewDeploymentHistory (Name, DeploymentID, AssignedUndername, Date) 
+                            VALUES ('${projectName}', '${
+                                response.data.result
+                            }', 
+                            ${
+                                userArns ? `'${userArns}'` : "NULL"
+                            }, '${getTime()}')
+                        ]]`,
+                            mgProcess,
+                        ),
+                    );
                 }
-
-                const historyInsertQuery = runLua(
-                    `db:exec[[
-                        INSERT INTO NewDeploymentHistory (Name, DeploymentID, AssignedUndername, Date) VALUES
-                        ('${projectName}', '${response.data.result}', 
-                        ${userArns ? `'${userArns}'` : "NULL"}
-                        , '${getTime()}')
-                    ]]`,
-                    mgProcess,
-                );
-
+                setIsFetchingLogs((prev) => false);
                 setAlmostDone(true);
-                setIsFetchingLogs(false);
-                // Execute all operations in parallel
-                await Promise.all([
-                    alterQuery,
-                    insertQuery,
-                    updateIdQuery,
-                    underNameQuery,
-                    historyTableQuery,
-                    historyInsertQuery,
-                    malikIndexing,
-                ]);
-
+                await Promise.all(dbOperations);
                 await refresh();
                 toast.success("Deployment successful");
-                // Navigate after all operations complete
                 navigate(`/deployment/card?repo=${projectName}`);
             } else {
                 throw new Error("Deployment failed: Unexpected response");
             }
         } catch (error) {
-            clearIntervalPolling();
-            setIsFetchingLogs(false);
-            setIsWaitingForLogs(false);
-
-            // Handle rate limiting errors
-            if (isAxiosError(error) && error.response?.status === 406) {
-                setLogError(
-                    "Too many requests detected. Please try again later.",
-                );
-                setDeploymentSucceded(false);
-                setDeploymentComplete(false);
-                setDeploymentFailed(true);
-                return;
+            isPollingActive = false;
+            if (axios.isAxiosError(error)) {
+                if (error.response?.status === 406) {
+                    setLogError(
+                        "Too many requests detected. Please try again later.",
+                    );
+                } else if (!error.response) {
+                    setLogError(
+                        "Network error. Please check your connection and try again.",
+                    );
+                } else {
+                    setLogError("Server error. Please try again later.");
+                }
+            } else {
+                console.error("Deployment error:", error);
+                const errorMessage =
+                    error instanceof Error
+                        ? error.message
+                        : "An unexpected error occurred";
+                setLogError(`Deployment failed: ${errorMessage}`);
             }
-
-            // Handle network errors
-            if (isAxiosError(error) && !error.response) {
-                setLogError(
-                    "Network error. Please check your connection and try again.",
-                );
-                setDeploymentSucceded(false);
-                setDeploymentComplete(false);
-                setDeploymentFailed(true);
-                return;
-            }
-
-            // Handle other HTTP errors
-            if (isAxiosError(error) && error.response) {
-                let errorMessage = "Deployment failed: ";
-
-                errorMessage += "Server error. Please try again later.";
-
-                setLogError(errorMessage);
-                setDeploymentSucceded(false);
-                setDeploymentComplete(false);
-                setDeploymentFailed(true);
-                return;
-            }
-
-            // Handle all other errors
-            console.error("Deployment error:", error);
-            const errorMessage =
-                error instanceof Error
-                    ? error.message
-                    : "An unexpected error occurred";
-            setLogError(`Deployment failed: ${errorMessage}`);
             setDeploymentSucceded(false);
             setDeploymentComplete(false);
             setDeploymentFailed(true);
         } finally {
+            if (pollingIntervalId) {
+                clearInterval(pollingIntervalId);
+            }
             setIsDeploying(false);
             setDeploymentComplete(true);
+            setIsFetchingLogs(false);
+            setIsWaitingForLogs(false);
         }
     };
 

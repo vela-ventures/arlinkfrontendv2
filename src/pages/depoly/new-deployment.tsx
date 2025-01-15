@@ -21,7 +21,6 @@ const NewDeployment = () => {
         console.log(selectedRepoUrl);
     }, [selectedRepoUrl]);
 
-
     return (
         <Layout>
             <div className="md:container px-4 text-white p-10">

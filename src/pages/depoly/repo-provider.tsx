@@ -173,49 +173,49 @@ const RepoProvider = ({
                 <div>
                     <ScrollArea className="h-80 border rounded-md">
                         {/*  this is added but not showing I will fix this don't worry  */}
-                        {!isProviderSelected && (
+                        {!isProviderSelected ? (
                             <div className="h-[17rem] w-full flex items-center justify-center">
                                 <p className="text-center">
                                     Please select a provider from the drop down
                                     menu
                                 </p>
                             </div>
+                        ) : isLoading || !managerProcess ? (
+                            [1, 2, 3, 4, 5].map((arrayValue) => (
+                                <RepoSkeleton key={arrayValue} />
+                            ))
+                        ) : provider === "github" ? (
+                            filteredRepositories.map((repo) => (
+                                <RepositoryItem
+                                    key={repo.id}
+                                    id={repo.id.toString()}
+                                    fullName={repo.full_name}
+                                    updatedAt={repo.updated_at}
+                                    url={repo.html_url}
+                                    onImport={() => {
+                                        handleRepoSelection({
+                                            name: repo.name,
+                                            url: repo.html_url,
+                                        });
+                                    }}
+                                />
+                            ))
+                        ) : (
+                            filteredProtocolRepos.map((value) => (
+                                <RepositoryItem
+                                    key={value.cloneUrl}
+                                    fullName={value.name}
+                                    id={value.cloneUrl}
+                                    onImport={() => {
+                                        handleProtocolLandrepoSelection({
+                                            name: value.name,
+                                            url: value.cloneUrl,
+                                        });
+                                    }}
+                                    url={value.cloneUrl}
+                                />
+                            ))
                         )}
-
-                        {(isLoading && isProviderSelected) || !managerProcess
-                            ? [1, 2, 3, 4, 5].map((arrayValue) => (
-                                  <RepoSkeleton key={arrayValue} />
-                              ))
-                            : provider === "github"
-                            ? filteredRepositories.map((repo) => (
-                                  <RepositoryItem
-                                      key={repo.id}
-                                      id={repo.id.toString()}
-                                      fullName={repo.full_name}
-                                      updatedAt={repo.updated_at}
-                                      url={repo.html_url}
-                                      onImport={() => {
-                                          handleRepoSelection({
-                                              name: repo.name,
-                                              url: repo.html_url,
-                                          });
-                                      }}
-                                  />
-                              ))
-                            : filteredProtocolRepos.map((value) => (
-                                  <RepositoryItem
-                                      key={value.cloneUrl}
-                                      fullName={value.name}
-                                      id={value.cloneUrl}
-                                      onImport={() => {
-                                          handleProtocolLandrepoSelection({
-                                              name: value.name,
-                                              url: value.cloneUrl,
-                                          });
-                                      }}
-                                      url={value.cloneUrl}
-                                  />
-                              ))}
                     </ScrollArea>
                 </div>
             </div>

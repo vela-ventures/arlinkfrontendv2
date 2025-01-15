@@ -138,13 +138,6 @@ export default function DeploymentComponent({
                 const { url: newDeploymentUrl, arnsUnderName } = response.data;
 
                 // if the onChain data is not up to date we will update the deploymentInDb
-                console.log("DATAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-                console.log({
-                    deploymentIdOnChain: deployment.DeploymentId,
-                    backend: newDeploymentUrl,
-                });
-                console.log("DATAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-
                 if (response.data.url !== deployment.DeploymentId) {
                     await updateDeploymentInDB(newDeploymentUrl);
                     // if the guy has done ci/cd at late midnight 3am and he opens the webapp during the afternoon of next day at 4:00pm

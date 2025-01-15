@@ -34,6 +34,19 @@ export function BuildDeploymentSetting({
         <>
             <SettingInput
                 disabled={disabled}
+                label="Install command"
+                placeholder="Enter your install command"
+                value={buildSettings.installCommand.value}
+                enabled={buildSettings.installCommand.enabled}
+                onValueChange={(value) =>
+                    onSettingChange("installCommand", "value", value)
+                }
+                onEnabledChange={(enabled) =>
+                    onSettingChange("installCommand", "enabled", enabled)
+                }
+            />
+            <SettingInput
+                disabled={disabled}
                 label="Build command"
                 placeholder="npm run build"
                 value={buildSettings.buildCommand.value}
@@ -46,19 +59,7 @@ export function BuildDeploymentSetting({
                 }
                 className={`${type === "protocol" ? "bg-[#0D0D0D] " : ""}`}
             />
-            <SettingInput
-                disabled={disabled}
-                label="Install command"
-                placeholder="Enter your install command"
-                value={buildSettings.installCommand.value}
-                enabled={buildSettings.installCommand.enabled}
-                onValueChange={(value) =>
-                    onSettingChange("installCommand", "value", value)
-                }
-                onEnabledChange={(enabled) =>
-                    onSettingChange("installCommand", "enabled", enabled)
-                }
-            />
+
             <SettingInput
                 disabled={disabled}
                 label="Output dir"
