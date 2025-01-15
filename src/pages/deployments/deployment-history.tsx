@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
     CalendarIcon,
     Check,
+    ChevronDown,
     ChevronsUpDown,
     Cog,
     Copy,
@@ -38,7 +39,7 @@ import useDeploymentManager, {
 } from "@/hooks/useDeploymentManager";
 import { Link, useSearchParams } from "react-router-dom";
 import { useGlobalState } from "@/store/useGlobalState";
-import { DeploymentRecord, TDeployment } from "@/types";
+import { ArnsName, DeploymentRecord, TDeployment } from "@/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
     Card,
@@ -62,6 +63,9 @@ import { setArnsName } from "@/lib/ao-vars";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { handleFetchExistingArnsName } from "../depoly/utilts";
+import { useActiveAddress } from "arweave-wallet-kit";
+import { TransactionDialog } from "@/components/transactionBlock";
 
 export default function DeploymentHistory() {
     // hooks
@@ -70,17 +74,20 @@ export default function DeploymentHistory() {
     const [searchParams] = useSearchParams();
     const repoName = searchParams.get("repo");
     const { managerProcess } = useGlobalState();
+
     const [history, setHistory] = useState<DeploymentRecord[]>([]);
-    const [date, setDate] = useState<Date>();
+
     const foundDeployment = deployments.find((d) => d.Name === repoName);
-    const [deploymentName, setDeploymentName] = useState<string>("");
 
     // loading and error states
     const [loadingDeploymentHistory, setLoadingDeploymentHistory] =
         useState<boolean>(false);
     const [historyError, setHistoryError] = useState<string | null>("");
-
+    const activeAddress = useActiveAddress();
     if (!foundDeployment) return;
+
+    const [arnsNames, setArnsNames] = useState<ArnsName[]>([]);
+    const [fetchingUserArns, setFetchingUserArns] = useState<boolean>(false);
 
     useEffect(() => {
         if (!repoName || !foundDeployment) return;
@@ -102,17 +109,35 @@ export default function DeploymentHistory() {
         fetchHistory();
     }, []);
 
+    const fetchArnsUndername = () => {
+        try {
+            handleFetchExistingArnsName({
+                setArnsNames,
+                activeAddress,
+                setExistingArnsLoading: setFetchingUserArns,
+            });
+        } catch (error) {}
+    };
+
+    useEffect(() => {
+        fetchArnsUndername();
+    }, []);
+
     return (
         <div className="min-h-screen text-neutral-200">
             <div className="container mx-auto px-4 py-10 md:px-10">
                 <div className="space-y-6">
                     <div className="space-y-2">
                         <h1 className="text-2xl font-semibold flex items-center tracking-tight text-neutral-100">
-                            Deployments
+                            Deployment history
                         </h1>
                         <div className="flex items-center space-x-2 text-sm text-neutral-400">
                             <GitBranchIcon className="h-4 w-4" />
-                            <span>Deployment history</span>
+                            <span>
+                                Review your complete deployment history,
+                                navigate to any deployment, or modify ARNs as
+                                needed
+                            </span>
                         </div>
                     </div>
 
@@ -176,6 +201,8 @@ export default function DeploymentHistory() {
                                     deployment={deployment}
                                     currentDeployment={foundDeployment}
                                     index={index}
+                                    fetchingUserArns={fetchingUserArns}
+                                    arnsNames={arnsNames}
                                 />
                             ))
                         )}
@@ -190,10 +217,14 @@ const DeploymentHistoryCard = ({
     deployment,
     currentDeployment,
     index,
+    fetchingUserArns,
+    arnsNames,
 }: {
     deployment: DeploymentRecord;
     currentDeployment: TDeployment;
     index: number;
+    fetchingUserArns: boolean;
+    arnsNames: ArnsName[];
 }) => {
     const [rollBackStarted, setRollBackStarted] = useState(false);
     const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -221,6 +252,13 @@ const DeploymentHistoryCard = ({
         }
     };
 
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+    const handleCloseDialog = () => {
+        setTransactionId(null);
+        setIsDialogOpen(false);
+    };
+
     useEffect(() => {
         if (transactionId) {
             setIsOpen(true);
@@ -229,58 +267,16 @@ const DeploymentHistoryCard = ({
 
     return (
         <>
-            <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogContent className="sm:max-w-[600px] bg-neutral-950 border border-neutral-800">
-                    <DialogHeader>
-                        <DialogTitle className="text-neutral-100 text-lg">
-                            Your arns will be set shortly
-                        </DialogTitle>
-                        <DialogDescription className="text-neutral-400 mt-">
-                            <div className="pt-2 leading-relaxed">
-                                This is the transaction Id
-                                <br />
-                                <strong className="text-white">
-                                    {transactionId}
-                                </strong>
-                                ,
-                                <br />
-                                you can use this transactionId to keep the track
-                                of your progress
-                            </div>
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <div className="col-span-4 text-neutral-100">
-                                <span className="text-xs">Link</span>
-                                <div className="hover:underline pt-1 text-neutral-300">
-                                    <Link
-                                        to={`https://www.ao.link/#/message/${transactionId}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex text-sm hover:underline items-center gap-2 hover:text-neutral-100 transition-colors duration-200"
-                                    >
-                                        Check to see the progress
-                                        <ExternalLink className="w-4 h-4" />
-                                    </Link>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="flex justify-end">
-                        <Button
-                            variant="outline"
-                            onClick={() => {
-                                setTransactionId(null);
-                                setIsOpen(false);
-                            }}
-                            className="bg-neutral-800 text-neutral-100 border-neutral-700 hover:bg-neutral-700 hover:text-neutral-100"
-                        >
-                            Close
-                        </Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
+            {transactionId && (
+                <TransactionDialog
+                    isOpen={isDialogOpen}
+                    setIsOpen={setIsDialogOpen}
+                    transactionId={transactionId}
+                    onClose={handleCloseDialog}
+                    title={"Your arns will be set shortly"}
+                />
+            )}
+
             <div
                 key={`${deployment.DeploymentID}`}
                 className="p-4 sm:p-6 flex flex-col sm:flex-row rounded-md border border-neutral-900 bg-arlink-bg-secondary-color/80 hover:bg-arlink-bg-secondary-color items-start sm:items-center justify-between"
@@ -402,7 +398,11 @@ const DeploymentHistoryCard = ({
                                         Manage your arns here
                                     </DialogTitle>
                                     <DialogDescription>
-                                        <ArnsTabSelector />
+                                        <ArnsTabSelector
+                                            fetchingUserArns={fetchingUserArns}
+                                            arnsNames={arnsNames}
+                                            deployment={deployment}
+                                        />
                                     </DialogDescription>
                                 </DialogHeader>
                             </DialogContent>
@@ -452,155 +452,205 @@ const DeploymentHistoryCard = ({
     );
 };
 
-const ArnsTabSelector = () => {
-    const [open, setOpen] = useState(false);
-    const [value, setValue] = useState("");
+const ArnsTabSelector = ({
+    fetchingUserArns,
+    arnsNames,
+    deployment,
+}: {
+    fetchingUserArns: boolean;
+    arnsNames: ArnsName[];
+    deployment: DeploymentRecord;
+}) => {
+    const [selectedArns, setSelectedArns] = useState<ArnsName | undefined>(
+        undefined,
+    );
+    const [arnsDropDownOpen, setArnsDropDownOpen] = useState<boolean>(false);
+    const [transactionId, setTransactionId] = useState<string | null>(null);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-    const frameworks = [
-        {
-            value: "next.js",
-            label: "Next.js",
-        },
-        {
-            value: "sveltekit",
-            label: "SvelteKit",
-        },
-        {
-            value: "nuxt.js",
-            label: "Nuxt.js",
-        },
-        {
-            value: "remix",
-            label: "Remix",
-        },
-        {
-            value: "astro",
-            label: "Astro",
-        },
-    ];
+    const handleCloseDialog = () => {
+        setTransactionId(null);
+        setIsDialogOpen(false);
+    };
+
+    const handleArnsSelection = (arnsName: ArnsName) => {
+        setSelectedArns(arnsName);
+        setArnsDropDownOpen(false);
+    };
+
+    const handleSwitchToAnotherArns = async () => {
+        if (!selectedArns) return;
+        const txid = await setArnsName(
+            selectedArns.processId,
+            deployment.DeploymentID,
+        );
+        if (txid) {
+            setTransactionId(selectedArns.processId);
+            toast.success("Successfully changed arns", {
+                description:
+                    "This process may take time please check the progress throught transaction id",
+            });
+        } else {
+            toast.error("Failed to switch arns");
+        }
+    };
+
+    useEffect(() => {
+        if (transactionId) {
+            setIsDialogOpen(true);
+        }
+    }, [transactionId]);
+
     return (
-        <Tabs defaultValue="account" className="w-full mt-4">
-            <TabsList className="grid bg-neutral-900 w-full grid-cols-2">
-                <TabsTrigger value="account">Switch arns</TabsTrigger>
-                <TabsTrigger value="password">Undername</TabsTrigger>
-            </TabsList>
-            <TabsContent
-                value="account"
-                className="bg-arlink-bg-secondary-color"
-            >
-                <Card className="border-none p-0">
-                    <CardHeader className="px-2">
-                        <CardTitle>Switch arns</CardTitle>
-                        <CardDescription>
-                            Switch to any arns you own easily
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-2 px-2">
-                        <Popover open={open} onOpenChange={setOpen}>
-                            <PopoverTrigger
-                                className="w-full ring-0 focus-visible:ring-0 focus-visible:ring-transparent bg-arlink-bg-secondary-color"
-                                asChild
-                            >
-                                <Button
-                                    variant="outline"
-                                    role="combobox"
-                                    aria-expanded={open}
-                                    className="w-full justify-between"
+        <>
+            {transactionId && (
+                <TransactionDialog
+                    isOpen={isDialogOpen}
+                    setIsOpen={setIsDialogOpen}
+                    transactionId={transactionId}
+                    onClose={handleCloseDialog}
+                    title={" Your anrs will be switched soon"}
+                />
+            )}
+            <Tabs defaultValue="account" className="w-full mt-4">
+                <TabsList className="grid bg-neutral-900 w-full grid-cols-2">
+                    <TabsTrigger value="account">Switch arns</TabsTrigger>
+                    <TabsTrigger value="password">Undername</TabsTrigger>
+                </TabsList>
+                <TabsContent
+                    value="account"
+                    className="bg-arlink-bg-secondary-color"
+                >
+                    <Card className="border-none p-0">
+                        <CardHeader className="px-2">
+                            <CardTitle>Switch arns</CardTitle>
+                            <CardDescription>
+                                Switch to any arns you own easily
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-2 px-2">
+                            {fetchingUserArns ? (
+                                <Skeleton className="w-full flex items-center justify-between gap-3 px-3 h-10 text-center focus:ring-0 focus:ring-offset-0 outline-none bg-neutral-900 border-[#383838] text-white">
+                                    <div className="flex items-center gap-3">
+                                        Fetching existing arns
+                                        <Loader2
+                                            size={15}
+                                            className="animate-spin"
+                                        />
+                                    </div>
+                                    <ChevronsUpDown size={15} />
+                                </Skeleton>
+                            ) : (
+                                <Popover
+                                    open={arnsDropDownOpen}
+                                    onOpenChange={setArnsDropDownOpen}
                                 >
-                                    {value
-                                        ? frameworks.find(
-                                              (framework) =>
-                                                  framework.value === value,
-                                          )?.label
-                                        : "Select an arns..."}
-                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-[--radix-popover-trigger-width] bg-arlink-bg-secondary-color p-0">
-                                <Command>
-                                    <CommandInput placeholder="Search your anrs" />
-                                    <CommandList>
-                                        <CommandEmpty>
-                                            No framework found.
-                                        </CommandEmpty>
-                                        <CommandGroup>
-                                            {frameworks.map((framework) => (
-                                                <CommandItem
-                                                    key={framework.value}
-                                                    value={framework.value}
-                                                    onSelect={(
-                                                        currentValue,
-                                                    ) => {
-                                                        setValue(
-                                                            currentValue ===
-                                                                value
-                                                                ? ""
-                                                                : currentValue,
-                                                        );
-                                                        setOpen(false);
-                                                    }}
-                                                >
-                                                    <Check
-                                                        className={cn(
-                                                            "mr-2 h-4 w-4",
-                                                            value ===
-                                                                framework.value
-                                                                ? "opacity-100"
-                                                                : "opacity-0",
-                                                        )}
-                                                    />
-                                                    {framework.label}
-                                                </CommandItem>
-                                            ))}
-                                        </CommandGroup>
-                                    </CommandList>
-                                </Command>
-                            </PopoverContent>
-                        </Popover>
-                    </CardContent>
-                    <CardFooter className="px-2">
-                        <Button
-                            size={"sm"}
-                            className="flex items-center text-sm gap-2 px-4 font-semibold"
-                            onClick={() => setOpen(true)}
-                        >
-                            Switch arns
-                        </Button>
-                    </CardFooter>
-                </Card>
-            </TabsContent>
-            <TabsContent value="password">
-                <Card className=" border-none p-0">
-                    <CardHeader className="px-2">
-                        <CardTitle>Undername</CardTitle>
-                        <CardDescription>
-                            Manage your undername here
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-2 px-2">
-                        <div className="space-y-1">
-                            <Label htmlFor="current">Current undername</Label>
-                            <Input
-                                className="bg-arlink-bg-secondary-color"
-                                id="current"
-                                type="text"
-                            />
-                        </div>
-                        <div className="space-y-1">
-                            <Label htmlFor="new">New undername</Label>
-                            <Input
-                                className="bg-arlink-bg-secondary-color"
-                                id="new"
-                                type="text"
-                            />
-                        </div>
-                    </CardContent>
-                    <CardFooter className="px-2">
-                        <Button>Save password</Button>
-                    </CardFooter>
-                </Card>
-            </TabsContent>
-        </Tabs>
+                                    <PopoverTrigger
+                                        className="w-full bg-arlink-bg-secondary-color border-[#383838]"
+                                        asChild
+                                    >
+                                        <Button
+                                            variant="outline"
+                                            role="combobox"
+                                            aria-expanded={arnsDropDownOpen}
+                                            className="justify-between"
+                                        >
+                                            {selectedArns
+                                                ? selectedArns.name
+                                                : "Select an arns name"}
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="max-w-3xl p-0 border-[#383838] bg-arlink-bg-secondary-color w-[--radix-popover-trigger-width] max-h-[--radix-popover-content-available-height]">
+                                        <Command>
+                                            <CommandInput placeholder="Select an existing arns..." />
+                                            <CommandList>
+                                                <CommandEmpty>
+                                                    No arns found.
+                                                </CommandEmpty>
+                                                <CommandGroup>
+                                                    {arnsNames.map(
+                                                        (arnsObj) => (
+                                                            <CommandItem
+                                                                key={
+                                                                    arnsObj.processId
+                                                                }
+                                                                value={
+                                                                    arnsObj.name
+                                                                }
+                                                                onSelect={() =>
+                                                                    handleArnsSelection(
+                                                                        arnsObj,
+                                                                    )
+                                                                }
+                                                            >
+                                                                <Check
+                                                                    className={cn(
+                                                                        "mr-2 h-4 w-4",
+                                                                        selectedArns?.name ===
+                                                                            arnsObj.name
+                                                                            ? "opacity-100"
+                                                                            : "opacity-0",
+                                                                    )}
+                                                                />
+                                                                {arnsObj.name}
+                                                            </CommandItem>
+                                                        ),
+                                                    )}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
+                            )}
+                        </CardContent>
+                        <CardFooter className="px-2">
+                            <Button
+                                type="button"
+                                size="sm"
+                                className="flex items-center text-sm gap-2 px-4 font-semibold"
+                                onClick={handleSwitchToAnotherArns}
+                            >
+                                Switch arns
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                </TabsContent>
+                <TabsContent value="password">
+                    <Card className="border-none p-0">
+                        <CardHeader className="px-2">
+                            <CardTitle>Undername</CardTitle>
+                            <CardDescription>
+                                Manage your undername here
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-2 px-2">
+                            <div className="space-y-1">
+                                <Label htmlFor="current">
+                                    Current undername
+                                </Label>
+                                <Input
+                                    className="bg-arlink-bg-secondary-color"
+                                    id="current"
+                                    type="text"
+                                />
+                            </div>
+                            <div className="space-y-1">
+                                <Label htmlFor="new">New undername</Label>
+                                <Input
+                                    className="bg-arlink-bg-secondary-color"
+                                    id="new"
+                                    type="text"
+                                />
+                            </div>
+                        </CardContent>
+                        <CardFooter className="px-2">
+                            <Button>Save password</Button>
+                        </CardFooter>
+                    </Card>
+                </TabsContent>
+            </Tabs>
+        </>
     );
 };
 
