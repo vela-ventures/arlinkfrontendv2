@@ -1,14 +1,12 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import axios from "axios";
 import { connect } from "@permaweb/aoconnect";
 import { toast } from "sonner";
 import Layout from "@/layouts/layout";
 import { Button } from "@/components/ui/button";
 import { useGlobalState } from "@/store/useGlobalState";
-import useDeploymentManager, {
-    historyTable,
-} from "@/hooks/useDeploymentManager";
+import useDeploymentManager from "@/hooks/useDeploymentManager";
 import { getTime, TESTING_FETCH } from "@/lib/utils";
 import { runLua } from "@/lib/ao-vars";
 import { setArnsName } from "@/lib/ao-vars";
@@ -136,14 +134,6 @@ export default function DeploymentComponent({
                     `${TESTING_FETCH}/config/${owner}/${repoName}`,
                 );
                 const { url: newDeploymentUrl, arnsUnderName } = response.data;
-
-                // if the onChain data is not up to date we will update the deploymentInDb
-                console.log("DATAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-                console.log({
-                    deploymentIdOnChain: deployment.DeploymentId,
-                    backend: newDeploymentUrl,
-                });
-                console.log("DATAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
 
                 if (response.data.url !== deployment.DeploymentId) {
                     await updateDeploymentInDB(newDeploymentUrl);

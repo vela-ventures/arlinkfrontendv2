@@ -6,41 +6,89 @@ import { connect, createDataItemSigner } from "@permaweb/aoconnect";
 import { gql, GraphQLClient } from "graphql-request";
 import { GetDemploymentHistoryReturnType } from "@/types";
 
-const setupCommands = `json = require "json"
+const setupCommands = `
+    json = require "json"
 
-if not db then
-    db = require"lsqlite3".open_memory()
-end
-
-db:exec[[
-    CREATE TABLE IF NOT EXISTS Deployments (
-        ID INTEGER PRIMARY KEY AUTOINCREMENT,
-        Name TEXT NOT NULL,
-        RepoUrl TEXT NOT NULL,
-        Branch TEXT DEFAULT 'main',
-        InstallCMD TEXT DEFAULT 'npm i',
-        BuildCMD TEXT DEFAULT 'npm run build',
-        OutputDIR TEXT DEFAULT './dist',
-        ArnsProcess TEXT,
-        DeploymentId TEXT,
-        DeploymentHash TEXT,
-        Logs TEXT
-    )
-]]
-
-Handlers.add(
-    "ARlink.GetDeployments",
-    Handlers.utils.hasMatchingTag("Action","ARlink.GetDeployments"),
-    function(msg)
-        local deployments = {}
-        for row in db:nrows[[SELECT * FROM Deployments]] do
-            table.insert(deployments, row)
-        end
-        Send({Target=msg.From, Data=json.encode(deployments)})
+    if not db then
+        db = require"lsqlite3".open_memory()
     end
-)
-    
-return "OK"
+
+    db:exec[[
+        CREATE TABLE IF NOT EXISTS Deployments (
+            ID                  INTEGER PRIMARY KEY AUTOINCREMENT,
+            Name                TEXT NOT NULL,
+            RepoUrl             TEXT NOT NULL, 
+            Branch              TEXT DEFAULT 'main',
+            InstallCMD          TEXT DEFAULT 'npm i',
+            BuildCMD            TEXT DEFAULT 'npm run build',
+            OutputDIR           TEXT DEFAULT './dist',
+            DeploymentId        TEXT,
+            ArnsProcess         TEXT,
+            DeploymentHash      TEXT,
+            Logs                TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS NewDeploymentHistory (
+            ID                  INTEGER PRIMARY KEY AUTOINCREMENT,
+            Name                TEXT NOT NULL,
+            DeploymentID        TEXT NOT NULL,
+            AssignedUndername   TEXT DEFAULT NULL,
+            Date                TEXT NOT NULL,
+            FOREIGN KEY (Name) REFERENCES Deployments(Name)
+        );
+
+        ALTER TABLE Deployments ADD COLUMN UnderName TEXT;
+    ]]
+
+    Handlers.add(
+        "ARlink.GetDeployments",
+        Handlers.utils.hasMatchingTag("Action", "ARlink.GetDeployments"),
+        function(msg)
+            -- Initialize empty deployments table
+            local deployments = {}
+            
+            -- Get all deployments from database
+            for row in db:nrows[[SELECT * FROM Deployments]] do
+                table.insert(deployments, row)
+            end
+
+            -- Send response back
+            Send({
+                Target = msg.From,
+                Data = json.encode(deployments)
+            })
+        end
+    )
+
+    Handlers.add(
+        "ARlink.GetDeploymentHistoryByProjectName",
+        Handlers.utils.hasMatchingTag("Action", "ARlink.GetDeploymentHistoryByProjectName"),
+        function(msg)
+            print('Message received: ', msg)  -- Log the received message
+            local projectName = msg.Tags.ProjectName  -- Get the project name from the message tags
+            print("Project name received: ", projectName)  -- Log the project name
+            local history = {}
+            
+            -- Using string concatenation with quotes instead of sqlite3.quote
+            local query = string.format(
+                [[SELECT * FROM NewDeploymentHistory WHERE Name = '%s']], 
+                projectName:gsub("'", "''")
+            )
+            print("Executing query: ", query)  -- Log the query
+            
+            for row in db:nrows(query) do
+                table.insert(history, row)
+            end
+            
+            print("Loop ran, history retrieved: ", json.encode(history))  -- Log the retrieved history
+            
+            Send({
+                Target = msg.From, 
+                Data = json.encode(history)
+            })
+        end
+    )
+    return "OK"
 `;
 
 export const historyTable = `

@@ -24,7 +24,6 @@ import RootDirectoryDrawer from "../../../components/rootdir-drawer";
 import { useActiveAddress } from "arweave-wallet-kit";
 import { toast } from "sonner";
 import DomainSelection from "../../../components/shared/domain-selection";
-import { getWalletOwnedNames } from "@/lib/get-arns";
 import useDeploymentManager, {
     historyTable,
 } from "@/hooks/useDeploymentManager";
@@ -91,6 +90,7 @@ const ConfiguringDeploymentProject = ({
             extractRepoName(repoUrl),
             configPath,
         );
+
         console.log({
             configData: newData,
         });
@@ -129,7 +129,13 @@ const ConfiguringDeploymentProject = ({
         useState<boolean>(false);
     const [deploymentSucceded, setDeploymentSucceded] =
         useState<boolean>(false);
-    const [configFailed, setConfigFailed] = useState<boolean>(false);
+    const [configFailed, setConfigFailed] = useState<{
+        errorMessage: string;
+        error: boolean;
+    }>({
+        error: false,
+        errorMessage: "",
+    });
 
     const [deploymentFailed, setDeploymentFailed] = useState<boolean>(false);
 
@@ -162,45 +168,52 @@ const ConfiguringDeploymentProject = ({
             repo: string,
         ) => {
             // Fetch repository configuration
-            const config = await getRepoConfig(owner, repo);
             setProjectName(defaultProjectName);
+            const config = await getRepoConfig(owner, repo);
             setCustomArnsName(defaultProjectName);
-            setBuildSettings((prev) => ({
-                ...prev,
-                buildCommand: {
-                    value: "npm run build",
-                    enabled: false,
-                },
-                installCommand: {
-                    value: config.installCommand || "npm install",
-                    enabled: false,
-                },
-                outPutDir: {
-                    value: config.outputDir
+
+            console.log({ config });
+
+            if (config.error && config.errorType === "static") {
+                setConfigFailed({
+                    error: true,
+                    errorMessage:
+                        "You are using static files please check the below commands before deploying.",
+                });
+                console.log("hello from the static if block");
+                handleBuildSettings({
+                    installCommand: config.installCommand,
+                    outPutDir: config.outputDir,
+                    buildCommand: config.buildCommand,
+                    enabled: true,
+                });
+            } else if (config.error && config.errorType === "server") {
+                setConfigFailed({
+                    error: true,
+                    errorMessage:
+                        "Failed to fetch the configuration, please review the commands below before deploying.",
+                });
+                console.log("hello from the server if block");
+
+                handleBuildSettings({
+                    installCommand: config.installCommand,
+                    outPutDir: config.outputDir,
+                    buildCommand: config.buildCommand,
+                    enabled: true,
+                });
+            } else {
+                console.log("hello from the normal if block");
+
+                handleBuildSettings({
+                    buildCommand: "npm run build",
+                    installCommand: config.installCommand || "npm install",
+                    outPutDir: config.outputDir
                         ? config.outputDir === ".next"
                             ? "./dist"
                             : config.outputDir
                         : "./dist",
                     enabled: false,
-                },
-            }));
-            if (config.error) {
-                setConfigFailed(true);
-                setBuildSettings((prev) => ({
-                    ...prev,
-                    buildCommand: {
-                        value: config.buildCommand,
-                        enabled: true,
-                    },
-                    installCommand: {
-                        value: config.installCommand,
-                        enabled: true,
-                    },
-                    outPutDir: {
-                        value: config.outputDir,
-                        enabled: true,
-                    },
-                }));
+                });
             }
 
             setFrameWork(detectFrameworkImage(config.outputDir));
@@ -208,6 +221,35 @@ const ConfiguringDeploymentProject = ({
 
         handleInit();
     }, [repoUrl]);
+
+    const handleBuildSettings = ({
+        installCommand,
+        buildCommand,
+        outPutDir,
+        enabled,
+    }: {
+        installCommand: string;
+        buildCommand: string;
+        outPutDir: string;
+        enabled: boolean;
+    }) => {
+        console.log({ enabled });
+        setBuildSettings((prev) => ({
+            ...prev,
+            installCommand: {
+                value: installCommand,
+                enabled: enabled,
+            },
+            buildCommand: {
+                value: buildCommand,
+                enabled: enabled,
+            },
+            outPutDir: {
+                value: outPutDir,
+                enabled: enabled,
+            },
+        }));
+    };
 
     // handlers
     // function to fetch all the branches
@@ -374,7 +416,7 @@ const ConfiguringDeploymentProject = ({
                 repository: tokenizedRepoUrl,
                 installCommand: buildSettings.installCommand.value,
                 buildCommand: buildSettings.buildCommand.value,
-                outputDir: buildSettings.outPutDir.value,
+                outputDir: `./${buildSettings.outPutDir.value}`,
                 subDirectory: rootDirectory,
                 protocolLand: false,
                 repoName: customArnsName,
@@ -387,7 +429,7 @@ const ConfiguringDeploymentProject = ({
             const response = await axios.post<{
                 result: string;
                 finalUnderName: string;
-            }>(`${BUILDER_BACKEND}/deploy`, deploymentData, {
+            }>(`${TESTING_FETCH}/deploy`, deploymentData, {
                 timeout: 60 * 60 * 1000,
                 headers: { "Content-Type": "application/json" },
             });
@@ -400,16 +442,12 @@ const ConfiguringDeploymentProject = ({
                 // Database operations
                 const dbOperations = [
                     runLua(
-                        `db:exec[[ALTER TABLE Deployments ADD COLUMN UnderName TEXT]]`,
-                        mgProcess,
-                    ),
-                    runLua(
                         `db:exec[[
                             INSERT INTO Deployments (
                                 Name,
                                 RepoUrl,
                                 Branch,
-                                InstallCMD,
+                                InstallCMD,x
                                 BuildCMD,
                                 OutputDIR,
                                 ArnsProcess
@@ -426,19 +464,55 @@ const ConfiguringDeploymentProject = ({
                                         ? `'${finalArnsProcess}'`
                                         : "NULL"
                                 }
-                            )
+                            );
+
+                            UPDATE Deployments SET DeploymentId='${
+                                response.data.result
+                            }' WHERE Name='${projectName}';
+
+                            UPDATE Deployments SET UnderName='${
+                                response.data.finalUnderName
+                            }' WHERE Name='${projectName}';
                         ]]`,
                         mgProcess,
                     ),
-                    runLua(
-                        `db:exec[[UPDATE Deployments SET DeploymentId='${response.data.result}' WHERE Name='${projectName}']]`,
-                        mgProcess,
-                    ),
-                    runLua(
-                        `db:exec[[UPDATE Deployments SET UnderName='${response.data.finalUnderName}' WHERE Name='${projectName}']]`,
-                        mgProcess,
-                    ),
-                    runLua(historyTable, mgProcess),
+
+                    // runLua(
+                    //     `db:exec[[
+                    //         INSERT INTO Deployments (
+                    //             Name,
+                    //             RepoUrl,
+                    //             Branch,
+                    //             InstallCMD,
+                    //             BuildCMD,
+                    //             OutputDIR,
+                    //             ArnsProcess
+                    //         )
+                    //         VALUES (
+                    //             '${projectName}',
+                    //             '${repoUrl}',
+                    //             '${selectedBranch}',
+                    //             '${buildSettings.installCommand.value}',
+                    //             '${buildSettings.buildCommand.value}',
+                    //             '${buildSettings.outPutDir.value}',
+                    //             ${
+                    //                 finalArnsProcess
+                    //                     ? `'${finalArnsProcess}'`
+                    //                     : "NULL"
+                    //             }
+                    //         )
+                    //     ]]`,
+                    //     mgProcess,
+                    // ),
+                    // runLua(
+                    //     `db:exec[[UPDATE Deployments SET DeploymentId='${response.data.result}' WHERE Name='${projectName}']]`,
+                    //     mgProcess,
+                    // ),
+                    // runLua(
+                    //     `db:exec[[UPDATE Deployments SET UnderName='${response.data.finalUnderName}' WHERE Name='${projectName}']]`,
+                    //     mgProcess,
+                    // ),
+
                     indexInMalik({
                         projectName,
                         description: "An awesome decentralized project",
@@ -469,6 +543,7 @@ const ConfiguringDeploymentProject = ({
                         ),
                     );
                 }
+
                 setIsFetchingLogs((prev) => false);
                 setAlmostDone(true);
                 await Promise.all(dbOperations);
@@ -548,6 +623,7 @@ const ConfiguringDeploymentProject = ({
                 extractRepoName(repoUrl),
                 githubToken as string,
             );
+
             console.log({ subDirData: data });
             setSubDir(data);
 
@@ -719,12 +795,11 @@ const ConfiguringDeploymentProject = ({
                 </p>
 
                 <div className="space-y-4">
-                    {configFailed && (
+                    {configFailed.error && (
                         <div className="bg-neutral-900 p-4 rounded-lg shadow-md">
                             <p className="text-sm flex-center gap-2 font-medium text-neutral-200">
                                 <AlertTriangle size={14} />
-                                Please review deployment commands before
-                                deploying
+                                {configFailed.errorMessage}
                             </p>
                         </div>
                     )}
@@ -754,7 +829,6 @@ const ConfiguringDeploymentProject = ({
                     almostDone={almostDone}
                 />
             )}
-
             <RootDirectoryDrawer
                 subDir={subDir}
                 isOpen={isRootDirectoryDrawerOpen}

@@ -1,71 +1,17 @@
-interface PackageConfig {
-    framework: "next" | "vite" | "create-react-app" | "gatsby" | "unknown";
-    repoName: string;
-    installCommand: string;
-    buildCommand: string;
-    outputDir: string;
-}
-
 // Move getDefaultConfig before it's used
+import { PackageConfig } from "@/types";
+import { Octokit } from "@octokit/rest";
+
 function getDefaultConfig(repoName: string): PackageConfig {
     return {
         framework: "unknown",
         repoName: repoName,
-        installCommand: "npm install",
-        buildCommand: "npm run build",
-        outputDir: "./dist",
+        installCommand: "npm --version",
+        buildCommand: "npm --version",
+        outputDir: "./",
     };
 }
-
-import { Octokit } from "@octokit/rest";
-
 const octokit = new Octokit();
-
-// export async function getRepoConfig(
-// 	owner: string,
-// 	repo: string,
-// ): Promise<PackageConfig> {
-// 	try {
-// 		const branches = ["main", "master"];
-// 		let packageJson = null;
-
-// 		for (const branch of branches) {
-// 			try {
-// 				const { data } = await octokit.repos.getContent({
-// 					owner,
-// 					repo,
-// 					path: "package.json",
-// 					ref: branch,
-// 				});
-
-// 				if ("content" in data) {
-// 					const content = atob(data.content);
-// 					console.log(content);
-// 					packageJson = JSON.parse(content);
-// 					break;
-// 				}
-// 			} catch (e) {
-// 				console.log(e);
-// 			}
-// 		}
-
-// 		if (packageJson) {
-// 			return {
-// 				repoName: repo,
-// 				installCommand: packageJson.scripts?.install || "npm install",
-// 				buildCommand: packageJson.scripts?.build || "npm run build",
-// 				outputDir: packageJson.main
-// 					? packageJson.main.split("/").slice(0, -1).join("/")
-// 					: "./dist",
-// 			};
-// 		}
-
-// 		return getDefaultConfig(repo);
-// 	} catch (error) {
-// 		console.error("Error fetching repo config:", error);
-// 		return getDefaultConfig(repo);
-// 	}
-// }
 
 interface FrameworkConfig {
     framework: "next" | "vite" | "create-react-app" | "gatsby" | "unknown";
@@ -123,7 +69,9 @@ export async function getRepoConfig(
     owner: string,
     repo: string,
     path?: string,
-): Promise<PackageConfig & { error: boolean }> {
+): Promise<
+    PackageConfig & { error: boolean; errorType: "server" | "static" | null }
+> {
     try {
         const branches = ["main", "master"];
         let packageJson = null;
@@ -157,17 +105,29 @@ export async function getRepoConfig(
                 buildCommand: packageJson.scripts?.build || "npm run build",
                 outputDir: outputDir,
                 error: false,
+                errorType: null,
             };
         }
+
         return {
-            ...getDefaultConfig(repo),
+            repoName: repo,
+            framework: "unknown",
+            installCommand: "npm --version",
+            buildCommand: "npm --version",
+            outputDir: "./",
             error: true,
+            errorType: "static",
         };
     } catch (error) {
-        console.error("Error fetching repo config:", error);
+        console.error(error);
         return {
-            ...getDefaultConfig(repo),
+            repoName: repo,
+            framework: "unknown",
+            installCommand: "npm install",
+            buildCommand: "npm run build",
+            outputDir: "./",
             error: true,
+            errorType: "server",
         };
     }
 }
