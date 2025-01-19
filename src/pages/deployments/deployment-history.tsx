@@ -33,7 +33,7 @@ import {
 import useDeploymentManager, {
     getDeploymentHistory,
 } from "@/hooks/useDeploymentManager";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useGlobalState } from "@/store/useGlobalState";
 import { ArnsName, DeploymentRecord, TDeployment } from "@/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -228,6 +228,8 @@ const DeploymentHistoryCard = ({
     arnsNames: ArnsName[];
 }) => {
     const [rollBackStarted, setRollBackStarted] = useState(false);
+    const { refresh } = useDeploymentManager();
+    const navigate = useNavigate();
 
     const [rollBackTransactionIdFetched, setRollBackTransactionIdFetched] =
         useState(false);
@@ -247,6 +249,8 @@ const DeploymentHistoryCard = ({
             if (txid) {
                 setTransactionId(txid);
                 setRollBackTransactionIdFetched(true);
+                await refresh();
+                navigate(`/deployment?repo=${currentDeployment.Name}`);
             } else {
                 toast.error("Failed to rollback");
             }
@@ -270,6 +274,8 @@ const DeploymentHistoryCard = ({
         if (data.txid) {
             setTransactionId(data.txid);
             setRollBackTransactionIdFetched(true);
+            await refresh();
+            navigate(`/deployment?repo=${currentDeployment.Name}`);
         } else {
             toast.error("Failed to rollback");
         }
@@ -297,7 +303,7 @@ const DeploymentHistoryCard = ({
                     setIsOpen={setIsDialogOpen}
                     transactionId={transactionId}
                     onClose={handleCloseDialog}
-                    title={"Your arns will be set shortly"}
+                    title={"Your process has been started"}
                 />
             )}
 

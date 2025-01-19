@@ -52,11 +52,10 @@ import {
     extractOwnerName,
     extractRepoName,
     handleFetchExistingArnsName,
-    handleFetchLogs,
 } from "../depoly/utilts";
 import { useActiveAddress } from "arweave-wallet-kit";
 import { Popover, PopoverContent } from "@/components/ui/popover";
-import { ArnsName, TDeployment } from "@/types";
+import { ArnsName } from "@/types";
 import {
     Command,
     CommandEmpty,
@@ -68,12 +67,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PopoverTrigger } from "@radix-ui/react-popover";
 import { CommandGroup } from "cmdk";
 import { deleteFromServer, performDeleteDeployment } from "@/actions/deploy";
-// import { deleteDeployment } from "@/actions/deploy";
 
 export default function DeploymentSetting() {
     // global states
     const [searchParams] = useSearchParams();
-    const { managerProcess, deployments, refresh } = useDeploymentManager();
+    const { refresh } = useDeploymentManager();
     const repo = searchParams.get("repo");
     const navigate = useNavigate();
     const globalState = useGlobalState();

@@ -1,6 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { detectFrameworkImage } from "@/pages/depoly/utilts";
+import {
+    detectFrameworkImage,
+    extractOwnerName,
+    extractRepoName,
+} from "@/pages/depoly/utilts";
 import type { Project } from "@/types";
 import {
     ExternalLink,
@@ -8,9 +12,19 @@ import {
     Loader2,
     LucideLink,
     MoreVertical,
-    RefreshCcw,
     Trash2,
 } from "lucide-react";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Link, useNavigate } from "react-router-dom";
 import {
     Popover,
@@ -20,8 +34,8 @@ import {
 import { toast } from "sonner";
 import React, { useState } from "react";
 import { useGlobalState } from "@/store/useGlobalState";
-import { performDeleteDeployment } from "@/actions/deploy";
 import useDeploymentManager from "@/hooks/useDeploymentManager";
+import { performDeleteDeployment, deleteFromServer } from "@/actions/deploy";
 
 interface ProjectCardProps {
     project: Project;
@@ -50,7 +64,6 @@ export function ProjectCard({ project }: ProjectCardProps) {
 
     async function deleteDeployment() {
         setIsDeleting(true);
-
         if (!globalState.managerProcess) {
             toast.error("Manager process not found");
             setIsDeleting(false);
@@ -58,13 +71,21 @@ export function ProjectCard({ project }: ProjectCardProps) {
         }
 
         try {
-            await performDeleteDeployment(
-                project.name,
-                globalState.managerProcess,
-                refresh,
-            );
-            toast.success("Deployment deleted successfully");
-            navigate("/dashboard");
+            const ownerName = extractOwnerName(project.repoUrl);
+            const repoProjectName = extractRepoName(project.repoUrl);
+            const deleteRes = await deleteFromServer({
+                ownerName,
+                repoProjectName,
+            });
+            if (deleteRes) {
+                await performDeleteDeployment(
+                    project.name,
+                    globalState.managerProcess,
+                    refresh,
+                );
+                toast.success("Deployment deleted successfully");
+                navigate("/dashboard");
+            }
         } catch (error) {
             console.error("Error deleting deployment:", error);
             toast.error("An error occurred while deleting the deployment");
@@ -162,23 +183,50 @@ export function ProjectCard({ project }: ProjectCardProps) {
                                         <ExternalLink />
                                         View
                                     </Button>
-                                    <Button
-                                        variant={"outline"}
-                                        className="px-3  transition-all flex justify-start border-none bg-arlink-bg-secondary-color hover:bg-red-700 rounded-lg"
-                                        onClick={deleteDeployment}
-                                        disabled={isDeleting}
-                                    >
-                                        {isDeleting ? (
-                                            <div className="flex items-center gap-3">
-                                                <Loader2 className="animate-spin" />
-                                                deleting...
-                                            </div>
-                                        ) : (
-                                            <div className="flex items-center gap-3">
-                                                <Trash2 /> Delete
-                                            </div>
-                                        )}
-                                    </Button>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button
+                                                variant={"outline"}
+                                                className="px-3  transition-all flex justify-start border-none bg-arlink-bg-secondary-color hover:bg-red-700 rounded-lg"
+                                                disabled={isDeleting}
+                                            >
+                                                {isDeleting ? (
+                                                    <div className="flex items-center gap-3">
+                                                        <Loader2 className="animate-spin" />
+                                                        deleting...
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center gap-3">
+                                                        <Trash2 /> Delete
+                                                    </div>
+                                                )}
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>
+                                                    Are you absolutely sure?
+                                                </AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    This action is irreversible.
+                                                    The data will be deleted
+                                                    from the on-chain records
+                                                    but will remain permanently
+                                                    stored on Arweave
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>
+                                                    Cancel
+                                                </AlertDialogCancel>
+                                                <AlertDialogAction
+                                                    onClick={deleteDeployment}
+                                                >
+                                                    Continue
+                                                </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
                                 </PopoverContent>
                             </Popover>
                             <span className="sr-only">More options</span>
