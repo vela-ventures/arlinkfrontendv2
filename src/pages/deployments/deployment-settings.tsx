@@ -67,7 +67,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { PopoverTrigger } from "@radix-ui/react-popover";
 import { CommandGroup } from "cmdk";
-import { performDeleteDeployment } from "@/actions/deploy";
+import { deleteFromServer, performDeleteDeployment } from "@/actions/deploy";
 // import { deleteDeployment } from "@/actions/deploy";
 
 export default function DeploymentSetting() {
@@ -142,13 +142,21 @@ export default function DeploymentSetting() {
         }
 
         try {
-            await performDeleteDeployment(
-                deployment.Name,
-                globalState.managerProcess,
-                refresh,
-            );
-            toast.success("Deployment deleted successfully");
-            navigate("/dashboard");
+            const ownerName = extractOwnerName(deployment.RepoUrl);
+            const repoProjectName = extractRepoName(deployment.RepoUrl);
+            const deleted = await deleteFromServer({
+                ownerName,
+                repoProjectName,
+            });
+            if (deleted) {
+                await performDeleteDeployment(
+                    deployment.Name,
+                    globalState.managerProcess,
+                    refresh,
+                );
+                toast.success("Deployment deleted successfully");
+                navigate("/dashboard");
+            }
         } catch (error) {
             console.error("Error deleting deployment:", error);
             toast.error("An error occurred while deleting the deployment");
@@ -602,8 +610,10 @@ export default function DeploymentSetting() {
                                         Are you absolutely sure?
                                     </AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        This action cannot be undone. This will
-                                        permanently delete your deployment.
+                                        This action is irreversible. The data
+                                        will be deleted from the on-chain
+                                        records but will remain permanently
+                                        stored on Arweave
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>

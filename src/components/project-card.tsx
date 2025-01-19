@@ -106,10 +106,10 @@ export function ProjectCard({ project }: ProjectCardProps) {
                                     target="_blank"
                                     rel="noreferrer"
                                 >
-                                    {project.UnderName.toLowerCase().length > 15
+                                    {project.UnderName.toLowerCase().length > 12
                                         ? `${project.UnderName.toLowerCase().slice(
                                               0,
-                                              15,
+                                              12,
                                           )}...`
                                         : project.UnderName.toLowerCase()}
                                     _arlink.arweave.net
@@ -199,10 +199,10 @@ export function ProjectCard({ project }: ProjectCardProps) {
                             alt="GitHub logo"
                         />
                         <span className="font-medium">
-                            {project.repo.toLowerCase().length > 24
+                            {project.repo.toLowerCase().length > 20
                                 ? `${project.repo
                                       .toLowerCase()
-                                      .slice(0, 24)}...`
+                                      .slice(0, 20)}...`
                                 : project.repo.toLowerCase()}
                         </span>
                     </a>

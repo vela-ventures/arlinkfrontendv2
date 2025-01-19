@@ -118,7 +118,7 @@ export default function Navbar() {
             <div className="md:px-[40px] px-[16px] pt-4 w-full flex items-center justify-between">
                 <div className="flex gap-2  items-center">
                     <Link to="/dashboard">
-                    <img
+                        <img
                             src="/joose.svg"
                             alt="Joose logo"
                             className="md:w-[56px] w-[40px] aspect-square rounded-full"

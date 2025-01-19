@@ -12,12 +12,8 @@ import {
     Github,
     Loader2,
     RefreshCcw,
-    SearchIcon,
-    Tornado,
 } from "lucide-react";
-import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import {
     Dialog,
@@ -63,9 +59,14 @@ import { runLua, setArnsName } from "@/lib/ao-vars";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
-import { handleFetchExistingArnsName } from "../depoly/utilts";
+import {
+    extractOwnerName,
+    extractRepoName,
+    handleFetchExistingArnsName,
+} from "../depoly/utilts";
 import { useActiveAddress } from "arweave-wallet-kit";
 import { TransactionDialog } from "@/components/transactionBlock";
+import { revertNonArnsProject } from "@/actions/deploy";
 
 export default function DeploymentHistory() {
     // hooks
@@ -227,7 +228,6 @@ const DeploymentHistoryCard = ({
     arnsNames: ArnsName[];
 }) => {
     const [rollBackStarted, setRollBackStarted] = useState(false);
-    const [isOpen, setIsOpen] = useState<boolean>(false);
 
     const [rollBackTransactionIdFetched, setRollBackTransactionIdFetched] =
         useState(false);
@@ -235,17 +235,40 @@ const DeploymentHistoryCard = ({
     const [transactionId, setTransactionId] = useState<string | null>(null);
 
     const handleRollBack = async (deploymentID: string) => {
-        if (!currentDeployment.ArnsProcess)
-            return toast.error("You don't own any arns");
+        if (!currentDeployment.ArnsProcess) {
+            setRollBackTransactionIdFetched(false);
+            setRollBackStarted(true);
+            const txid = await setArnsName(
+                currentDeployment.ArnsProcess,
+                deploymentID,
+            );
+
+            setRollBackStarted(false);
+            if (txid) {
+                setTransactionId(txid);
+                setRollBackTransactionIdFetched(true);
+            } else {
+                toast.error("Failed to rollback");
+            }
+        }
+    };
+
+    const rollBackNonArnsUser = async (deploymentID: string) => {
         setRollBackStarted(true);
-        const txid = await setArnsName(
-            currentDeployment.ArnsProcess,
-            deploymentID,
-        );
+        setTransactionId("");
+        setRollBackTransactionIdFetched(false);
+        const ownerName = extractOwnerName(currentDeployment.RepoUrl);
+        const repoProjectName = extractRepoName(currentDeployment.RepoUrl);
+
+        const { data } = await revertNonArnsProject({
+            ownerName,
+            repoProjectName,
+            manifestId: deploymentID,
+        });
 
         setRollBackStarted(false);
-        if (txid) {
-            setTransactionId(deploymentID);
+        if (data.txid) {
+            setTransactionId(data.txid);
             setRollBackTransactionIdFetched(true);
         } else {
             toast.error("Failed to rollback");
@@ -261,7 +284,8 @@ const DeploymentHistoryCard = ({
 
     useEffect(() => {
         if (transactionId) {
-            setIsOpen(true);
+            console.log("hello from transactiond Id ");
+            setIsDialogOpen(true);
         }
     }, [transactionId]);
 
@@ -326,7 +350,7 @@ const DeploymentHistoryCard = ({
                             </div>
                         </div>
                     </div>
-                    {currentDeployment.ArnsProcess && (
+                    {currentDeployment.ArnsProcess ? (
                         <div className="flex flex-wrap items-center gap-2">
                             {index !== 0 && (
                                 <Dialog>
@@ -420,6 +444,61 @@ const DeploymentHistoryCard = ({
                                 </DialogContent>
                             </Dialog>
                         </div>
+                    ) : (
+                        index !== 0 && (
+                            <Dialog>
+                                <DialogTrigger>
+                                    <Button
+                                        size={"sm"}
+                                        className="flex items-center -transparent text-sm gap-2 px-4 font-semibold rounded-xl"
+                                        disabled={rollBackTransactionIdFetched}
+                                    >
+                                        <RefreshCcw />
+                                        Roll back
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="bg-neutral-950 border-neutral-900 ">
+                                    <DialogHeader>
+                                        <DialogTitle>
+                                            {rollBackTransactionIdFetched
+                                                ? "Your roll back is in process"
+                                                : "Roll back your changes"}
+                                        </DialogTitle>
+                                        <DialogDescription>
+                                            {rollBackTransactionIdFetched
+                                                ? "Roll back is in progress you can close this"
+                                                : "Do you want to roll back to this deployment? "}
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <DialogFooter>
+                                        <div className="w-full ">
+                                            {!rollBackTransactionIdFetched ? (
+                                                <Button
+                                                    className="font-semibold tracking-tight rounded-lg"
+                                                    size={"sm"}
+                                                    disabled={rollBackStarted}
+                                                    onClick={() => {
+                                                        rollBackNonArnsUser(
+                                                            deployment.DeploymentID,
+                                                        );
+                                                    }}
+                                                >
+                                                    {rollBackStarted && (
+                                                        <Loader2 className="animate-spin" />
+                                                    )}
+                                                    {rollBackStarted
+                                                        ? "Saving"
+                                                        : "Save"}{" "}
+                                                    changes
+                                                </Button>
+                                            ) : (
+                                                <DialogClose>Close</DialogClose>
+                                            )}
+                                        </div>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+                        )
                     )}
                 </div>
                 {/* right - column */}
