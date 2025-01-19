@@ -70,19 +70,25 @@ export async function getRepoConfig(
     repo: string,
     path?: string,
 ): Promise<
-    PackageConfig & { error: boolean; errorType: "server" | "static" | null }
+    PackageConfig & {
+        error: boolean;
+        errorType: "server" | "static" | "not-found" | null;
+    }
 > {
     try {
         const branches = ["main", "master"];
         let packageJson = null;
-        const fullPath = path ? `${path}/package.json` : "package.json";
+        let hasIndexHtml = false;
+        const packageJsonPath = path ? `${path}/package.json` : "package.json";
+        const indexHtmlPath = path ? `${path}/index.html` : "index.html";
 
+        // First try to find package.json
         for (const branch of branches) {
             try {
                 const { data } = await octokit.repos.getContent({
                     owner,
                     repo,
-                    path: fullPath,
+                    path: packageJsonPath,
                     ref: branch,
                 });
                 if ("content" in data) {
@@ -95,9 +101,9 @@ export async function getRepoConfig(
             }
         }
 
+        // If package.json is found, return its config
         if (packageJson) {
             const { framework, outputDir } = detectFramework(packageJson);
-
             return {
                 repoName: repo,
                 framework,
@@ -109,23 +115,55 @@ export async function getRepoConfig(
             };
         }
 
+        // If package.json not found, look for index.html
+        for (const branch of branches) {
+            try {
+                const { data } = await octokit.repos.getContent({
+                    owner,
+                    repo,
+                    path: indexHtmlPath,
+                    ref: branch,
+                });
+                if ("content" in data) {
+                    hasIndexHtml = true;
+                    break;
+                }
+            } catch (e) {
+                console.log(e);
+            }
+        }
+
+        // If index.html is found, return static site config
+        if (hasIndexHtml) {
+            return {
+                repoName: repo,
+                framework: "unknown",
+                installCommand: "npm --version",
+                buildCommand: "npm --version",
+                outputDir: "./",
+                error: true,
+                errorType: "static",
+            };
+        }
+
+        // If neither package.json nor index.html is found, return null-like object
         return {
             repoName: repo,
             framework: "unknown",
-            installCommand: "npm --version",
-            buildCommand: "npm --version",
-            outputDir: "./",
+            installCommand: "",
+            buildCommand: "",
+            outputDir: "",
             error: true,
-            errorType: "static",
+            errorType: "not-found",
         };
     } catch (error) {
         console.error(error);
         return {
             repoName: repo,
             framework: "unknown",
-            installCommand: "npm install",
-            buildCommand: "npm run build",
-            outputDir: "./",
+            installCommand: "",
+            buildCommand: "",
+            outputDir: "",
             error: true,
             errorType: "server",
         };

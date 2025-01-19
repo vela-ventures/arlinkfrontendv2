@@ -85,15 +85,27 @@ const ConfiguringDeploymentProject = ({
     async function handleSelectRootDir(path: string) {
         setRootDirectory(path);
         const configPath = path.replace("./", "");
-        const newData = await getRepoConfig(
+        const config = await getRepoConfig(
             extractOwnerName(repoUrl),
             extractRepoName(repoUrl),
             configPath,
         );
-
-        console.log({
-            configData: newData,
+        console.log({ userConfig: config });
+        const { buildSettings, configFailed, framework } =
+            handleConfigurationAndBuild({
+                error: config.error,
+                errorType: config.errorType,
+                installCommand: config.installCommand,
+                buildCommand: config.buildCommand,
+                outputDir: config.outputDir,
+            });
+        handleBuildSettings({
+            ...buildSettings,
         });
+        setConfigFailed({
+            ...configFailed,
+        });
+        setFrameWork(framework);
     }
 
     // domain states
@@ -145,6 +157,86 @@ const ConfiguringDeploymentProject = ({
     const [isFetchingLogs, setIsFetchingLogs] = useState<boolean>(false);
     const [almostDone, setAlmostDone] = useState(false);
 
+    type ErrorType = "static" | "server" | "not-found" | null;
+    interface Config {
+        error: boolean;
+        errorType: ErrorType;
+        installCommand: string;
+        outputDir: string;
+        buildCommand: string;
+    }
+
+    const handleConfigurationAndBuild = (config: Config) => {
+        let configState = {
+            configFailed: {
+                error: false,
+                errorMessage: "",
+            },
+            buildSettings: {
+                installCommand: config.installCommand || "npm install",
+                outPutDir: "./dist",
+                buildCommand: "npm run build",
+                enabled: false,
+            },
+            framework: {
+                name: "unknown",
+                svg: "unknown.svg",
+                dir: "unknown",
+            },
+        };
+
+        if (config.error && config.errorType === "static") {
+            configState.configFailed = {
+                error: true,
+                errorMessage:
+                    "You are using static files please check the below commands before deploying.",
+            };
+            configState.buildSettings = {
+                installCommand: config.installCommand,
+                outPutDir: config.outputDir,
+                buildCommand: config.buildCommand,
+                enabled: true,
+            };
+        } else if (config.error && config.errorType === "server") {
+            configState.configFailed = {
+                error: true,
+                errorMessage:
+                    "Failed to fetch the configuration, please review the commands below before deploying.",
+            };
+            configState.buildSettings = {
+                installCommand: config.installCommand,
+                outPutDir: config.outputDir,
+                buildCommand: config.buildCommand,
+                enabled: true,
+            };
+        } else if (config.error && config.errorType === "not-found") {
+            configState.configFailed = {
+                error: true,
+                errorMessage: "No index.html was found in the project",
+            };
+            configState.buildSettings = {
+                installCommand: config.installCommand,
+                outPutDir: config.outputDir,
+                buildCommand: config.buildCommand,
+                enabled: false,
+            };
+        } else {
+            configState.buildSettings = {
+                buildCommand: "npm run build",
+                installCommand: config.installCommand || "npm install",
+                outPutDir: config.outputDir
+                    ? config.outputDir === ".next"
+                        ? "./dist"
+                        : config.outputDir
+                    : "./dist",
+                enabled: false,
+            };
+        }
+
+        configState.framework = detectFrameworkImage(config.outputDir);
+        return configState;
+    };
+
     // use effects
     useEffect(() => {
         const handleInit = async () => {
@@ -172,51 +264,21 @@ const ConfiguringDeploymentProject = ({
             const config = await getRepoConfig(owner, repo);
             setCustomArnsName(defaultProjectName);
 
-            console.log({ config });
-
-            if (config.error && config.errorType === "static") {
-                setConfigFailed({
-                    error: true,
-                    errorMessage:
-                        "You are using static files please check the below commands before deploying.",
-                });
-                console.log("hello from the static if block");
-                handleBuildSettings({
+            const { buildSettings, configFailed, framework } =
+                handleConfigurationAndBuild({
+                    error: config.error,
+                    errorType: config.errorType,
                     installCommand: config.installCommand,
-                    outPutDir: config.outputDir,
                     buildCommand: config.buildCommand,
-                    enabled: true,
+                    outputDir: config.outputDir,
                 });
-            } else if (config.error && config.errorType === "server") {
-                setConfigFailed({
-                    error: true,
-                    errorMessage:
-                        "Failed to fetch the configuration, please review the commands below before deploying.",
-                });
-                console.log("hello from the server if block");
-
-                handleBuildSettings({
-                    installCommand: config.installCommand,
-                    outPutDir: config.outputDir,
-                    buildCommand: config.buildCommand,
-                    enabled: true,
-                });
-            } else {
-                console.log("hello from the normal if block");
-
-                handleBuildSettings({
-                    buildCommand: "npm run build",
-                    installCommand: config.installCommand || "npm install",
-                    outPutDir: config.outputDir
-                        ? config.outputDir === ".next"
-                            ? "./dist"
-                            : config.outputDir
-                        : "./dist",
-                    enabled: false,
-                });
-            }
-
-            setFrameWork(detectFrameworkImage(config.outputDir));
+            handleBuildSettings({
+                ...buildSettings,
+            });
+            setConfigFailed({
+                ...configFailed,
+            });
+            setFrameWork(framework);
         };
 
         handleInit();
@@ -233,7 +295,6 @@ const ConfiguringDeploymentProject = ({
         outPutDir: string;
         enabled: boolean;
     }) => {
-        console.log({ enabled });
         setBuildSettings((prev) => ({
             ...prev,
             installCommand: {
@@ -274,6 +335,7 @@ const ConfiguringDeploymentProject = ({
             console.log(response.data);
             const branchesNames = response.data.map((branch) => branch.name);
             setBranches(branchesNames);
+            setSelectedBranch(branchesNames[0]);
         } catch (error) {
             console.error("Error fetching branches:", error);
             // If the error is 404, assume it's a single-branch repository
@@ -447,7 +509,7 @@ const ConfiguringDeploymentProject = ({
                                 Name,
                                 RepoUrl,
                                 Branch,
-                                InstallCMD,x
+                                InstallCMD,
                                 BuildCMD,
                                 OutputDIR,
                                 ArnsProcess
@@ -476,42 +538,6 @@ const ConfiguringDeploymentProject = ({
                         ]]`,
                         mgProcess,
                     ),
-
-                    // runLua(
-                    //     `db:exec[[
-                    //         INSERT INTO Deployments (
-                    //             Name,
-                    //             RepoUrl,
-                    //             Branch,
-                    //             InstallCMD,
-                    //             BuildCMD,
-                    //             OutputDIR,
-                    //             ArnsProcess
-                    //         )
-                    //         VALUES (
-                    //             '${projectName}',
-                    //             '${repoUrl}',
-                    //             '${selectedBranch}',
-                    //             '${buildSettings.installCommand.value}',
-                    //             '${buildSettings.buildCommand.value}',
-                    //             '${buildSettings.outPutDir.value}',
-                    //             ${
-                    //                 finalArnsProcess
-                    //                     ? `'${finalArnsProcess}'`
-                    //                     : "NULL"
-                    //             }
-                    //         )
-                    //     ]]`,
-                    //     mgProcess,
-                    // ),
-                    // runLua(
-                    //     `db:exec[[UPDATE Deployments SET DeploymentId='${response.data.result}' WHERE Name='${projectName}']]`,
-                    //     mgProcess,
-                    // ),
-                    // runLua(
-                    //     `db:exec[[UPDATE Deployments SET UnderName='${response.data.finalUnderName}' WHERE Name='${projectName}']]`,
-                    //     mgProcess,
-                    // ),
 
                     indexInMalik({
                         projectName,
