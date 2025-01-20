@@ -2,12 +2,11 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { Search, Grid, List, Plus, RocketIcon } from "lucide-react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useConnection, useActiveAddress } from "arweave-wallet-kit";
 import Layout from "@/layouts/layout";
-import useDeploymentManager from "@/hooks/useDeploymentManager";
+import useDeploymentManager from "@/hooks/use-deployment-manager";
 import type { TDeployment } from "@/types";
 import {
     Select,

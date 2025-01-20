@@ -6,7 +6,7 @@ import {
 } from "arweave-wallet-kit";
 import { useState, useEffect } from "react";
 import { getProfileByWalletAddress, type ProfileHeaderType } from "@/lib/Bazar";
-import { extractRepoName } from "@/pages/depoly/utilts";
+import { extractRepoName } from "@/pages/utilts";
 import ProfileCard from "../profile-card";
 import { getPrimaryname } from "@/lib/utils";
 
@@ -17,7 +17,7 @@ export default function Navbar() {
 
     //@ts-ignore
     const [isNewDeployment, setIsNewDeployment] = useState(false);
-    const [profile, setProfile] = useState<ProfileHeaderType | null>(null);
+    const [, setProfile] = useState<ProfileHeaderType | null>(null);
     const [primaryName, setPrimaryName] = useState<string | null>(null);
     const [primaryLogo, setPrimaryLogo] = useState<string | null>(null);
     const [searchParams] = useSearchParams();

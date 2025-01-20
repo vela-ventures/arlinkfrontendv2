@@ -14,9 +14,9 @@ import { Toaster } from "./components/ui/sonner";
 import DeploymentLogs from "./pages/deployments/deployment-logs";
 import { useEffect } from "react";
 import ComingSoon from "./components/coming-soon";
-import NewDeployment from "./pages/depoly/new-deployment";
+import NewDeployment from "./pages/deployments/new-deployment";
 import DeploymentSetting from "./pages/deployments/deployment-settings";
-import DeploymentPreview from "./pages/deployments/deployment-preview";
+import DeploymentCard from "./pages/deployments/deployment-card";
 import AnalyticsSkeleton from "./pages/deployments/analytics";
 import DeploymentHistory from "./pages/deployments/deployment-history";
 
@@ -66,12 +66,8 @@ const router = createBrowserRouter([
                         element: <DeploymentLogs />,
                     },
                     {
-                        path: "deployment/preview",
-                        element: <DeploymentPreview />,
-                    },
-                    {
                         path: "deployment/card",
-                        element: <DeploymentPreview />,
+                        element: <DeploymentCard />,
                     },
                     {
                         path: "deployment/history",

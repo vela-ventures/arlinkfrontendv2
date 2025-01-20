@@ -6,18 +6,18 @@ import { toast } from "sonner";
 import Layout from "@/layouts/layout";
 import { Button } from "@/components/ui/button";
 import { useGlobalState } from "@/store/useGlobalState";
-import useDeploymentManager from "@/hooks/useDeploymentManager";
+import useDeploymentManager from "@/hooks/use-deployment-manager";
 import { getTime, TESTING_FETCH } from "@/lib/utils";
 import { runLua } from "@/lib/ao-vars";
 import { setArnsName } from "@/lib/ao-vars";
 import { DeploymentConfig, type TDeployment } from "@/types";
-import ConfigureProject from "./configure-project";
+import ConfigureProject from "../../components/configure-project";
 import {
     ConfigureProjectSkeleton,
     DeploymentCardSkeleton,
 } from "@/components/skeletons";
 import DeploymentCard from "@/components/shared/deployment-card";
-import { extractGithubPath } from "../depoly/utilts";
+import { extractGithubPath } from "../utilts";
 import { useDeploymentStore } from "@/store/use-deployment-store";
 import { Loader2 } from "lucide-react";
 
@@ -26,7 +26,7 @@ interface DeploymentComponentProps {
 }
 ``;
 
-export default function DeploymentComponent({
+export default function DeploymentOverview({
     deployment,
 }: DeploymentComponentProps) {
     // zustand stores and hooks
@@ -39,8 +39,8 @@ export default function DeploymentComponent({
 
     // states
     const [, setBuildOutput] = useState("");
-    const [antName, setAntName] = useState("");
-    const [redeploying, setRedeploying] = useState(false);
+    const [, setAntName] = useState("");
+    const [redeploying] = useState(false);
     const [deploymentUrl, setDeploymentUrl] = useState(deployment.DeploymentId);
     const [updatingArns, setUpdatingArns] = useState(false);
 

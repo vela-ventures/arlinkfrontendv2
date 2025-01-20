@@ -39,7 +39,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { runLua, setArnsName as setArnsNameWithProcessId } from "@/lib/ao-vars";
 import { useEffect, useRef, useState } from "react";
-import useDeploymentManager from "@/hooks/useDeploymentManager";
+import useDeploymentManager from "@/hooks/use-deployment-manager";
 import axios, { isAxiosError } from "axios";
 import {
     Accordion,
@@ -52,7 +52,7 @@ import {
     extractOwnerName,
     extractRepoName,
     handleFetchExistingArnsName,
-} from "../depoly/utilts";
+} from "../utilts";
 import { useActiveAddress } from "arweave-wallet-kit";
 import { Popover, PopoverContent } from "@/components/ui/popover";
 import { ArnsName } from "@/types";
@@ -80,12 +80,12 @@ export default function DeploymentSetting() {
     // setting states
     const [activeTab, setActiveTab] = useState("redeploy");
     const [showSidebar, setShowSidebar] = useState(true);
-    const [error, setError] = useState<string>("");
+    const [, setError] = useState<string>("");
 
     // loading state
     const [isDeleting, setIsDeleting] = useState<boolean>(false);
     const [isRedeploying, setIsRedeploying] = useState<boolean>(false);
-    const [buildOutput, setBuildOutput] = useState<string[]>([]);
+    const [, setBuildOutput] = useState<string[]>([]);
     const deploymentFailedRef = useRef(false);
     const [isWaitingForLogs, setIsWaitingForLogs] = useState<boolean>(false);
     const [isFetchingLogs, setIsFetchingLogs] = useState<boolean>(false);

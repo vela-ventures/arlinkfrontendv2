@@ -26,9 +26,6 @@ export default function Home() {
     }
     return (
         <>
-            {/* <div>
-				<NewHero />
-			</div> */}
             <div className="min-h-screen bg-black text-white relative overflow-hidden">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-neutral-800/30 via-neutral-900/20 to-black"></div>
 

@@ -4,7 +4,7 @@ import Layout from "@/layouts/layout";
 import { toast } from "sonner";
 import type { TDeployment } from "@/types";
 import { useGlobalState } from "@/store/useGlobalState";
-import DeploymentComponent from "@/pages/deployments/deployment-component";
+import DeploymentOverview from "@/pages/deployments/deployment-overview";
 
 export default function DeploymentPage() {
     const [searchParams] = useSearchParams();
@@ -18,10 +18,6 @@ export default function DeploymentPage() {
             console.log({ ...deployment, repo });
         });
     }, []);
-
-    console.log({
-        deployments: deployments.find((project) => project.Name === repo),
-    });
 
     useEffect(() => {
         if (!repo) {
@@ -49,7 +45,7 @@ export default function DeploymentPage() {
 
     return (
         <Layout>
-            <DeploymentComponent deployment={deployment} />
+            <DeploymentOverview deployment={deployment} />
         </Layout>
     );
 }

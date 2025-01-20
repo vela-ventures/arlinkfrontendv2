@@ -1,7 +1,7 @@
 import { useGlobalState } from "@/store/useGlobalState";
 import type { ProtocolLandRepo, Repository, Steps } from "@/types";
 import { useEffect, useState } from "react";
-import { fetchProtocolLandRepos, fetchRepositories } from "./utilts";
+import { fetchProtocolLandRepos, fetchRepositories } from "../utilts";
 import { CustomDropdown } from "../../components/shared/drop-down";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card";
 import { useActiveAddress } from "arweave-wallet-kit";
 import { RepoSkeleton } from "@/components/skeletons";
 import { RepositoryItem } from "@/components/shared/repository-item";
-import useDeploymentManager from "@/hooks/useDeploymentManager";
+import useDeploymentManager from "@/hooks/use-deployment-manager";
 
 type GitAuthRepoSelectorTypesProps = {
     setSelectedRepo: React.Dispatch<

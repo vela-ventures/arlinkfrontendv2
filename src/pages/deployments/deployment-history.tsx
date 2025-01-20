@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import {
-    CalendarIcon,
     Check,
-    ChevronDown,
     ChevronsUpDown,
     Cog,
     Copy,
@@ -32,7 +30,7 @@ import {
 } from "@/components/ui/popover";
 import useDeploymentManager, {
     getDeploymentHistory,
-} from "@/hooks/useDeploymentManager";
+} from "@/hooks/use-deployment-manager";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useGlobalState } from "@/store/useGlobalState";
 import { ArnsName, DeploymentRecord, TDeployment } from "@/types";
@@ -63,7 +61,7 @@ import {
     extractOwnerName,
     extractRepoName,
     handleFetchExistingArnsName,
-} from "../depoly/utilts";
+} from "../utilts";
 import { useActiveAddress } from "arweave-wallet-kit";
 import { TransactionDialog } from "@/components/transactionBlock";
 import { revertNonArnsProject } from "@/actions/deploy";
@@ -83,7 +81,7 @@ export default function DeploymentHistory() {
     // loading and error states
     const [loadingDeploymentHistory, setLoadingDeploymentHistory] =
         useState<boolean>(false);
-    const [historyError, setHistoryError] = useState<string | null>("");
+    const [, setHistoryError] = useState<string | null>("");
     const activeAddress = useActiveAddress();
     if (!foundDeployment) return;
 

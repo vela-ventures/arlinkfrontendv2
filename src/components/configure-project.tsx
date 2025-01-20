@@ -14,7 +14,7 @@ import { useEffect, useState } from "react";
 import { useGlobalState } from "@/store/useGlobalState";
 import { runLua } from "@/lib/ao-vars";
 import { toast } from "sonner";
-import useDeploymentManager from "@/hooks/useDeploymentManager";
+import useDeploymentManager from "@/hooks/use-deployment-manager";
 import type { TDeployment } from "@/types";
 import {
     Select,
@@ -27,13 +27,6 @@ import {
 import { Input } from "@/components/ui/input";
 import axios, { isAxiosError } from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { extractOwnerName } from "../depoly/utilts";
 
 interface DeploymentComponentProps {
     deployment: TDeployment;
@@ -51,7 +44,7 @@ const ConfigureProject = ({ deployment }: DeploymentComponentProps) => {
     });
     const [branches, setBranches] = useState<string[]>([]);
     const [selectedBranch, setSelectedBranch] = useState<string | undefined>(
-        undefined
+        undefined,
     );
     const [loadingBranches, setLoadingBranches] = useState<boolean>(false);
 
@@ -89,7 +82,7 @@ const ConfigureProject = ({ deployment }: DeploymentComponentProps) => {
         if (!deployment.RepoUrl) return;
         const [owner, repo] = deployment.RepoUrl.replace(
             "https://github.com/",
-            ""
+            "",
         ).split("/");
 
         try {
@@ -100,7 +93,7 @@ const ConfigureProject = ({ deployment }: DeploymentComponentProps) => {
                         Authorization: `token ${globalState.githubToken}`,
                         Accept: "application/vnd.github.v3+json",
                     },
-                }
+                },
             );
 
             console.log(response.data);

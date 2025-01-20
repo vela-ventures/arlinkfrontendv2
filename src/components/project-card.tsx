@@ -4,7 +4,7 @@ import {
     detectFrameworkImage,
     extractOwnerName,
     extractRepoName,
-} from "@/pages/depoly/utilts";
+} from "@/pages/utilts";
 import type { Project } from "@/types";
 import {
     ExternalLink,
@@ -34,7 +34,7 @@ import {
 import { toast } from "sonner";
 import React, { useState } from "react";
 import { useGlobalState } from "@/store/useGlobalState";
-import useDeploymentManager from "@/hooks/useDeploymentManager";
+import useDeploymentManager from "@/hooks/use-deployment-manager";
 import { performDeleteDeployment, deleteFromServer } from "@/actions/deploy";
 
 interface ProjectCardProps {

@@ -1,8 +1,8 @@
-import useDeploymentManager from "@/hooks/useDeploymentManager";
+import useDeploymentManager from "@/hooks/use-deployment-manager";
 import { Zap, Globe, ChevronRight, ExternalLink } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
-export default function DeploymentPreview({}) {
+export default function DeploymentCard({}) {
     const navigate = useNavigate();
     // hooks and stores
     const { deployments } = useDeploymentManager();

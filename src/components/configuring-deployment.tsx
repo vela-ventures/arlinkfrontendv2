@@ -20,17 +20,15 @@ import { SelectGroup } from "@radix-ui/react-select";
 import axios, { isAxiosError } from "axios";
 import { AlertTriangle, ChevronDown, ChevronLeft, Loader2 } from "lucide-react";
 import React, { useEffect, useState } from "react";
-import RootDirectoryDrawer from "../../../components/rootdir-drawer";
+import RootDirectoryDrawer from "./rootdir-drawer";
 import { useActiveAddress } from "arweave-wallet-kit";
 import { toast } from "sonner";
-import DomainSelection from "../../../components/shared/domain-selection";
-import useDeploymentManager, {
-    historyTable,
-} from "@/hooks/useDeploymentManager";
+import DomainSelection from "./shared/domain-selection";
+import useDeploymentManager from "@/hooks/use-deployment-manager";
 import { BUILDER_BACKEND, getTime, TESTING_FETCH } from "@/lib/utils";
 import { runLua, setArnsName as setArnsNameWithProcessId } from "@/lib/ao-vars";
 import { useNavigate } from "react-router-dom";
-import DeploymentLogs from "../../../components/shared/deploying-logs";
+import DeploymentLogs from "./shared/deploying-logs";
 import {
     analyzeRepoStructure,
     createTokenizedRepoUrl,
@@ -39,7 +37,7 @@ import {
     extractRepoName,
     handleFetchExistingArnsName,
     indexInMalik,
-} from "../utilts";
+} from "../pages/utilts";
 import NewDeploymentCard from "@/components/shared/new-deployment-card";
 import { BuildDeploymentSetting } from "@/components/shared/build-settings";
 import { NextJsProjectWarningCard } from "@/components/skeletons";
@@ -135,12 +133,10 @@ const ConfiguringDeploymentProject = ({
     const [arnsDropdownModal, setarnsDropdownModal] = useState(false);
 
     // deployment state
-    const [isDeploying, setIsDeploying] = useState<boolean>(false);
+    const [, setIsDeploying] = useState<boolean>(false);
     const [deploymentStarted, setDeploymentStarted] = useState<boolean>(false);
-    const [deploymentComplete, setDeploymentComplete] =
-        useState<boolean>(false);
-    const [deploymentSucceded, setDeploymentSucceded] =
-        useState<boolean>(false);
+    const [, setDeploymentComplete] = useState<boolean>(false);
+    const [, setDeploymentSucceded] = useState<boolean>(false);
     const [configFailed, setConfigFailed] = useState<{
         errorMessage: string;
         error: boolean;
@@ -491,7 +487,7 @@ const ConfiguringDeploymentProject = ({
             const response = await axios.post<{
                 result: string;
                 finalUnderName: string;
-            }>(`${TESTING_FETCH}/deploy`, deploymentData, {
+            }>(`${BUILDER_BACKEND}/deploy`, deploymentData, {
                 timeout: 60 * 60 * 1000,
                 headers: { "Content-Type": "application/json" },
             });
@@ -570,7 +566,7 @@ const ConfiguringDeploymentProject = ({
                     );
                 }
 
-                setIsFetchingLogs((prev) => false);
+                setIsFetchingLogs(() => false);
                 setAlmostDone(true);
                 await Promise.all(dbOperations);
                 await refresh();
@@ -586,12 +582,16 @@ const ConfiguringDeploymentProject = ({
                     setLogError(
                         "Too many requests detected. Please try again later.",
                     );
-                } else if (!error.response) {
-                    setLogError(
-                        "Network error. Please check your connection and try again.",
-                    );
+                } else if (error.response?.status === 500) {
+                    setLogError("Build failed, please check logs");
+                } else if (error.response?.status === 429) {
+                    setLogError("Daily deployment limit over");
+                } else if (error.response?.status === 204) {
+                    setLogError("Daily deployment limit over");
+                } else if (error.response?.status === 404) {
+                    setLogError("Server down please try again later");
                 } else {
-                    setLogError("Server error. Please try again later.");
+                    setLogError("Unknown error occured please try again later");
                 }
             } else {
                 console.error("Deployment error:", error);

@@ -1,33 +1,69 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" class="dark">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 
-<head>
-  <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="/joose.svg" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
-    rel="stylesheet">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Arlink</title>
-  <script>
-    // Check for redirect from 404.html
-    (function () {
-      const redirect = sessionStorage.getItem('redirect');
-      if (redirect) {
-        sessionStorage.removeItem('redirect');
-        if (redirect !== '/') {
-          history.replaceState(null, null, redirect);
-        }
-      }
-    })();
-  </script>
-</head>
+        <title>
+            Arlink - Deployments on Arweave made as simple as one click"
+        </title>
+        <meta
+            name="description"
+            content="Arlink - Deployments on Arweave made as simple as one click"
+        />
 
-<body>
-  <div id="root"></div>
-  <script type="module" src="/src/main.tsx"></script>
-</body>
+        <meta
+            name="keywords"
+            content="Arlink, projects, deployment, technology, modern platform"
+        />
 
+        <link rel="canonical" href="https://arlink.ar.io/" />
+
+        <meta property="og:title" content="Arlink" />
+        <meta
+            property="og:description"
+            content="Arlink - Deployments on Arweave made as simple as one click"
+        />
+        <meta property="og:url" content="https://arlink.ar.io" />
+        <meta property="og:type" content="website" />
+        <meta
+            property="og:image"
+            content="https://arlink.ar.io/dashboard.png"
+        />
+
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Arlink" />
+        <meta
+            name="twitter:description"
+            content="Arlink - Deployments on Arweave made as simple as one click"
+        />
+        <meta
+            name="twitter:image"
+            content="https://arlink.ar.io/dashboard.png"
+        />
+
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+            rel="stylesheet"
+        />
+        <script>
+            // Check for redirect from 404.html
+            (function () {
+                const redirect = sessionStorage.getItem("redirect");
+                if (redirect) {
+                    sessionStorage.removeItem("redirect");
+                    if (redirect !== "/") {
+                        history.replaceState(null, null, redirect);
+                    }
+                }
+            })();
+        </script>
+    </head>
+    <body>
+        <div id="root"></div>
+        <script type="module" src="/src/main.tsx"></script>
+    </body>
 </html>
