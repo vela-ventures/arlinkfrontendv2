@@ -19,6 +19,7 @@ import DeploymentSetting from "./pages/deployments/deployment-settings";
 import DeploymentCard from "./pages/deployments/deployment-card";
 import AnalyticsSkeleton from "./pages/deployments/analytics";
 import DeploymentHistory from "./pages/deployments/deployment-history";
+import Templates from "./pages/templates";
 
 // Layout component remains the same
 function Layout() {
@@ -60,6 +61,10 @@ const router = createBrowserRouter([
                     {
                         path: "deployment",
                         element: <Deployment />,
+                    },
+                    {
+                        path: "templates",
+                        element: <Templates />,
                     },
                     {
                         path: "deployment/logs",

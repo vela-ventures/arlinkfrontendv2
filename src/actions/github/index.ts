@@ -6,13 +6,15 @@ export function createOctokit(token: string): Octokit {
     return new Octokit({ auth: token });
 }
 
-export async function initiateGitHubAuth() {
+export async function initiateGitHubAuth({ template }: { template?: boolean }) {
     const BASE_URL =
         import.meta.env.VITE_ENV === "test"
             ? "http://localhost:3000"
             : "https://arlink.arweave.net";
 
-    const redirectUri = encodeURIComponent(`${BASE_URL}/deploy`);
+    const redirectUri = template
+        ? `${BASE_URL}/deploy`
+        : `${BASE_URL}/templates`;
     const authUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${redirectUri}&scope=repo`;
     window.location.href = authUrl;
 }
@@ -38,7 +40,7 @@ export async function handleGitHubCallback(code: string): Promise<string> {
 }
 
 export async function checkAndInstallGitHubApp(token: string) {
-    if (import.meta.env.VITE_ENV === 'test') {
+    if (import.meta.env.VITE_ENV === "test") {
         return;
     }
 

@@ -40,7 +40,7 @@ export function CustomDropdown({ handleProvider }: CustomDropdownProps) {
     // user get's redirected to the github authentication page and generates code also loading state get's triggered here
     const handleGithubLogin = async () => {
         setLoadingId("1");
-        await initiateGitHubAuth();
+        await initiateGitHubAuth({ template: false });
     };
 
     // step - 3
