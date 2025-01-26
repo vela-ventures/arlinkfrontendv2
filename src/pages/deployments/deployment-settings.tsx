@@ -609,10 +609,10 @@ export default function DeploymentSetting() {
                                         Are you absolutely sure?
                                     </AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        This action is irreversible. The data
-                                        will be deleted from the on-chain
-                                        records but will remain permanently
-                                        stored on Arweave
+                                    This action is irreversible.
+                                        The data will be deleted from the our
+                                        records  but all deployments will
+                                        remain permanently stored on Arweave
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
