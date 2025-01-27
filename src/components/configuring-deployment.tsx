@@ -118,7 +118,7 @@ const ConfiguringDeploymentProject = ({
     // build and output setting states
     const [buildSettings, setBuildSettings] = useState<BuildSettings>({
         buildCommand: { enabled: false, value: "npm run build" },
-        installCommand: { enabled: false, value: "npm install" },
+        installCommand: { enabled: false, value: "pnpm install" },
         outPutDir: { enabled: false, value: "./dist" },
     });
 
@@ -169,7 +169,7 @@ const ConfiguringDeploymentProject = ({
                 errorMessage: "",
             },
             buildSettings: {
-                installCommand: config.installCommand || "npm install",
+                installCommand: config.installCommand || "pnpm install",
                 outPutDir: "./dist",
                 buildCommand: "npm run build",
                 enabled: false,
@@ -219,7 +219,7 @@ const ConfiguringDeploymentProject = ({
         } else {
             configState.buildSettings = {
                 buildCommand: "npm run build",
-                installCommand: config.installCommand || "npm install",
+                installCommand: "pnpm install",
                 outPutDir: config.outputDir
                     ? config.outputDir === ".next"
                         ? "./dist"

@@ -35,7 +35,7 @@ const ConfigureProtocolLandProject = ({
     const [branch, setBranch] = useState<string>("main");
     const [buildSettings, setBuildSettings] = useState<BuildSettings>({
         buildCommand: { enabled: true, value: "npm run build" },
-        installCommand: { enabled: true, value: "npm install" },
+        installCommand: { enabled: true, value: "pnpm install" },
         outPutDir: { enabled: true, value: "./dist" },
     });
     const [rootDir, setRootDir] = useState<string>("./");
