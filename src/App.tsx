@@ -75,6 +75,10 @@ const router = createBrowserRouter([
                         element: <DeploymentHistory />,
                     },
                     {
+                        path: "templates",
+                        element: <Templates />,
+                    },
+                    {
                         path: "deployment/analytics",
                         element: <AnalyticsSkeleton />,
                     },

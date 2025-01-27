@@ -34,6 +34,10 @@ export default function Navbar() {
             url: "/deploy",
         },
         {
+            name: "Templates",
+            url: "/templates",
+        },
+        {
             name: "Integration",
             url: "/integration",
         },
