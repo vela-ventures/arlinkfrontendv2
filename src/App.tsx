@@ -63,10 +63,6 @@ const router = createBrowserRouter([
                         element: <Deployment />,
                     },
                     {
-                        path: "templates",
-                        element: <Templates />,
-                    },
-                    {
                         path: "deployment/logs",
                         element: <DeploymentLogs />,
                     },

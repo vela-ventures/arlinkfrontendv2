@@ -12,7 +12,6 @@ import {
     EclipseIcon,
     Briefcase,
     FileCode,
-    GitForkIcon,
     ChevronUp,
     ChevronDown,
 } from "lucide-react";

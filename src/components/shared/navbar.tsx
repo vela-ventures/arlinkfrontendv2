@@ -38,10 +38,6 @@ export default function Navbar() {
             url: "/integration",
         },
         {
-            name: "Templates",
-            url: "/templates",
-        },
-        {
             name: "Discord",
             url: "https://discord.gg/PZjQH8DVTP",
         },

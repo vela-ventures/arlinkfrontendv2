@@ -12,9 +12,7 @@ export async function initiateGitHubAuth({ template }: { template?: boolean }) {
             ? "http://localhost:3000"
             : "https://arlink.arweave.net";
 
-    const redirectUri = template
-        ? `${BASE_URL}/deploy`
-        : `${BASE_URL}/templates`;
+    const redirectUri = `${BASE_URL}/deploy`
     const authUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${redirectUri}&scope=repo`;
     window.location.href = authUrl;
 }
