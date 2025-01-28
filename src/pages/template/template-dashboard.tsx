@@ -3,11 +3,12 @@ import GitHubSignIn from "@/components/ui/github-sign-in";
 import { useGlobalState } from "@/store/useGlobalState";
 import { Suspense } from "react";
 
-export default function Template() {
+export default function TemplateDashboard() {
     const { githubToken } = useGlobalState();
     if (!githubToken) {
         return <GitHubSignIn />;
     }
+
     return (
         <div className="min-h-screen bg-black text-white p-4 sm:p-8">
             <div className="max-w-7xl mx-auto space-y-6">

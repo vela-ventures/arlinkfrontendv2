@@ -19,7 +19,9 @@ import DeploymentSetting from "./pages/deployments/deployment-settings";
 import DeploymentCard from "./pages/deployments/deployment-card";
 import AnalyticsSkeleton from "./pages/deployments/analytics";
 import DeploymentHistory from "./pages/deployments/deployment-history";
-import Templates from "./pages/templates";
+import TemplateDashboard from "./pages/template/template-dashboard";
+import SelectedTemplate from "./pages/template/selected-template";
+import TemplateDeploy from "./pages/template/template-deploy";
 
 // Layout component remains the same
 function Layout() {
@@ -76,7 +78,15 @@ const router = createBrowserRouter([
                     },
                     {
                         path: "templates",
-                        element: <Templates />,
+                        element: <TemplateDashboard />,
+                    },
+                    {
+                        path: "templates/:owner/:repoName",
+                        element: <SelectedTemplate />,
+                    },
+                    {
+                        path: "templates/deploy/:owner/:repoName",
+                        element: <TemplateDeploy />,
                     },
                     {
                         path: "deployment/analytics",

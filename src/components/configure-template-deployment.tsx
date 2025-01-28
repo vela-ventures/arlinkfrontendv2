@@ -27,7 +27,7 @@ import DomainSelection from "./shared/domain-selection";
 import useDeploymentManager from "@/hooks/use-deployment-manager";
 import { BUILDER_BACKEND, getTime, TESTING_FETCH } from "@/lib/utils";
 import { runLua, setArnsName as setArnsNameWithProcessId } from "@/lib/ao-vars";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import DeploymentLogs from "./shared/deploying-logs";
 import {
     analyzeRepoStructure,
@@ -42,15 +42,9 @@ import NewDeploymentCard from "@/components/shared/new-deployment-card";
 import { BuildDeploymentSetting } from "@/components/shared/build-settings";
 import { NextJsProjectWarningCard } from "@/components/skeletons";
 import {} from "@/lib/ao-vars";
+import { forkRepository } from "@/actions/github/template";
 
-const ConfiguringDeploymentProject = ({
-    repoUrl,
-    setStep,
-}: {
-    repoName: string;
-    repoUrl: string;
-    setStep: React.Dispatch<React.SetStateAction<Steps>>;
-}) => {
+const ConfigureTemplateDeployment = ({ repoUrl }: { repoUrl: string }) => {
     // global state and primary hooks
     const { githubToken, managerProcess: mgProcess } = useGlobalState();
     const { refresh, deployments } = useDeploymentManager();
@@ -126,6 +120,7 @@ const ConfiguringDeploymentProject = ({
     const [existingArnsLoading, setExistingArnsLoading] =
         useState<boolean>(true);
     const [fetchingSubDir, setFetchingSubDir] = useState<boolean>(false);
+    const [forkingTemplate, setForkingTemplate] = useState<boolean>(false);
 
     // error states < will keep adding more after deploy button >
     const [branchError, setBranchError] = useState<string>("");
@@ -329,7 +324,11 @@ const ConfiguringDeploymentProject = ({
 
             const branchesNames = response.data.map((branch) => branch.name);
             setBranches(branchesNames);
-            setSelectedBranch(branchesNames.find((branch) => branch === "main") || "main");
+            setSelectedBranch(
+                branchesNames.find((branch) => branch === "main")
+                    ? "main"
+                    : branchesNames[0],
+            );
         } catch (error) {
             console.error("Error fetching branches:", error);
             // If the error is 404, assume it's a single-branch repository
@@ -357,6 +356,14 @@ const ConfiguringDeploymentProject = ({
     // build and output settings handler commands
     const deployProject = async () => {
         if (!githubToken) return;
+        setForkingTemplate(true);
+        await forkRepository(
+            githubToken,
+            extractOwnerName(repoUrl),
+            extractRepoName(repoUrl),
+        );
+        setForkingTemplate(false);
+
         // Validation checks
         const validationErrors = [
             { condition: !projectName, message: "Project name is required" },
@@ -662,13 +669,12 @@ const ConfiguringDeploymentProject = ({
 
     return (
         <div className="text-white md:px-8 px-4 mb-20 max-w-3xl mx-auto">
-            <button
-                type="button"
-                onClick={() => setStep("importing")}
+            <Link
+                to={"/templates"}
                 className="mb-6 flex items-center gap-2 text-neutral-600 hover:text-neutral-100 text-sm cursor-pointer"
             >
                 <ChevronLeft size={18} /> Go back
-            </button>
+            </Link>
             <h1 className="md:text-2xl text-xl font-bold mb-6">
                 Set up ur deployment process
             </h1>
@@ -845,6 +851,15 @@ const ConfiguringDeploymentProject = ({
                 Deploy now
             </Button>
 
+            {forkingTemplate && (
+                <div className="bg-arlink-bg-secondary-color p-6 rounded-lg mt-6 border border-[#383838]">
+                    <p className="flex items-center gap-2 text-sm text-neutral-400">
+                        <Loader2 className="animate-spin" />
+                        Forking template...
+                    </p>
+                </div>
+            )}
+
             {deploymentStarted && (
                 <DeploymentLogs
                     logs={logs}
@@ -854,24 +869,15 @@ const ConfiguringDeploymentProject = ({
                     almostDone={almostDone}
                 />
             )}
+
             <RootDirectoryDrawer
                 subDir={subDir}
                 isOpen={isRootDirectoryDrawerOpen}
                 onClose={() => setIsRootDirectoryDrawerOpen(false)}
                 onSelect={handleSelectRootDir}
             />
-
-            {deploymentFailed && (
-                <button
-                    type="button"
-                    onClick={() => setStep("importing")}
-                    className="transition-all mt-6 flex items-center gap-2 text-neutral-600 hover:text-neutral-100 text-sm cursor-pointer"
-                >
-                    <ChevronLeft size={18} /> Go back
-                </button>
-            )}
         </div>
     );
 };
 
-export default ConfiguringDeploymentProject;
+export default ConfigureTemplateDeployment;

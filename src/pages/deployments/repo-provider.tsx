@@ -3,7 +3,7 @@ import type { ProtocolLandRepo, Repository, Steps } from "@/types";
 import { useEffect, useState } from "react";
 import { fetchProtocolLandRepos, fetchRepositories } from "../utilts";
 import { CustomDropdown } from "../../components/shared/drop-down";
-import { Search } from "lucide-react";
+import { Info, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
@@ -171,17 +171,21 @@ const RepoProvider = ({
                     </div>
                 </div>
                 <div>
-                    <ScrollArea className="h-80 border rounded-md">
+                    <ScrollArea className="h-[370px] border rounded-md">
                         {/*  this is added but not showing I will fix this don't worry  */}
                         {!isProviderSelected ? (
-                            <div className="h-[17rem] w-full flex items-center justify-center">
-                                <p className="text-center">
-                                    Please select a provider from the drop down
-                                    menu
+                            <div className="h-[370px] w-full flex items-center justify-center">
+                                <p className="text-center leading-[1.2] tracking-tight text-xl font-semibold -translate-y-2">
+                                    <span className="flex items-start gap-2">
+                                        <Info className="w-6 h-6" />
+                                        Please select a provider from the drop
+                                        down menu
+                                    </span>
+                                    <br />
                                 </p>
                             </div>
                         ) : isLoading || !managerProcess ? (
-                            [1, 2, 3, 4, 5].map((arrayValue) => (
+                            [1, 2, 3, 4, 5, 6].map((arrayValue) => (
                                 <RepoSkeleton key={arrayValue} />
                             ))
                         ) : provider === "github" ? (

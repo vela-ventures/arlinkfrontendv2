@@ -12,6 +12,18 @@ export type PackageConfig = {
   buildCommand: string;
   outputDir: string;
 }
+export interface Template {
+    id: string;
+    title: string;
+    description: string;
+    creator: string;
+    image: string;
+    framework: string;
+    useCase: string;
+    repoOwner: string;
+    repoName: string;
+}
+
 
 
 
