@@ -141,7 +141,6 @@ export default function useDeploymentManager() {
         if (connected && address) {
             getManagerProcessFromAddress(address).then((id) => {
                 if (id) {
-                    console.log("deployment manager id", id);
                     globalState.setManagerProcess(id);
                 } else {
                     console.log("No manager process found, spawning new one");
@@ -175,7 +174,6 @@ export default function useDeploymentManager() {
             // console.log("result", result);
             const { Messages } = result;
             const deployments = JSON.parse(Messages[0].Data);
-            console.log("deployments", deployments);
             globalState.setDeployments(deployments);
         } catch {
             await runLua(setupCommands, globalState.managerProcess);
@@ -260,10 +258,8 @@ export async function getDeploymentHistory(
 
         // Log the response messages
         if (Messages && Messages.length > 0) {
-            console.log("Deployment History:", Messages);
             // Parse the JSON data from the response
             const historyData = JSON.parse(Messages[0].Data);
-            console.log(Messages);
             return {
                 messageId: null,
                 history: historyData,

@@ -134,11 +134,18 @@ export default function DeploymentOverview({
                     `${TESTING_FETCH}/config/${owner}/${repoName}`,
                 );
                 const { url: newDeploymentUrl, arnsUnderName } = response.data;
+                console.log({
+                    idFromBackend: response.data.url,
+                });
 
                 if (response.data.url !== deployment.DeploymentId) {
                     await updateDeploymentInDB(newDeploymentUrl);
-                    // if the guy has done ci/cd at late midnight 3am and he opens the webapp during the afternoon of next day at 4:00pm
-                    // the guy will have a date of 4 instead of midnight 3am
+
+                    console.log("updated the deployment history");
+                    console.log({
+                        onChainDataId: deployment.DeploymentId,
+                    });
+
                     await runLua(
                         `db:exec[[
                                 INSERT INTO NewDeploymentHistory (Name, DeploymentID, AssignedUndername, Date) VALUES
@@ -148,6 +155,8 @@ export default function DeploymentOverview({
                             ]]`,
                         globalState.managerProcess,
                     );
+                } else {
+                    console.log("no new deployment was found.");
                 }
 
                 // updating in global store

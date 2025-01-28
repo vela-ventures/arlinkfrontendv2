@@ -241,7 +241,6 @@ const ConfigureProtocolLandProject = ({
 
             if (status === 200) {
                 isPollingActive = false;
-                console.log("https://arweave.net/" + txid.result);
                 toast.success("Deployment successful");
                 const dbQueries = [
                     `ALTER TABLE Deployments ADD COLUMN UnderName TEXT`,

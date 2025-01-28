@@ -88,7 +88,6 @@ const ConfiguringDeploymentProject = ({
             extractRepoName(repoUrl),
             configPath,
         );
-        console.log({ userConfig: config });
         const { buildSettings, configFailed, framework } =
             handleConfigurationAndBuild({
                 error: config.error,
@@ -328,7 +327,6 @@ const ConfiguringDeploymentProject = ({
                 },
             );
 
-            console.log(response.data);
             const branchesNames = response.data.map((branch) => branch.name);
             setBranches(branchesNames);
             setSelectedBranch(branchesNames[0]);
@@ -650,7 +648,6 @@ const ConfiguringDeploymentProject = ({
                 githubToken as string,
             );
 
-            console.log({ subDirData: data });
             setSubDir(data);
 
             setIsRootDirectoryDrawerOpen(true);

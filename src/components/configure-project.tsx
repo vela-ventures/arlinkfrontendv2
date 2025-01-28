@@ -96,7 +96,6 @@ const ConfigureProject = ({ deployment }: DeploymentComponentProps) => {
                 },
             );
 
-            console.log(response.data);
             const branchesNames = response.data.map((branch) => branch.name);
             setBranches(branchesNames);
         } catch (error) {
@@ -114,8 +113,6 @@ const ConfigureProject = ({ deployment }: DeploymentComponentProps) => {
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
     useEffect(() => {
-        console.log("hello world");
-        console.log(globalState.githubToken);
         if (globalState.githubToken) {
             handleFetchBranches();
         }

@@ -86,7 +86,6 @@ export function CustomDropdown({ handleProvider }: CustomDropdownProps) {
                 id: "1",
             };
             setSelectedOption(option);
-            console.log(selectedOption);
         }
     }, [githubToken, searchParams]);
 

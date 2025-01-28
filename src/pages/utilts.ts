@@ -439,7 +439,6 @@ export async function handleFetchExistingArnsName({
         // our logic of fetching the arns name
         const names = await getWalletOwnedNames(activeAddress);
         setArnsNames(names);
-        console.log("hello world");
     } catch (error) {
         console.error("Error fetching ArNS names:", error);
         toast.error("Failed to fetch ArNS names");

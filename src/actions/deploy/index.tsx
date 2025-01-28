@@ -17,7 +17,6 @@ export async function performDeleteDeployment(
         if (res.Error) {
             throw new Error(res.Error);
         }
-        console.log(res);
         await refresh();
     } catch (error) {
         throw new Error("Failed to delete deployment. Please try again.");
@@ -33,14 +32,12 @@ export async function deleteFromServer({
 }): Promise<boolean> {
     try {
         // this will delete the project from the server
-        const deleteFromServer = await axios.delete(
+        await axios.delete(
             `${TESTING_FETCH}/deleteproject/${ownerName}/${repoProjectName}`,
         );
 
-        console.log(deleteFromServer);
         return true;
     } catch (error) {
-        console.log(error);
         return false;
     }
 }
@@ -73,9 +70,7 @@ export async function revertNonArnsProject({
             },
         );
 
-        console.log({
-            revertResponse,
-        });
+    
         return {
             ...revertResponse.data,
             error: false,
