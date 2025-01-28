@@ -299,6 +299,16 @@ const ConfigureProtocolLandProject = ({
                 setIsFetchingLogs(false);
                 setAlmostDone(true);
                 await Promise.all(dbOperations);
+                await runLua(
+                    `db:exec[[
+                                INSERT INTO NewDeploymentHistory (Name, DeploymentID, AssignedUndername, Date) VALUES
+                                ('${
+                                    projectName
+                                }', '${txid.result}', '${txid.finalUnderName}', '${getTime()}')
+                            ]]`,
+                    managerProcess,
+                );
+
                 await refresh();
                 navigate(`/deployment/card?repo=${projectName}`);
             } else {

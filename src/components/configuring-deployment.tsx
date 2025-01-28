@@ -329,7 +329,9 @@ const ConfiguringDeploymentProject = ({
 
             const branchesNames = response.data.map((branch) => branch.name);
             setBranches(branchesNames);
-            setSelectedBranch(branchesNames.find((branch) => branch === "main") || "main");
+            setSelectedBranch(
+                branchesNames.find((branch) => branch === "main") || "main",
+            );
         } catch (error) {
             console.error("Error fetching branches:", error);
             // If the error is 404, assume it's a single-branch repository
@@ -569,6 +571,16 @@ const ConfiguringDeploymentProject = ({
                 setIsFetchingLogs(() => false);
                 setAlmostDone(true);
                 await Promise.all(dbOperations);
+                await runLua(
+                    `db:exec[[
+                                INSERT INTO NewDeploymentHistory (Name, DeploymentID, AssignedUndername, Date) VALUES
+                                ('${
+                                    projectName
+                                }', '${response.data.result}', '${response.data.finalUnderName}', '${getTime()}')
+                            ]]`,
+                    mgProcess,
+                );
+
                 await refresh();
                 toast.success("Deployment successful");
                 navigate(`/deployment/card?repo=${projectName}`);

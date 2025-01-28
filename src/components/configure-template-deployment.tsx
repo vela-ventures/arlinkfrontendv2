@@ -576,6 +576,15 @@ const ConfigureTemplateDeployment = ({ repoUrl }: { repoUrl: string }) => {
                 setIsFetchingLogs(() => false);
                 setAlmostDone(true);
                 await Promise.all(dbOperations);
+                await runLua(
+                    `db:exec[[
+                                INSERT INTO NewDeploymentHistory (Name, DeploymentID, AssignedUndername, Date) VALUES
+                                ('${
+                                    projectName
+                                }', '${response.data.result}', '${response.data.finalUnderName}', '${getTime()}')
+                            ]]`,
+                    mgProcess,
+                );
                 await refresh();
                 toast.success("Deployment successful");
                 navigate(`/deployment/card?repo=${projectName}`);

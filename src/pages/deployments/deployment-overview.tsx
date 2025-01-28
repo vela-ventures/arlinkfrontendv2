@@ -133,7 +133,9 @@ export default function DeploymentOverview({
                 const response = await axios.get<DeploymentConfig>(
                     `${TESTING_FETCH}/config/${owner}/${repoName}`,
                 );
+
                 const { url: newDeploymentUrl, arnsUnderName } = response.data;
+
                 console.log({
                     idFromBackend: response.data.url,
                 });
