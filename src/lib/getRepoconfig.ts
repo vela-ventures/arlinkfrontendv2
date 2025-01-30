@@ -2,15 +2,6 @@
 import { PackageConfig } from "@/types";
 import { Octokit } from "@octokit/rest";
 
-function getDefaultConfig(repoName: string): PackageConfig {
-    return {
-        framework: "unknown",
-        repoName: repoName,
-        installCommand: "npm --version",
-        buildCommand: "npm --version",
-        outputDir: "./",
-    };
-}
 const octokit = new Octokit();
 
 interface FrameworkConfig {
@@ -164,6 +155,57 @@ export async function getRepoConfig(
             installCommand: "",
             buildCommand: "",
             outputDir: "",
+            error: true,
+            errorType: "server",
+        };
+    }
+}
+
+export async function getRepoReadme(
+    owner: string,
+    repo: string,
+    path?: string,
+): Promise<{
+    content: string | null;
+    error: boolean;
+    errorType: "server" | "not-found" | null;
+}> {
+    try {
+        const branches = ["main", "master"];
+        const readmePath = path ? `${path}/README.md` : "README.md";
+
+        for (const branch of branches) {
+            try {
+                const { data } = await octokit.repos.getContent({
+                    owner,
+                    repo,
+                    path: readmePath,
+                    ref: branch,
+                });
+
+                if ("content" in data) {
+                    // GitHub API returns content as base64 encoded
+                    const content = atob(data.content);
+                    return {
+                        content,
+                        error: false,
+                        errorType: null,
+                    };
+                }
+            } catch (e) {
+                console.log(e);
+            }
+        }
+
+        return {
+            content: null,
+            error: true,
+            errorType: "not-found",
+        };
+    } catch (error) {
+        console.error(error);
+        return {
+            content: null,
             error: true,
             errorType: "server",
         };

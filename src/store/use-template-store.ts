@@ -27,8 +27,8 @@ export const useTemplateStore = create<TemplateStore>(() => ({
             image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQAFUs8tjezy1zhOvLw0dvXDrd476B3qnnexQ&s",
             framework: "react",
             useCase: "solana",
-            repoOwner: "DMZTdhruv",
-            repoName: "awesome-preact",
+            repoOwner: "keizerworks",
+            repoName: "invoicen",
         },
         {
             id: "3",
@@ -38,8 +38,8 @@ export const useTemplateStore = create<TemplateStore>(() => ({
             image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTkprJTO6N5AbTg3ljMGrPOtka2DnAskIKoSw&s",
             framework: "vite",
             useCase: "ethereum",
-            repoOwner: "shaqdeff",
-            repoName: "Portfolio-Template",
+            repoOwner: "keizerworks",
+            repoName: "keizer-auth",
         },
     ],
 }));

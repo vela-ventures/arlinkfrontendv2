@@ -9,6 +9,13 @@ body {
     overflow-x: hidden;
 }
 
+.markdown > * {
+    all: revert;
+    
+}
+
+
+
 @layer base {
     :root {
         --background: 0 0% 100%;
