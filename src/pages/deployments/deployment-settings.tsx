@@ -359,7 +359,7 @@ export default function DeploymentSetting() {
     }, [transactionId]);
 
     return (
-        <div className="flex flex-col z-0 md:py-8 md:flex-row container bg-black min-h-[80vh]">
+        <div className="flex flex-col z-0 md:py-8 md:flex-row container bg-random min-h-[80vh]">
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogContent className="sm:max-w-[425px] bg-neutral-950 border border-neutral-800">
                     <DialogHeader>
@@ -408,7 +408,7 @@ export default function DeploymentSetting() {
                 className={cn(
                     "w-full md:w-48 z-20 border-neutral-800 md:p-4",
                     showSidebar ? "block" : "hidden md:block",
-                    "md:static inset-0 z-50 py-4 bg-black md:bg-transparent",
+                    "md:static inset-0 z-50 py-4 bg-random md:bg-transparent",
                 )}
             >
                 <nav className="space-y-1">

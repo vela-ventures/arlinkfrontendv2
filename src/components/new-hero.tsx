@@ -14,7 +14,7 @@ function GridPattern() {
     const gridItems = Array.from({ length: 100 }, (_, i) => i);
 
     return (
-        <div className="w-full aspect-square bg-black p-4">
+        <div className="w-full aspect-square bg-random p-4">
             <Navbar />
             <div className="grid grid-cols-10 gap-[1px] h-[800px]">
                 {gridItems.map((item) => (

@@ -20,7 +20,7 @@ export default function GitHubSignIn() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-black p-4">
+        <div className="min-h-screen flex items-center justify-center bg-random p-4">
             <Card className="w-full max-w-md bg-neutral-900 text-white border-neutral-800">
                 <CardHeader className="space-y-1">
                     <CardTitle className="text-2xl font-bold text-center">

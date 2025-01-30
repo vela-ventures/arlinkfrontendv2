@@ -26,7 +26,7 @@ export default function Home() {
     }
     return (
         <>
-            <div className="min-h-screen bg-black text-white relative overflow-hidden">
+            <div className="min-h-screen bg-random text-white relative overflow-hidden">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-neutral-800/30 via-neutral-900/20 to-black"></div>
 
                 <div className="absolute top-6 w-full z-10">
@@ -112,7 +112,7 @@ export default function Home() {
                             <div className="relative rounded-2xl overflow-hidden">
                                 <div className="dashboard-border-glow"></div>
 
-                                <div className="relative bg-black/30 backdrop-blur-sm rounded-2xl overflow-hidden">
+                                <div className="relative bg-random/30 backdrop-blur-sm rounded-2xl overflow-hidden">
                                     <div className="absolute inset-0">
                                         <div className="absolute inset-0 bg-gradient-to-b from-white/[0.07] to-transparent"></div>
                                         <div className="absolute inset-0 bg-gradient-to-t from-white/[0.05] to-transparent"></div>

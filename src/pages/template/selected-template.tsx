@@ -2,22 +2,16 @@ import MarkdownRender from "@/components/markdown-render";
 import { Button } from "@/components/ui/button";
 import { getRepoReadme } from "@/lib/getRepoconfig";
 import { useTemplateStore } from "@/store/use-template-store";
-import { useGlobalState } from "@/store/useGlobalState";
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useParams, Link, Navigate } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 
 const SelectedTemplate = () => {
     const { owner, repoName } = useParams();
     const template = useTemplateStore();
-    const { githubToken } = useGlobalState();
     const [fetchingReadme, setFetchingReadme] = useState<boolean>(false);
     const [error, setError] = useState<string>("");
     const [readmeContent, setReadmeContent] = useState<string>("");
-
-    if (!githubToken) {
-        return <Navigate to="/deploy" />;
-    }
 
     const currentTemplate = template.templates.find(
         (t) => t.repoOwner === owner && t.repoName === repoName,
@@ -77,7 +71,7 @@ const SelectedTemplate = () => {
 
                         <div className="flex flex-col sm:flex-row gap-2">
                             <Link
-                                to={`/templates/deploy/${currentTemplate.repoOwner}/${currentTemplate.repoName}`}
+                                to={`/templates/clone/${currentTemplate.repoOwner}/${currentTemplate.repoName}`}
                                 className="w-full flex justify-center items-center px-3 py-1 rounded-md font-semibold sm:w-auto bg-white text-black hover:bg-neutral-200"
                             >
                                 Deploy

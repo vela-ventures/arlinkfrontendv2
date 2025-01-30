@@ -22,11 +22,12 @@ import DeploymentHistory from "./pages/deployments/deployment-history";
 import TemplateDashboard from "./pages/template/template-dashboard";
 import SelectedTemplate from "./pages/template/selected-template";
 import TemplateDeploy from "./pages/template/template-deploy";
+import CloneTemplate from "./pages/template/clone-template";
 
 // Layout component remains the same
 function Layout() {
     return (
-        <div className="bg-black">
+        <div className="bg-random">
             <Navbar />
             <main className="max-w-[1440px] mx-auto">
                 <Outlet />
@@ -83,6 +84,10 @@ const router = createBrowserRouter([
                     {
                         path: "templates/:owner/:repoName",
                         element: <SelectedTemplate />,
+                    },
+                    {
+                        path: "templates/clone/:owner/:repoName",
+                        element: <CloneTemplate />,
                     },
                     {
                         path: "templates/deploy/:owner/:repoName",

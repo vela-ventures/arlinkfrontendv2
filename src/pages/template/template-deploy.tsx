@@ -22,7 +22,7 @@ const TemplateDeploy = () => {
     }
 
     return (
-        <div className="min-h-screen bg-black text-white p-4 sm:p-8">
+        <div className="min-h-screen bg-random text-white p-4 sm:p-8">
             <ConfigureTemplateDeployment
                 repoUrl={`https://github.com/${currentTemplate.repoOwner}/${currentTemplate.repoName}`}
             />

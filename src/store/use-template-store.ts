@@ -24,7 +24,7 @@ export const useTemplateStore = create<TemplateStore>(() => ({
             description:
                 "keizer invoicen is a invoicen starter for keizerworks",
             creator: "keizerworks",
-            image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQAFUs8tjezy1zhOvLw0dvXDrd476B3qnnexQ&s",
+            image: "https://images.unsplash.com/photo-1642083139428-9ee5fa423c46?q=80&w=1887&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
             framework: "react",
             useCase: "solana",
             repoOwner: "keizerworks",

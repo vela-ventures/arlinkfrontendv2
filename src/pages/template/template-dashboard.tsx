@@ -10,7 +10,7 @@ export default function TemplateDashboard() {
     }
 
     return (
-        <div className="min-h-screen bg-black text-white p-4 sm:p-8">
+        <div className="min-h-screen bg-random text-white p-4 sm:p-8">
             <div className="max-w-7xl mx-auto space-y-6">
                 <div className="space-y-1">
                     <h1 className="text-2xl tracking-tight sm:text-4xl font-bold">

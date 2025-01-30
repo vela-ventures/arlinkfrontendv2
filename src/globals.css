@@ -11,10 +11,7 @@ body {
 
 .markdown > * {
     all: revert;
-    
 }
-
-
 
 @layer base {
     :root {
@@ -78,8 +75,11 @@ body {
         @apply border-border;
     }
     body {
-        @apply bg-background text-foreground;
+        @apply text-foreground;
     }
+}
+body {
+    background-color: #060606;
 }
 
 .arlink-navbar {
@@ -103,4 +103,8 @@ body {
     background-color: rgb(38, 38, 38);
     border-radius: 6px;
     border: 3px solid hsl(var(--background));
+}
+
+.inner-shadow-template {
+    box-shadow: inset 0px 0px 19.1px 0px rgba(23, 23, 23, 0.56);
 }

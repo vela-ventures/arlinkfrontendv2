@@ -25,7 +25,7 @@ import { useActiveAddress } from "arweave-wallet-kit";
 import { toast } from "sonner";
 import DomainSelection from "./shared/domain-selection";
 import useDeploymentManager from "@/hooks/use-deployment-manager";
-import { BUILDER_BACKEND, getTime, TESTING_FETCH } from "@/lib/utils";
+import { getTime, TESTING_FETCH } from "@/lib/utils";
 import { runLua, setArnsName as setArnsNameWithProcessId } from "@/lib/ao-vars";
 import { useNavigate } from "react-router-dom";
 import DeploymentLogs from "./shared/deploying-logs";
@@ -574,9 +574,9 @@ const ConfiguringDeploymentProject = ({
                 await runLua(
                     `db:exec[[
                                 INSERT INTO NewDeploymentHistory (Name, DeploymentID, AssignedUndername, Date) VALUES
-                                ('${
-                                    projectName
-                                }', '${response.data.result}', '${response.data.finalUnderName}', '${getTime()}')
+                                ('${projectName}', '${
+                        response.data.result
+                    }', '${response.data.finalUnderName}', '${getTime()}')
                             ]]`,
                     mgProcess,
                 );

@@ -11,7 +11,7 @@ export function TemplateSelection() {
     return (
         <Card className="mx-auto py-4 border-neutral-900 bg-arlink-bg-secondary-color md:w-auto w-full overflow-hidden relative px-6  rounded-lg flex flex-col">
             {!githubToken && (
-                <div className="absolute z-40 inset-0 backdrop-blur-2xl bg-black/50">
+                <div className="absolute z-40 inset-0 backdrop-blur-2xl bg-random/50">
                     <div className="flex items-center justify-center h-full">
                         <p className="text-center text-white text-3xl font-bold">
                             Coming soon...
