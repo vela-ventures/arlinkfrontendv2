@@ -5,16 +5,20 @@ import { useTemplateStore } from "@/store/use-template-store";
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { extractRepoName } from "../utilts";
+import { extractOwnerName } from "../utilts";
 
 const SelectedTemplate = () => {
     const { owner, repoName } = useParams();
-    const template = useTemplateStore();
+    const { templates } = useTemplateStore();
     const [fetchingReadme, setFetchingReadme] = useState<boolean>(false);
     const [error, setError] = useState<string>("");
     const [readmeContent, setReadmeContent] = useState<string>("");
 
-    const currentTemplate = template.templates.find(
-        (t) => t.repoOwner === owner && t.repoName === repoName,
+    const currentTemplate = templates.find(
+        (t) =>
+            extractOwnerName(t.RepoUrl) === owner &&
+            extractRepoName(t.RepoUrl) === repoName,
     );
 
     if (!currentTemplate) {
@@ -25,8 +29,8 @@ const SelectedTemplate = () => {
         const fetchReadmeContent = async () => {
             setFetchingReadme(true);
             const data = await getRepoReadme(
-                currentTemplate.repoOwner,
-                currentTemplate.repoName,
+                extractOwnerName(currentTemplate.RepoUrl),
+                extractRepoName(currentTemplate.RepoUrl),
             );
             if (data.error) {
                 setFetchingReadme(false);
@@ -57,21 +61,23 @@ const SelectedTemplate = () => {
 
                         <div className="space-y-2">
                             <div className="flex items-center gap-2 text-sm">
-                                {currentTemplate.repoOwner}/
-                                {currentTemplate.repoName}
+                                {extractOwnerName(currentTemplate.RepoUrl)}/
+                                {extractRepoName(currentTemplate.RepoUrl)}
                             </div>
                             <h1 className="text-3xl lg:text-4xl xl:text-5xl font-bold tracking-tight lg:leading-[1.2]">
-                                {currentTemplate.title}
+                                {currentTemplate.Name}
                             </h1>
                         </div>
 
                         <p className="text-lg lg:text-xl text-neutral-400">
-                            {currentTemplate.description}
+                            {currentTemplate.Description}
                         </p>
 
                         <div className="flex flex-col sm:flex-row gap-2">
                             <Link
-                                to={`/templates/clone/${currentTemplate.repoOwner}/${currentTemplate.repoName}`}
+                                to={`/templates/clone/${extractOwnerName(
+                                    currentTemplate.RepoUrl,
+                                )}/${extractRepoName(currentTemplate.RepoUrl)}`}
                                 className="w-full flex justify-center items-center px-3 py-1 rounded-md font-semibold sm:w-auto bg-white text-black hover:bg-neutral-200"
                             >
                                 Deploy
@@ -90,13 +96,13 @@ const SelectedTemplate = () => {
                                 <span className="text-neutral-400">
                                     Framework
                                 </span>
-                                <span>{currentTemplate.framework}</span>
+                                <span>{currentTemplate.Framework}</span>
                             </div>
                             <div className="flex justify-between text-sm">
                                 <span className="text-neutral-400">
                                     Use Case
                                 </span>
-                                <span>{currentTemplate.useCase}</span>
+                                <span>{currentTemplate.UseCase}</span>
                             </div>
                         </div>
                     </div>
@@ -105,15 +111,18 @@ const SelectedTemplate = () => {
                 <div className="w-full lg:w-[60%] p-4 lg:p-8">
                     <div className="rounded-lg text-white">
                         <img
-                            src={currentTemplate.image}
+                            src={currentTemplate.ThumbnailUrl}
                             alt="Next.js Logo"
                             className="mb-6 lg:mb-8 w-full h-[200px] sm:h-[250px] lg:h-[300px] object-cover rounded-lg"
+                            onError={(e) => {
+                                e.currentTarget.src = "/placeholder-clone.jpg";
+                            }}
                         />
                     </div>
 
                     <div className="mt-6 lg:mt-8 pb-[60px] lg:pb-[100px]">
                         <MarkdownRender
-                            title={`Documentation for ${currentTemplate.title}`}
+                            title={`Documentation for ${currentTemplate.Name}`}
                             content={readmeContent}
                             isLoading={fetchingReadme}
                             error={error}

@@ -1,31 +1,81 @@
+import { getAllTemplates } from "@/actions/github/template";
 import { Card } from "@/components/ui/card";
+import { extractRepoName } from "@/pages/utilts";
+import { extractOwnerName } from "@/pages/utilts";
 import { useTemplateStore } from "@/store/use-template-store";
-import { useGlobalState } from "@/store/useGlobalState";
-import { Template } from "@/types";
+import { TemplateDashboard } from "@/types";
 import { ChevronRightIcon, GithubIcon } from "lucide-react";
+import { useState } from "react";
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 
 export function TemplateSelection() {
     const { templates } = useTemplateStore();
-    const { githubToken } = useGlobalState();
+    const { setTemplates } = useTemplateStore();
+    const [isLoading, setIsLoading] = useState<boolean>(true);
+
+    useEffect(() => {
+        const fetchTemplates = async () => {
+            setIsLoading(true);
+            const response = await getAllTemplates();
+            setTemplates(response.templates);
+            setIsLoading(false);
+        };
+        fetchTemplates();
+    }, []);
+
     return (
-        <Card className="mx-auto py-4 border-neutral-900 bg-arlink-bg-secondary-color md:w-auto w-full overflow-hidden relative px-6  rounded-lg flex flex-col">
-            {!githubToken && (
-                <div className="absolute z-40 inset-0 backdrop-blur-2xl bg-random/50">
-                    <div className="flex items-center justify-center h-full">
-                        <p className="text-center text-white text-3xl font-bold">
-                            Coming soon...
-                        </p>
-                    </div>
-                </div>
-            )}
+        <Card className="mx-auto py-4 flex-1 border-neutral-900 bg-arlink-bg-secondary-color md:w-auto w-full overflow-hidden relative px-6  rounded-lg flex flex-col">
             <h2 className="text-2xl tracking-tight font-semibold mb-4">
                 Start with a template
             </h2>
             <div className="grid grid-cols-2 relative z-10 flex-grow gap-4">
-                <TemplateCard template={templates[0]} className="col-span-2" />
-                <TemplateCard template={templates[1]} />
-                <TemplateCard template={templates[2]} />
+                {isLoading ? (
+                    <>
+                        <div className="col-span-2 animate-pulse">
+                            <div className="bg-neutral-800 rounded-md h-[144px] w-full" />
+                            <div className="py-2 flex gap-2 border-t border-neutral-800">
+                                <div className="flex px-2 items-center gap-2">
+                                    <div className="bg-neutral-900 p-2 rounded-full">
+                                        <div className="w-4 h-4 bg-neutral-800 rounded-full" />
+                                    </div>
+                                    <div className="h-4 w-24 bg-neutral-800 rounded" />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="animate-pulse">
+                            <div className="bg-neutral-800 rounded-md h-[144px] w-full" />
+                            <div className="py-2 flex gap-2 border-t border-neutral-800">
+                                <div className="flex px-2 items-center gap-2">
+                                    <div className="bg-neutral-900 p-2 rounded-full">
+                                        <div className="w-4 h-4 bg-neutral-800 rounded-full" />
+                                    </div>
+                                    <div className="h-4 w-24 bg-neutral-800 rounded" />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="animate-pulse">
+                            <div className="bg-neutral-800 rounded-md h-[144px] w-full" />
+                            <div className="py-2 flex gap-2 border-t border-neutral-800">
+                                <div className="flex px-2 items-center gap-2">
+                                    <div className="bg-neutral-900 p-2 rounded-full">
+                                        <div className="w-4 h-4 bg-neutral-800 rounded-full" />
+                                    </div>
+                                    <div className="h-4 w-24 bg-neutral-800 rounded" />
+                                </div>
+                            </div>
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        <TemplateCard
+                            template={templates[2]}
+                            className="col-span-2"
+                        />
+                        <TemplateCard template={templates[1]} />
+                        <TemplateCard template={templates[0]} />
+                    </>
+                )}
             </div>
 
             <Link
@@ -43,12 +93,14 @@ function TemplateCard({
     template,
     className,
 }: {
-    template: Template;
+    template: TemplateDashboard;
     className?: string;
 }) {
     return (
         <Link
-            to={`/templates/${template.repoOwner}/${template.repoName}`}
+            to={`/templates/${extractOwnerName(
+                template.RepoUrl,
+            )}/${extractRepoName(template.RepoUrl)}`}
             className={className}
         >
             <Card
@@ -57,7 +109,10 @@ function TemplateCard({
                 <div className="relative z-0 flex-grow w-full">
                     <img
                         className="w-full max-w-full object-cover h-[144px]"
-                        src={template.image}
+                        src={template.ThumbnailUrl || "/placeholder-clone.jpg"}
+                        onError={(e) => {
+                            e.currentTarget.src = "/placeholder-clone.jpg";
+                        }}
                     />
                 </div>
                 <div className="py-2 flex gap-2 border-t group-hover:border-neutral-600">
@@ -66,7 +121,7 @@ function TemplateCard({
                             <GithubIcon className="w-4 h-4" />
                         </div>
                         <span className="text-sm font-semibold">
-                            {template.title}
+                            {template.Name}
                         </span>
                     </div>
                 </div>

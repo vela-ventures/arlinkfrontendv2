@@ -1,6 +1,5 @@
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMemo, useRef, useState } from "react";
-
 import { ArrowLeft, ExternalLink, GitBranch, Github, Info } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,10 @@ import AnimatedCloneTemplate from "@/components/animated-clone-template";
 import { cloneGitHubRepo } from "@/actions/github/clone-gh-repo";
 import { useGlobalState } from "@/store/useGlobalState";
 import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
+import GitHubSignIn from "@/components/ui/github-sign-in";
+import { extractOwnerName } from "../utilts";
+import { extractRepoName } from "../utilts";
 
 const CloneTemplate = () => {
     const { owner, repoName } = useParams();
@@ -19,14 +21,16 @@ const CloneTemplate = () => {
     const [error, setError] = useState("");
     const [projectName, setProjectName] = useState("");
     const cloneRef = useRef<HTMLDivElement>(null);
+    const navigate = useNavigate();
 
     if (!githubToken) {
-        return <Navigate to="/deploy" />;
+        return <GitHubSignIn />;
     }
     const currentTemplate = useMemo(() => {
         return templates.find(
             (template) =>
-                template.repoOwner === owner && template.repoName === repoName,
+                extractOwnerName(template.RepoUrl) === owner &&
+                extractRepoName(template.RepoUrl) === repoName,
         );
     }, [owner, repoName]);
 
@@ -70,7 +74,9 @@ const CloneTemplate = () => {
 
         try {
             const data = await cloneGitHubRepo(
-                `https://github.com/${currentTemplate.repoOwner}/${currentTemplate.repoName}`,
+                `https://github.com/${extractOwnerName(
+                    currentTemplate.RepoUrl,
+                )}/${extractRepoName(currentTemplate.RepoUrl)}`,
                 projectName,
                 githubToken,
             );
@@ -81,6 +87,11 @@ const CloneTemplate = () => {
             } else {
                 setLoader(false);
                 toast.success("Repository cloned successfully!");
+                navigate(
+                    `/deploy/${extractOwnerName(data.url)}/${extractRepoName(
+                        data.url,
+                    )}`,
+                );
             }
         } catch (err) {
             toast.error("An unexpected error occurred");
@@ -109,7 +120,7 @@ const CloneTemplate = () => {
                 <div className="bg-neutral-950 border w-full max-w-[800px] border-neutral-900 hover:border-neutral-800 rounded-lg p-[14px] mb-6">
                     <div className="flex flex-col items-start w-full gap-6">
                         <img
-                            src={currentTemplate?.image}
+                            src={currentTemplate?.ThumbnailUrl}
                             alt="Template preview"
                             className="rounded-md border border-neutral-800 object-cover w-full aspect-video"
                         />
@@ -117,12 +128,12 @@ const CloneTemplate = () => {
                         <div className="flex-1">
                             <div className="flex items-center gap-2">
                                 <h2 className="text-xl font-semibold">
-                                    {currentTemplate?.title}
+                                    {currentTemplate?.Name}
                                 </h2>
                                 <ExternalLink className="w-5 h-5 text-white" />
                             </div>
                             <p className="text-sm text-white mb-4">
-                                {currentTemplate?.description}
+                                {currentTemplate?.Description}
                             </p>
                             <p className="text-xs text-neutral-400 mb-3">
                                 cloning from
@@ -131,8 +142,13 @@ const CloneTemplate = () => {
                                 <div className="flex items-center gap-2">
                                     <Github className="w-5 h-5" />
                                     <span className="font-semibold">
-                                        {currentTemplate?.repoOwner}/
-                                        {currentTemplate?.repoName}
+                                        {extractOwnerName(
+                                            currentTemplate.RepoUrl,
+                                        )}
+                                        /
+                                        {extractRepoName(
+                                            currentTemplate.RepoUrl,
+                                        )}
                                     </span>
                                 </div>
                                 <div className="flex items-center space-x-1">
@@ -263,8 +279,8 @@ const CloneTemplate = () => {
                             </svg>
 
                             <span>
-                                {currentTemplate?.repoOwner}/
-                                {currentTemplate?.repoName}
+                                {extractOwnerName(currentTemplate.RepoUrl)}/
+                                {extractRepoName(currentTemplate.RepoUrl)}
                             </span>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-white mb-[40px]">

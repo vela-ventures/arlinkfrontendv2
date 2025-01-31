@@ -1,13 +1,26 @@
+import { getAllTemplates } from "@/actions/github/template";
 import TemplateSelector from "@/components/template-selector";
-import GitHubSignIn from "@/components/ui/github-sign-in";
-import { useGlobalState } from "@/store/useGlobalState";
-import { Suspense } from "react";
+import { useTemplateStore } from "@/store/use-template-store";
+import type { TemplateDashboard } from "@/types";
+import { useEffect, useState } from "react";
 
 export default function TemplateDashboard() {
-    const { githubToken } = useGlobalState();
-    if (!githubToken) {
-        return <GitHubSignIn />;
-    }
+    const { setTemplates, templates } = useTemplateStore();
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+
+    useEffect(() => {
+        const fetchTemplates = async () => {
+            if (templates.length === 0) {
+                setIsLoading(true);
+            }
+            const response = await getAllTemplates();
+            setTemplates(response.templates);
+            if (templates.length === 0) {
+                setIsLoading(false);
+            }
+        };
+        fetchTemplates();
+    }, []);
 
     return (
         <div className="min-h-screen bg-random text-white p-4 sm:p-8">
@@ -21,9 +34,7 @@ export default function TemplateDashboard() {
                         solutions from our community.
                     </p>
                 </div>
-                <Suspense fallback={<div>Loading...</div>}>
-                    <TemplateSelector />
-                </Suspense>
+                <TemplateSelector isLoading={isLoading} />
             </div>
         </div>
     );

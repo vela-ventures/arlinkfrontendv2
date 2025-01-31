@@ -63,7 +63,7 @@ const Steps = ({
                         web apps on the PermaWeb with ease.
                     </p>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div className="flex gap-4">
                         <RepoProvider
                             setSelectedRepo={setSelectedRepo}
                             setStep={setStep}

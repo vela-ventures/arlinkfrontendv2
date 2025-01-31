@@ -42,7 +42,6 @@ import NewDeploymentCard from "@/components/shared/new-deployment-card";
 import { BuildDeploymentSetting } from "@/components/shared/build-settings";
 import { NextJsProjectWarningCard } from "@/components/skeletons";
 import {} from "@/lib/ao-vars";
-import { forkRepository } from "@/actions/github/template";
 
 const ConfigureTemplateDeployment = ({ repoUrl }: { repoUrl: string }) => {
     // global state and primary hooks
@@ -120,7 +119,6 @@ const ConfigureTemplateDeployment = ({ repoUrl }: { repoUrl: string }) => {
     const [existingArnsLoading, setExistingArnsLoading] =
         useState<boolean>(true);
     const [fetchingSubDir, setFetchingSubDir] = useState<boolean>(false);
-    const [forkingTemplate, setForkingTemplate] = useState<boolean>(false);
 
     // error states < will keep adding more after deploy button >
     const [branchError, setBranchError] = useState<string>("");
@@ -356,13 +354,6 @@ const ConfigureTemplateDeployment = ({ repoUrl }: { repoUrl: string }) => {
     // build and output settings handler commands
     const deployProject = async () => {
         if (!githubToken) return;
-        setForkingTemplate(true);
-        await forkRepository(
-            githubToken,
-            extractOwnerName(repoUrl),
-            extractRepoName(repoUrl),
-        );
-        setForkingTemplate(false);
 
         // Validation checks
         const validationErrors = [
@@ -579,9 +570,9 @@ const ConfigureTemplateDeployment = ({ repoUrl }: { repoUrl: string }) => {
                 await runLua(
                     `db:exec[[
                                 INSERT INTO NewDeploymentHistory (Name, DeploymentID, AssignedUndername, Date) VALUES
-                                ('${
-                                    projectName
-                                }', '${response.data.result}', '${response.data.finalUnderName}', '${getTime()}')
+                                ('${projectName}', '${
+                        response.data.result
+                    }', '${response.data.finalUnderName}', '${getTime()}')
                             ]]`,
                     mgProcess,
                 );
@@ -859,15 +850,6 @@ const ConfigureTemplateDeployment = ({ repoUrl }: { repoUrl: string }) => {
             >
                 Deploy now
             </Button>
-
-            {forkingTemplate && (
-                <div className="bg-arlink-bg-secondary-color p-6 rounded-lg mt-6 border border-[#383838]">
-                    <p className="flex items-center gap-2 text-sm text-neutral-400">
-                        <Loader2 className="animate-spin" />
-                        Forking template...
-                    </p>
-                </div>
-            )}
 
             {deploymentStarted && (
                 <DeploymentLogs

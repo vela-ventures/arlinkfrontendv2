@@ -23,6 +23,8 @@ import { useGlobalState } from "@/store/useGlobalState";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useTemplateStore } from "@/store/use-template-store";
 import { Link } from "react-router-dom";
+import { TemplateDashboard } from "@/types";
+import { extractOwnerName, extractRepoName } from "@/pages/utilts";
 
 interface Template {
     id: string;
@@ -77,34 +79,38 @@ const useCases: Category[] = [
     },
 ];
 
-export default function TemplateSelector() {
+export default function TemplateSelector({
+    isLoading,
+}: {
+    isLoading: boolean;
+}) {
     const { templates } = useTemplateStore();
     const [selectedFrameworks, setSelectedFrameworks] = useState<string[]>([]);
     const [selectedUseCases, setSelectedUseCases] = useState<string[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [filteredTemplates, setFilteredTemplates] =
-        useState<Template[]>(templates);
+        useState<TemplateDashboard[]>(templates);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
 
     useEffect(() => {
         const filtered = templates.filter((template) => {
             const matchesFramework =
                 selectedFrameworks.length === 0 ||
-                selectedFrameworks.includes(template.framework);
+                selectedFrameworks.includes(template.Framework);
             const matchesUseCase =
                 selectedUseCases.length === 0 ||
-                selectedUseCases.includes(template.useCase);
+                selectedUseCases.includes(template.UseCase);
             const matchesSearch =
-                template.title
-                    .toLowerCase()
-                    .includes(searchQuery.toLowerCase()) ||
-                template.description
-                    .toLowerCase()
-                    .includes(searchQuery.toLowerCase());
+                template.Name.toLowerCase().includes(
+                    searchQuery.toLowerCase(),
+                ) ||
+                template.Description.toLowerCase().includes(
+                    searchQuery.toLowerCase(),
+                );
             return matchesFramework && matchesUseCase && matchesSearch;
         });
         setFilteredTemplates(filtered);
-    }, [selectedFrameworks, selectedUseCases, searchQuery]);
+    }, [selectedFrameworks, selectedUseCases, searchQuery, templates]);
 
     const toggleCategory = (
         category: string,
@@ -152,17 +158,22 @@ export default function TemplateSelector() {
 
     return (
         <div className="space-y-4">
-            <div className="relative">
-                <Search
-                    size={18}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500"
-                />
-                <Input
-                    className="w-full bg-neutral-950 border-neutral-800 pl-4"
-                    placeholder="search for a template"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                />
+            <div className="flex items-center gap-2 justify-between">
+                <div className="relative flex-1">
+                    <Search
+                        size={18}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500"
+                    />
+                    <Input
+                        className="w-full bg-neutral-950 border-neutral-800 pl-4"
+                        placeholder="search for a template"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                </div>
+                <Link to="/templates/upload">
+                    <Button className="">Add a template</Button>
+                </Link>
             </div>
 
             <div className="lg:hidden">
@@ -200,50 +211,56 @@ export default function TemplateSelector() {
                 </aside>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredTemplates.map((template) => (
-                        <TemplateCard key={template.id} template={template} />
-                    ))}
+                    {isLoading
+                        ? [...Array(6)].map((_, i) => (
+                              <div
+                                  key={i}
+                                  className="block h-fit rounded-lg overflow-hidden border border-neutral-900 bg-arlink-bg-secondary-color animate-pulse"
+                              >
+                                  <div className="aspect-video pt-1 px-1 relative overflow-hidden">
+                                      <div className="w-full h-full bg-neutral-800 rounded-md" />
+                                  </div>
+                                  <div className="p-2 flex flex-col gap-2">
+                                      <div className="px-1">
+                                          <div className="flex items-center space-x-2">
+                                              <div className="bg-neutral-800 w-8 h-8 rounded-full" />
+                                              <div className="h-4 bg-neutral-800 rounded w-24" />
+                                          </div>
+                                          <div className="h-3 bg-neutral-800 rounded w-32 mt-2 ml-10" />
+                                      </div>
+                                      <div className="p-2 flex gap-2 items-start justify-between">
+                                          <div className="h-3 bg-neutral-800 rounded w-24" />
+                                          <div className="h-3 bg-neutral-800 rounded w-12" />
+                                      </div>
+                                  </div>
+                              </div>
+                          ))
+                        : filteredTemplates.map((template) => (
+                              <TemplateCard
+                                  key={template.ID}
+                                  template={template}
+                              />
+                          ))}
                 </div>
             </div>
         </div>
     );
 }
 
-const TemplateCard = ({ template }: { template: Template }) => {
-    const { githubToken } = useGlobalState();
-    const [forking, setForking] = useState(false);
-
-    const handleFork = async (template: Template) => {
-        if (!githubToken) {
-            toast.error("Please connect your GitHub account to fork templates");
-            return;
-        }
-
-        setForking(true);
-        const result = await forkRepository(
-            githubToken,
-            template.repoOwner,
-            template.repoName,
-        );
-        if (result.success) {
-            setForking(false);
-            toast.success(`Successfully forked ${template.title}`);
-        } else {
-            setForking(false);
-            toast.error(`Failed to fork ${template.title}`);
-        }
-    };
-
+const TemplateCard = ({ template }: { template: TemplateDashboard }) => {
     return (
         <div
-            key={template.id}
+            key={template.ID}
             className="block h-fit rounded-lg overflow-hidden border border-neutral-900 bg-arlink-bg-secondary-color hover:border-neutral-700 transition-colors"
         >
             <div className="aspect-video pt-1 px-1 relative overflow-hidden">
                 <img
-                    src={template.image || "/placeholder.svg"}
-                    alt={template.title}
+                    src={template.ThumbnailUrl || "/placeholder-clone.jpg"}
+                    alt={template.Name}
                     className="object-cover  object-center w-full h-full border border-neutral-900 rounded-md"
+                    onError={(e) => {
+                        e.currentTarget.src = "/placeholder-clone.jpg";
+                    }}
                 />
             </div>
             <div className="p-2 flex flex-col gap-2 ">
@@ -252,24 +269,26 @@ const TemplateCard = ({ template }: { template: Template }) => {
                         <span className="bg-neutral-900 border border-neutral-800 w-8 h-8 rounded-full flex items-center justify-center text-sm">
                             {
                                 frameworks.find(
-                                    (f) => f.id === template.framework,
+                                    (f) => f.id === template.Framework,
                                 )?.icon
                             }
                         </span>
-                        <span className="font-semibold">{template.title}</span>
+                        <span className="font-semibold">{template.Name}</span>
                     </div>
                     <p className="text-sm pl-10 text-neutral-400">
-                        {template.description.length > 20
-                            ? template.description.slice(0, 20) + "..."
-                            : template.description}
+                        {template.Description.length > 20
+                            ? template.Description.slice(0, 20) + "..."
+                            : template.Description}
                     </p>
                 </div>
                 <div className="p-2 flex gap-2 items-start justify-between">
                     <span className="text-sm text-neutral-500">
-                        Creator: {template.creator}
+                        Creator: {template.CreatorName}
                     </span>
                     <Link
-                        to={`/templates/${template.repoOwner}/${template.repoName}`}
+                        to={`/templates/${extractOwnerName(
+                            template.RepoUrl,
+                        )}/${extractRepoName(template.RepoUrl)}`}
                         className="flex items-center hover:underline -transparent text-sm gap-2 font-semibold rounded-sm"
                     >
                         deploy

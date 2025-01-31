@@ -23,6 +23,7 @@ import TemplateDashboard from "./pages/template/template-dashboard";
 import SelectedTemplate from "./pages/template/selected-template";
 import TemplateDeploy from "./pages/template/template-deploy";
 import CloneTemplate from "./pages/template/clone-template";
+import UploadTemplate from "./pages/template/upload-template";
 
 // Layout component remains the same
 function Layout() {
@@ -88,6 +89,14 @@ const router = createBrowserRouter([
                     {
                         path: "templates/clone/:owner/:repoName",
                         element: <CloneTemplate />,
+                    },
+                    {
+                        path: "/deploy/:owner/:repoName",
+                        element: <TemplateDeploy />,
+                    },
+                    {
+                        path: "templates/upload",
+                        element: <UploadTemplate />,
                     },
                     {
                         path: "templates/deploy/:owner/:repoName",

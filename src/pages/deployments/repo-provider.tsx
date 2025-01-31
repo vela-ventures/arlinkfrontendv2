@@ -150,7 +150,7 @@ const RepoProvider = ({
     }, [provider]);
 
     return (
-        <Card className="bg-arlink-bg-secondary-color col-span-2 p-6 rounded-lg">
+        <Card className="bg-arlink-bg-secondary-color  w-2/3 p-6 rounded-lg">
             <h2 className="md:text-2xl text-md font-semibold mb-4">
                 Select a provider and import
             </h2>
