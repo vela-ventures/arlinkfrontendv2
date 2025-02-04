@@ -181,23 +181,6 @@ export async function analyzeRepoStructure(
     return findFrontendDirs(structure);
 }
 
-interface ProjectDeploymentConfig {
-    owner: string;
-    repoName: string;
-    repository: string;
-    branch: string;
-    installCommand: string;
-    buildCommand: string;
-    outputDir: string;
-    subDirectory: string;
-    lastBuiltCommit: string;
-    maxDailyDeploys: number;
-    deployCount: number;
-    url: string;
-    arnsUnderName: string;
-    noSizeCheck: boolean;
-}
-
 function findFrontendDirs(
     structure: DirectoryStructure[],
 ): DirectoryStructure[] {
@@ -281,6 +264,12 @@ export const detectFrameworkImage = (
                 name: "Create React App",
                 svg: "react.svg",
             };
+        case "public":
+            return {
+                dir: "public",
+                name: "Gatsby",
+                svg: "gatsby.svg",
+            };
         case "./public":
             return {
                 dir: "./public",
@@ -309,7 +298,6 @@ export const handleFetchLogs = async ({
     setLogError,
     setIsWaitingForLogs,
     setIsFetchingLogs,
-    isWaitingForLogs,
     protocolLand,
     walletAddress,
 }: {

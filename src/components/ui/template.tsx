@@ -93,14 +93,14 @@ function TemplateCard({
     template,
     className,
 }: {
-    template: TemplateDashboard;
+    template: TemplateDashboard | undefined;
     className?: string;
 }) {
     return (
         <Link
             to={`/templates/${extractOwnerName(
-                template.RepoUrl,
-            )}/${extractRepoName(template.RepoUrl)}`}
+                template?.RepoUrl || "",
+            )}/${extractRepoName(template?.RepoUrl || "")}`}
             className={className}
         >
             <Card
@@ -109,7 +109,7 @@ function TemplateCard({
                 <div className="relative z-0 flex-grow w-full">
                     <img
                         className="w-full max-w-full object-cover h-[144px]"
-                        src={template.ThumbnailUrl || "/placeholder-clone.jpg"}
+                        src={template?.ThumbnailUrl || "/placeholder-clone.jpg"}
                         onError={(e) => {
                             e.currentTarget.src = "/placeholder-clone.jpg";
                         }}
@@ -121,7 +121,7 @@ function TemplateCard({
                             <GithubIcon className="w-4 h-4" />
                         </div>
                         <span className="text-sm font-semibold">
-                            {template.Name}
+                            {template?.Name || "Template Name"}
                         </span>
                     </div>
                 </div>

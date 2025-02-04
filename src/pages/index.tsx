@@ -24,6 +24,7 @@ export default function Home() {
     if (location.pathname !== "/") {
         return null; // or a loading spinner
     }
+
     return (
         <>
             <div className="min-h-screen bg-random text-white relative overflow-hidden">

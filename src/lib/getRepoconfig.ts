@@ -184,7 +184,6 @@ export async function getRepoReadme(
                 });
 
                 if ("content" in data) {
-                    // GitHub API returns content as base64 encoded
                     const content = atob(data.content);
                     return {
                         content,

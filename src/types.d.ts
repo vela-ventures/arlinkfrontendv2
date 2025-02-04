@@ -14,21 +14,23 @@ export type PackageConfig = {
 };
 export interface Template {
     id: string;
-    title: string;
-    description: string;
-    creator: string;
-    image: string;
     framework: string;
+    description: string;
+    creatorWallet: string;
+    repoUrl: string;
+    name: string;
+    createdAt: string;
+    creatorName: string;
     useCase: string;
-    repoOwner: string;
-    repoName: string;
+    thumbnailUrl: string;
+    demoUrl: string;
 }
 
 export interface TemplateDashboard {
     Framework: string;
     Description: string;
     CreatorWallet: string;
-    RepoUrl: string;
+    RepoUrl?: string;
     Name: string;
     ID: string;
     CreatedAt: string;
@@ -36,6 +38,7 @@ export interface TemplateDashboard {
     Stars: number;
     UseCase: string;
     ThumbnailUrl: string;
+    DemoUrl: string;
 }
 
 export interface TemplatesResponse {
@@ -50,7 +53,9 @@ interface TemplateSubmission {
     framework: string;
     useCase: string;
     thumbnailUrl: string;
+    demoUrl: string;
     creatorName: string;
+    submissionCode: string;
 }
 
 export type GetDemploymentHistoryReturnType = {
@@ -210,4 +215,12 @@ interface BuildSettingsProps {
         field: keyof BuildSetting,
         value: string | boolean,
     ) => void;
+}
+
+export interface TemplateDetails extends Template {
+    stats?: {
+        reviews: string;
+        rating: string;
+        stars: string;
+    };
 }

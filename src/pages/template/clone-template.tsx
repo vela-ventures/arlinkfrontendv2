@@ -1,5 +1,5 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ExternalLink, GitBranch, Github, Info } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -9,30 +9,69 @@ import { cloneGitHubRepo } from "@/actions/github/clone-gh-repo";
 import { useGlobalState } from "@/store/useGlobalState";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import GitHubSignIn from "@/components/ui/github-sign-in";
 import { extractOwnerName } from "../utilts";
 import { extractRepoName } from "../utilts";
+import { GitHubSignInDeploy } from "@/components/ui/github-sign-in";
+import { getTemplateDetails } from "@/actions/github/template";
+import { Template } from "@/types";
 
 const CloneTemplate = () => {
-    const { owner, repoName } = useParams();
+    const { id, name, framework } = useParams();
     const { templates } = useTemplateStore();
     const { githubToken } = useGlobalState();
     const [loader, setLoader] = useState(false);
-    const [error, setError] = useState("");
+    const [, setError] = useState("");
     const [projectName, setProjectName] = useState("");
     const cloneRef = useRef<HTMLDivElement>(null);
+    const [, setLoading] = useState(false);
     const navigate = useNavigate();
+    const [currentTemplate, setCurrentTemplate] = useState<Template | null>(
+        null,
+    );
+
+    useEffect(() => {
+        if (!id || !name || !framework) return;
+        const getTemplate = async () => {
+            setLoading(true);
+            const template = await getTemplateDetails({
+                framework,
+                templateName: name,
+                templateId: id,
+            });
+            if (template.error) {
+                setError(template.error);
+            } else if (template.template) {
+                console.log(template.template);
+                setCurrentTemplate(template.template);
+            }
+            setLoading(false);
+        };
+        getTemplate();
+    }, [templates, id]);
 
     if (!githubToken) {
-        return <GitHubSignIn />;
-    }
-    const currentTemplate = useMemo(() => {
-        return templates.find(
-            (template) =>
-                extractOwnerName(template.RepoUrl) === owner &&
-                extractRepoName(template.RepoUrl) === repoName,
+        return (
+            <div className="flex flex-col items-center mt-16 min-h-screen p-4">
+                <div className="bg-neutral-950 border border-neutral-900 rounded-lg p-8 max-w-md w-full">
+                    <div className="flex flex-col items-center text-center gap-6">
+                        <Github className="w-16 h-16 text-neutral-700" />
+
+                        <div className="space-y-4">
+                            <h2 className="text-2xl font-bold text-white">
+                                Connect GitHub
+                            </h2>
+                            <p className="text-neutral-400">
+                                Sign in with GitHub to create your project
+                                repository
+                            </p>
+
+                            <GitHubSignInDeploy />
+                        </div>
+                    </div>
+                </div>
+            </div>
         );
-    }, [owner, repoName]);
+    }
 
     const handleProjectNameChange = (
         e: React.ChangeEvent<HTMLInputElement>,
@@ -42,22 +81,41 @@ const CloneTemplate = () => {
 
     if (!currentTemplate) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
-                <div className="space-y-2 text-center max-w-md">
-                    <h2 className="text-3xl font-bold tracking-tight text-white">
-                        Template Not Found
-                    </h2>
-                    <p className="text-neutral-400 text-lg">
-                        We couldn't find the template you're looking for.
-                    </p>
+            <section className="max-w-3xl mx-auto pt-8 pb-40 px-4 sm:px-6 lg:px-8">
+                <div className="flex items-center text-sm mb-4 animate-pulse">
+                    <div className="w-4 h-4 mr-2 bg-neutral-800 rounded" />
+                    <div className="w-16 h-4 bg-neutral-800 rounded" />
                 </div>
-                <Link
-                    to="/templates"
-                    className="inline-flex mt-4 items-center px-6 py-3 text-sm font-medium text-black bg-white rounded-md transition-colors hover:bg-neutral-200"
-                >
-                    Back to Templates
-                </Link>
-            </div>
+
+                <div className="w-48 h-8 bg-neutral-800 rounded mb-8 animate-pulse" />
+
+                <div className="bg-neutral-950 border border-neutral-900 rounded-lg p-[14px] mb-6">
+                    <div className="flex flex-col items-start w-full gap-6">
+                        {/* Thumbnail skeleton */}
+                        <div className="w-full aspect-video bg-neutral-800 rounded-md animate-pulse" />
+
+                        <div className="w-full space-y-4">
+                            {/* Title skeleton */}
+                            <div className="w-1/3 h-6 bg-neutral-800 rounded animate-pulse" />
+
+                            {/* Description skeleton */}
+                            <div className="space-y-2">
+                                <div className="w-full h-4 bg-neutral-800 rounded animate-pulse" />
+                                <div className="w-2/3 h-4 bg-neutral-800 rounded animate-pulse" />
+                            </div>
+
+                            {/* GitHub info skeleton */}
+                            <div className="space-y-3">
+                                <div className="w-24 h-3 bg-neutral-800 rounded animate-pulse" />
+                                <div className="flex items-center gap-2">
+                                    <div className="w-5 h-5 bg-neutral-800 rounded-full" />
+                                    <div className="w-40 h-5 bg-neutral-800 rounded animate-pulse" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
         );
     }
 
@@ -75,8 +133,8 @@ const CloneTemplate = () => {
         try {
             const data = await cloneGitHubRepo(
                 `https://github.com/${extractOwnerName(
-                    currentTemplate.RepoUrl,
-                )}/${extractRepoName(currentTemplate.RepoUrl)}`,
+                    currentTemplate.repoUrl,
+                )}/${extractRepoName(currentTemplate.repoUrl)}`,
                 projectName,
                 githubToken,
             );
@@ -120,7 +178,7 @@ const CloneTemplate = () => {
                 <div className="bg-neutral-950 border w-full max-w-[800px] border-neutral-900 hover:border-neutral-800 rounded-lg p-[14px] mb-6">
                     <div className="flex flex-col items-start w-full gap-6">
                         <img
-                            src={currentTemplate?.ThumbnailUrl}
+                            src={currentTemplate?.thumbnailUrl}
                             alt="Template preview"
                             className="rounded-md border border-neutral-800 object-cover w-full aspect-video"
                         />
@@ -128,12 +186,12 @@ const CloneTemplate = () => {
                         <div className="flex-1">
                             <div className="flex items-center gap-2">
                                 <h2 className="text-xl font-semibold">
-                                    {currentTemplate?.Name}
+                                    {currentTemplate?.name}
                                 </h2>
                                 <ExternalLink className="w-5 h-5 text-white" />
                             </div>
                             <p className="text-sm text-white mb-4">
-                                {currentTemplate?.Description}
+                                {currentTemplate?.description}
                             </p>
                             <p className="text-xs text-neutral-400 mb-3">
                                 cloning from
@@ -143,11 +201,11 @@ const CloneTemplate = () => {
                                     <Github className="w-5 h-5" />
                                     <span className="font-semibold">
                                         {extractOwnerName(
-                                            currentTemplate.RepoUrl,
+                                            currentTemplate.repoUrl,
                                         )}
                                         /
                                         {extractRepoName(
-                                            currentTemplate.RepoUrl,
+                                            currentTemplate.repoUrl,
                                         )}
                                     </span>
                                 </div>
@@ -279,8 +337,8 @@ const CloneTemplate = () => {
                             </svg>
 
                             <span>
-                                {extractOwnerName(currentTemplate.RepoUrl)}/
-                                {extractRepoName(currentTemplate.RepoUrl)}
+                                {extractOwnerName(currentTemplate.repoUrl)}/
+                                {extractRepoName(currentTemplate.repoUrl)}
                             </span>
                         </div>
                         <div className="flex items-center justify-center gap-16 py-8 border border-neutral-800 rounded-md">

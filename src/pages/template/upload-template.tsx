@@ -1,8 +1,7 @@
-import GithubSignIn from "@/components/ui/github-sign-in";
 import { useGlobalState } from "@/store/useGlobalState";
-import { Repository } from "@/types";
+import { Repository, TemplateSubmission } from "@/types";
 import { ArrowLeftIcon, GitBranch, GithubIcon, Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import React, { SetStateAction, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
     extractOwnerName,
@@ -14,14 +13,47 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { submitTemplate } from "@/actions/github/template";
 import { toast } from "sonner";
-
+import {
+    InputOTP,
+    InputOTPGroup,
+    InputOTPSeparator,
+    InputOTPSlot,
+} from "@/components/ui/input-otp";
+import { Button } from "@/components/ui/button";
+import { GitHubSignInTemplate } from "@/components/ui/github-sign-in";
 const UploadTemplate = () => {
-    const [step, setStep] = useState<"import" | "upload">("import");
+    const [step, setStep] = useState<"import" | "upload" | "code">("import");
     const { githubToken } = useGlobalState();
     const [selectRepoUrl, setSelectRepoUrl] = useState("");
+    const [code, setCode] = useState<string>("");
 
     if (!githubToken) {
-        return <GithubSignIn />;
+        return (
+            <div className="flex flex-col mt-8 items-center justify-center min-h-[80vh] px-4">
+                <div className="bg-neutral-950 border w-full max-w-[800px] border-neutral-900 hover:border-neutral-800 rounded-lg p-8 mb-6">
+                    <div className="flex flex-col items-center text-center w-full gap-8">
+                        <div className="w-full h-[300px] bg-neutral-800/50 rounded-lg flex items-center justify-center">
+                            <GithubIcon className="w-16 h-16 text-neutral-700" />
+                        </div>
+
+                        <div className="flex flex-col items-center gap-4">
+                            <h2 className="text-2xl font-bold text-white">
+                                Connect Your GitHub Account
+                            </h2>
+                            <p className="text-neutral-400 max-w-md">
+                                To upload a template, you'll need to connect
+                                your GitHub account first. This allows us to
+                                access your repositories.
+                            </p>
+
+                            <div className="mt-4">
+                                <GitHubSignInTemplate />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
     }
 
     return (
@@ -51,8 +83,15 @@ const UploadTemplate = () => {
                             setSelectRepoUrl={setSelectRepoUrl}
                         />
                     )}
+                    {step === "code" && (
+                        <CodeAuth
+                            setCode={setCode}
+                            setStep={setStep}
+                            code={code}
+                        />
+                    )}
                     {step === "upload" && (
-                        <Upload selectRepoUrl={selectRepoUrl} />
+                        <Upload selectRepoUrl={selectRepoUrl} code={code} />
                     )}
                 </main>
             </div>
@@ -60,11 +99,57 @@ const UploadTemplate = () => {
     );
 };
 
+const CodeAuth = ({
+    setCode,
+    setStep,
+    code,
+}: {
+    setCode: React.Dispatch<SetStateAction<string>>;
+    setStep: (step: "import" | "upload" | "code") => void;
+    code: string;
+}) => {
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (code.length === 6) {
+            setStep("upload");
+        } else {
+            toast.error("Please enter a valid code");
+        }
+    };
+    return (
+        <form
+            onSubmit={handleSubmit}
+            className="h-[200px] flex-col gap-2 w-full flex items-center justify-center"
+        >
+            <InputOTP
+                maxLength={6}
+                onChange={setCode}
+                onSubmit={() => {
+                    setStep("upload");
+                }}
+            >
+                <InputOTPGroup>
+                    <InputOTPSlot index={0} />
+                    <InputOTPSlot index={1} />
+                    <InputOTPSlot index={2} />
+                </InputOTPGroup>
+                <InputOTPSeparator />
+                <InputOTPGroup>
+                    <InputOTPSlot index={3} />
+                    <InputOTPSlot index={4} />
+                    <InputOTPSlot index={5} />
+                </InputOTPGroup>
+            </InputOTP>
+            <Button className="mt-4 text-sm text-black">Submit</Button>
+        </form>
+    );
+};
+
 const RepoSelector = ({
     setStep,
     setSelectRepoUrl,
 }: {
-    setStep: (step: "import" | "upload") => void;
+    setStep: (step: "import" | "upload" | "code") => void;
     setSelectRepoUrl: (url: string) => void;
 }) => {
     const { githubToken } = useGlobalState();
@@ -76,8 +161,12 @@ const RepoSelector = ({
     useEffect(() => {
         if (githubToken) {
             setIsLoading(true);
-            fetchRepositories({ githubToken, setRepositories: setRepos });
-            setIsLoading(false);
+            fetchRepositories({
+                githubToken,
+                setRepositories: setRepos,
+            }).finally(() => {
+                setIsLoading(false);
+            });
         }
     }, [githubToken]);
 
@@ -86,7 +175,7 @@ const RepoSelector = ({
     );
 
     const onSelectRepo = (repo: Repository) => {
-        setStep("upload");
+        setStep("code");
         setSelectRepoUrl(repo.html_url);
     };
 
@@ -195,9 +284,15 @@ const RepositoryItem = ({
     );
 };
 
-const Upload = ({ selectRepoUrl }: { selectRepoUrl: string }) => {
+const Upload = ({
+    selectRepoUrl,
+    code,
+}: {
+    selectRepoUrl: string;
+    code: string;
+}) => {
     const navigate = useNavigate();
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<TemplateSubmission>({
         name: extractRepoName(selectRepoUrl),
         description: "",
         repoUrl: selectRepoUrl,
@@ -205,6 +300,8 @@ const Upload = ({ selectRepoUrl }: { selectRepoUrl: string }) => {
         useCase: "",
         thumbnailUrl: "",
         creatorName: extractOwnerName(selectRepoUrl),
+        demoUrl: "",
+        submissionCode: code,
     });
     const [errors, setErrors] = useState({
         name: "",
@@ -213,6 +310,7 @@ const Upload = ({ selectRepoUrl }: { selectRepoUrl: string }) => {
         useCase: "",
         thumbnailUrl: "",
         creatorName: "",
+        demoUrl: "",
     });
     const [isLoading, setIsLoading] = useState(false);
 
@@ -225,6 +323,7 @@ const Upload = ({ selectRepoUrl }: { selectRepoUrl: string }) => {
             useCase: "",
             thumbnailUrl: "",
             creatorName: "",
+            demoUrl: "",
         };
 
         // Name validation
@@ -472,6 +571,32 @@ const Upload = ({ selectRepoUrl }: { selectRepoUrl: string }) => {
                         {errors.framework && (
                             <p className="mt-1 text-sm text-red-500">
                                 {errors.framework}
+                            </p>
+                        )}
+                    </div>
+
+                    <div>
+                        <label
+                            htmlFor="demoUrl"
+                            className="block text-sm font-medium text-white mb-1"
+                        >
+                            Demo URL
+                        </label>
+                        <input
+                            type="url"
+                            id="demoUrl"
+                            name="demoUrl"
+                            value={formData.demoUrl}
+                            onChange={handleChange}
+                            className={`w-full p-2 bg-neutral-950 border ${
+                                errors.demoUrl
+                                    ? "border-red-500"
+                                    : "border-neutral-800"
+                            } rounded-md text-white focus:outline-none focus:ring-2 focus:ring-neutral-700`}
+                        />
+                        {errors.demoUrl && (
+                            <p className="mt-1 text-sm text-red-500">
+                                {errors.demoUrl}
                             </p>
                         )}
                     </div>

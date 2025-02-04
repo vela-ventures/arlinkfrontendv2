@@ -1,53 +1,120 @@
-import { initiateGitHubAuth } from "@/actions/github";
-import { Button } from "@/components/ui/button";
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+    checkAndInstallGitHubApp,
+    handleGitHubCallback,
+    handleGitHubCallbackTemplate,
+    initiateGitHubAuth,
+    initiateGitHubAuthForTemplate,
+} from "@/actions/github";
+import { Button } from "@/components/ui/button";
+import { useGlobalState } from "@/store/useGlobalState";
 import { Github } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
-export default function GitHubSignIn() {
+export function GitHubSignInTemplate() {
     const [isLoading, setIsLoading] = useState(false);
+
+    const { githubToken, setGithubToken } = useGlobalState();
+    const [searchParams] = useSearchParams();
+
+    useEffect(() => {
+        const handleAuth = async () => {
+            const code = searchParams.get("code");
+            if (code) {
+                try {
+                    const token = await handleGitHubCallbackTemplate(code);
+                    setGithubToken(token);
+                    await checkAndInstallGitHubApp(token);
+                    window.history.replaceState(
+                        {},
+                        "",
+                        window.location.pathname,
+                    );
+                } catch (error) {
+                    console.log("Failed to authenticate with github", error);
+                }
+            }
+        };
+        if (!githubToken) {
+            handleAuth();
+        }
+    }, [searchParams]);
+
+    // handlers
     const handleGithubLogin = async () => {
         setIsLoading(true);
-        await initiateGitHubAuth({ template: true });
+        await initiateGitHubAuthForTemplate();
         setIsLoading(false);
     };
 
+    useEffect(() => {
+        console.log(githubToken);
+    }, [githubToken]);
+
     return (
-        <div className="min-h-screen flex items-center justify-center bg-random p-4">
-            <Card className="w-full max-w-md bg-neutral-900 text-white border-neutral-800">
-                <CardHeader className="space-y-1">
-                    <CardTitle className="text-2xl font-bold text-center">
-                        Connect with GitHub
-                    </CardTitle>
-                    <CardDescription className="text-zinc-400 text-center">
-                        Link your GitHub account to get started
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="flex justify-center">
-                    <Button
-                        variant="outline"
-                        className="w-full bg-neutral-800 text-white border-neutral-700 hover:bg-neutral-700 hover:text-white"
-                        onClick={() => {
-                            handleGithubLogin();
-                        }}
-                    >
-                        <Github className="mr-2 h-4 w-4" />
-                        {isLoading ? "Connecting..." : "Connect GitHub Account"}
-                    </Button>
-                </CardContent>
-                <CardFooter className="text-sm flex justify-center items-center text-neutral-500 ">
-                    <p className="text-center">
-                        By connecting, you will be able to use templates
-                    </p>
-                </CardFooter>
-            </Card>
-        </div>
+        <Button
+            variant="outline"
+            className="w-fit bg-neutral-800 text-white border-neutral-700 hover:bg-neutral-700 hover:text-white"
+            onClick={() => {
+                handleGithubLogin();
+            }}
+        >
+            <Github className="mr-2 h-4 w-4" />
+            {isLoading ? "Connecting..." : "Connect GitHub Account"}
+        </Button>
+    );
+}
+
+export function GitHubSignInDeploy() {
+    const [isLoading, setIsLoading] = useState(false);
+
+    const { githubToken, setGithubToken } = useGlobalState();
+    const [searchParams] = useSearchParams();
+
+    useEffect(() => {
+        const handleAuth = async () => {
+            const code = searchParams.get("code");
+            if (code) {
+                try {
+                    const token = await handleGitHubCallback(code);
+                    setGithubToken(token);
+                    await checkAndInstallGitHubApp(token);
+                    window.history.replaceState(
+                        {},
+                        "",
+                        window.location.pathname,
+                    );
+                } catch (error) {
+                    console.log("Failed to authenticate with github", error);
+                }
+            }
+        };
+        if (!githubToken) {
+            handleAuth();
+        }
+    }, [searchParams]);
+
+    // handlers
+    const handleGithubLogin = async () => {
+        setIsLoading(true);
+        await initiateGitHubAuth();
+        setIsLoading(false);
+    };
+
+    useEffect(() => {
+        console.log(githubToken);
+    }, [githubToken]);
+
+    return (
+        <Button
+            variant="outline"
+            className="w-fit bg-neutral-800 text-white border-neutral-700 hover:bg-neutral-700 hover:text-white"
+            onClick={() => {
+                handleGithubLogin();
+            }}
+        >
+            <Github className="mr-2 h-4 w-4" />
+            {isLoading ? "Connecting..." : "Connect GitHub Account"}
+        </Button>
     );
 }

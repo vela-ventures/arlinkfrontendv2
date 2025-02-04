@@ -3,7 +3,12 @@ import { ChevronDown, Check, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useGlobalState } from "@/store/useGlobalState";
-import { checkAndInstallGitHubApp, handleGitHubCallback, initiateGitHubAuth } from "@/actions/github";
+import {
+    checkAndInstallGitHubApp,
+    handleGitHubCallback,
+    initiateGitHubAuth,
+} from "@/actions/github";
+import useDeploymentManager from "@/hooks/use-deployment-manager";
 
 type Option = {
     id: string;
@@ -24,6 +29,10 @@ export function CustomDropdown({ handleProvider }: CustomDropdownProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [selectedOption, setSelectedOption] = useState<Option | null>(null);
     const [loadingId, setLoadingId] = useState<string | null>(null);
+    const { managerProcess } = useDeploymentManager();
+    useEffect(() => {
+        console.log(managerProcess);
+    }, [managerProcess]);
 
     // handling github auth
     // states for github
@@ -40,7 +49,7 @@ export function CustomDropdown({ handleProvider }: CustomDropdownProps) {
     // user get's redirected to the github authentication page and generates code also loading state get's triggered here
     const handleGithubLogin = async () => {
         setLoadingId("1");
-        await initiateGitHubAuth({ template: false });
+        await initiateGitHubAuth();
     };
 
     // step - 3
@@ -62,7 +71,7 @@ export function CustomDropdown({ handleProvider }: CustomDropdownProps) {
                     window.history.replaceState(
                         {},
                         "",
-                        window.location.pathname
+                        window.location.pathname,
                     );
                     onSuccess("1");
                 } catch (error) {

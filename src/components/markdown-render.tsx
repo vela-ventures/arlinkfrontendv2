@@ -1,6 +1,8 @@
-import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import remarkGemoji from "remark-gemoji";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 const MarkdownRender = ({
     content,
@@ -46,6 +48,7 @@ const MarkdownRender = ({
             <div className="prose prose-invert max-w-none prose-pre:p-0 prose-pre:bg-transparent">
                 <ReactMarkdown
                     className="markdown"
+                    remarkPlugins={[remarkGfm, remarkGemoji]}
                     components={{
                         code({ node, className, children, ...props }) {
                             const match = /language-(\w+)/.exec(
@@ -148,3 +151,5 @@ const MarkdownRender = ({
 };
 
 export default MarkdownRender;
+
+

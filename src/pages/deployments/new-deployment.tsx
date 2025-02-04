@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import type { Steps } from "@/types";
 import RepoProvider from "./repo-provider";
 import ConfigureProtocolLandProject from "../../components/configuring-pl-deployment";
+import useDeploymentManager from "@/hooks/use-deployment-manager";
 
 const NewDeployment = () => {
     const [selectedRepoUrl, setSelectedRepoUrl] = useState<{
@@ -14,6 +15,11 @@ const NewDeployment = () => {
         name: "project name",
         url: "demo-url",
     });
+    const { managerProcess } = useDeploymentManager();
+
+    useEffect(() => {
+        console.log(managerProcess);
+    }, [managerProcess]);
 
     const [step, setStep] = useState<Steps>("importing");
 

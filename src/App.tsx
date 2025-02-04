@@ -24,6 +24,7 @@ import SelectedTemplate from "./pages/template/selected-template";
 import TemplateDeploy from "./pages/template/template-deploy";
 import CloneTemplate from "./pages/template/clone-template";
 import UploadTemplate from "./pages/template/upload-template";
+import Generate from "./pages/6&iFtgG4Lr8Ul54+29";
 
 // Layout component remains the same
 function Layout() {
@@ -83,11 +84,15 @@ const router = createBrowserRouter([
                         element: <TemplateDashboard />,
                     },
                     {
-                        path: "templates/:owner/:repoName",
+                        path: "6&iFtgG4Lr8Ul54+29",
+                        element: <Generate />,
+                    },
+                    {
+                        path: "templates/:framework/:name/:id",
                         element: <SelectedTemplate />,
                     },
                     {
-                        path: "templates/clone/:owner/:repoName",
+                        path: "templates/clone/:framework/:name/:id",
                         element: <CloneTemplate />,
                     },
                     {

@@ -221,14 +221,15 @@ const ConfiguringDeploymentProject = ({
                 installCommand: "pnpm install",
                 outPutDir: config.outputDir
                     ? config.outputDir === ".next"
-                        ? "./dist"
+                        ? "./out"
                         : config.outputDir
                     : "./dist",
                 enabled: false,
             };
         }
-
+        console.log(config.outputDir);
         configState.framework = detectFrameworkImage(config.outputDir);
+        console.log(detectFrameworkImage("public"));
         return configState;
     };
 
@@ -330,7 +331,8 @@ const ConfiguringDeploymentProject = ({
             const branchesNames = response.data.map((branch) => branch.name);
             setBranches(branchesNames);
             setSelectedBranch(
-                branchesNames.find((branch) => branch === "main") || "main",
+                branchesNames.find((branch) => branch === "main") ||
+                    branchesNames[0],
             );
         } catch (error) {
             console.error("Error fetching branches:", error);
