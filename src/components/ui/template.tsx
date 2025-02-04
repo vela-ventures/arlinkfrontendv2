@@ -98,9 +98,7 @@ function TemplateCard({
 }) {
     return (
         <Link
-            to={`/templates/${extractOwnerName(
-                template?.RepoUrl || "",
-            )}/${extractRepoName(template?.RepoUrl || "")}`}
+            to={`/templates/${template?.Framework}/${template?.Name}/${template?.ID}`}
             className={className}
         >
             <Card
