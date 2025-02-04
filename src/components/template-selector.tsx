@@ -106,10 +106,12 @@ export default function TemplateSelector({
         const filtered = templates.filter((template) => {
             const matchesFramework =
                 selectedFrameworks.length === 0 ||
-                selectedFrameworks.includes(template.Framework);
+                selectedFrameworks.includes(
+                    template.Framework.toLowerCase().split(".").join(""),
+                );
             const matchesUseCase =
                 selectedUseCases.length === 0 ||
-                selectedUseCases.includes(template.UseCase);
+                selectedUseCases.includes(template.UseCase.toLowerCase());
             const matchesSearch =
                 template.Name.toLowerCase().includes(
                     searchQuery.toLowerCase(),
@@ -119,6 +121,7 @@ export default function TemplateSelector({
                 );
             return matchesFramework && matchesUseCase && matchesSearch;
         });
+        console.log(templates);
         setFilteredTemplates(filtered);
     }, [selectedFrameworks, selectedUseCases, searchQuery, templates]);
 
