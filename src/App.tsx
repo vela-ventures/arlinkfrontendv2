@@ -26,7 +26,7 @@ import CloneTemplate from "./pages/template/clone-template";
 import UploadTemplate from "./pages/template/upload-template";
 import Generate from "./pages/6&iFtgG4Lr8Ul54+29";
 
-// Layout component remains the sam
+// Layout component remains the same
 function Layout() {
     return (
         <div className="bg-random">
