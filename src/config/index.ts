@@ -6,4 +6,4 @@ export const GITHUB_CLIENT_ID = isTestEnv
 
 export const GITHUB_CLIENT_ID_TEMPLATE = isTestEnv
     ? import.meta.env.VITE_GITHUB_CLIENT_ID_TEMPLATE
-    : "Ov23liAuwrDPC0tAJFAu";
+    : "Ov23liTkkHlseRCnU73e";

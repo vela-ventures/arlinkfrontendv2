@@ -164,7 +164,7 @@ app.get("/", (req, res) => {
     res.send("<pre>permaDeploy Builder Running!</pre>");
 });
 
-/deploy", async (req, res) => {
+app.get("/deploy", async (req, res) => {
     console.log("Request:", req.body);
     const {
         repository,
