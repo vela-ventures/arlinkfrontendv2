@@ -82,14 +82,9 @@ const useCases: Category[] = [
         label: "Eth dev",
     },
     {
-        id: "usecase3",
+        id: "arweave",
         icon: <Briefcase className="w-4 h-4" />,
-        label: "Use case 3",
-    },
-    {
-        id: "usecase4",
-        icon: <FileCode className="w-4 h-4" />,
-        label: "Use case 4",
+        label: "Arweave",
     },
 ];
 
