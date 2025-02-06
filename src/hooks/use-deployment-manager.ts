@@ -191,7 +191,7 @@ export default function useDeploymentManager() {
 
 export async function getManagerProcessFromAddress(address: string) {
     const client = new GraphQLClient(
-        "https://arweave-search.goldsky.com/graphql",
+        "https://arweave.net/graphql",
     );
 
     const query = gql`

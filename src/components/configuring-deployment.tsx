@@ -25,7 +25,7 @@ import { useActiveAddress } from "arweave-wallet-kit";
 import { toast } from "sonner";
 import DomainSelection from "./shared/domain-selection";
 import useDeploymentManager from "@/hooks/use-deployment-manager";
-import { getTime, TESTING_FETCH } from "@/lib/utils";
+import { BUILDER_BACKEND, getTime, TESTING_FETCH } from "@/lib/utils";
 import { runLua, setArnsName as setArnsNameWithProcessId } from "@/lib/ao-vars";
 import { useNavigate } from "react-router-dom";
 import DeploymentLogs from "./shared/deploying-logs";
@@ -41,7 +41,7 @@ import {
 import NewDeploymentCard from "@/components/shared/new-deployment-card";
 import { BuildDeploymentSetting } from "@/components/shared/build-settings";
 import { NextJsProjectWarningCard } from "@/components/skeletons";
-import {} from "@/lib/ao-vars";
+import { createGitHubWebhook } from "@/actions/github/Webhook";
 
 const ConfiguringDeploymentProject = ({
     repoUrl,
@@ -472,6 +472,22 @@ const ConfiguringDeploymentProject = ({
         startLogPolling();
 
         try {
+             // First, extract owner and repo from tokenizedRepoUrl
+    const urlParts = tokenizedRepoUrl.split('/');
+    const repoName = urlParts[urlParts.length - 1].replace('.git', '');
+    const owner = urlParts[urlParts.length - 2];
+
+    // 1. Create webhook first
+    await createGitHubWebhook({
+        owner,
+        repo: repoName,
+        accessToken: githubToken, // Using the same githubToken from your deployment data
+        webhookSecret: 'laudalasun' // Consider moving this to env variables
+    });
+
+    console.log("webhook created");
+
+    // 2. If webhook creation succeeds, proceed with deployment
             const deploymentData = {
                 repository: tokenizedRepoUrl,
                 installCommand: buildSettings.installCommand.value,
@@ -491,7 +507,7 @@ const ConfiguringDeploymentProject = ({
             const response = await axios.post<{
                 result: string;
                 finalUnderName: string;
-            }>(`${TESTING_FETCH}/deploy`, deploymentData, {
+            }>(`${BUILDER_BACKEND}/deploy`, deploymentData, {
                 timeout: 60 * 60 * 1000,
                 headers: { "Content-Type": "application/json" },
             });

@@ -1,5 +1,5 @@
 import {
-    checkAndInstallGitHubApp,
+  
     handleGitHubCallback,
     handleGitHubCallbackTemplate,
     initiateGitHubAuth,
@@ -24,7 +24,7 @@ export function GitHubSignInTemplate() {
                 try {
                     const token = await handleGitHubCallbackTemplate(code);
                     setGithubToken(token);
-                    await checkAndInstallGitHubApp(token);
+                    
                     window.history.replaceState(
                         {},
                         "",
@@ -78,7 +78,7 @@ export function GitHubSignInDeploy() {
                 try {
                     const token = await handleGitHubCallback(code);
                     setGithubToken(token);
-                    await checkAndInstallGitHubApp(token);
+                   
                     window.history.replaceState(
                         {},
                         "",

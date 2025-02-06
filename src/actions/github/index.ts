@@ -13,7 +13,7 @@ export async function initiateGitHubAuth() {
             : "https://arlink.arweave.net";
 
     const redirectUri = `${BASE_URL}/deploy`;
-    const authUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${redirectUri}&scope=repo,read:org,read:user`;
+    const authUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${redirectUri}&scope=repo,read:org,read:user,admin:repo_hook`;
     window.location.href = authUrl;
 }
 
@@ -25,6 +25,7 @@ export async function initiateGitHubAuthForTemplate() {
 
     const redirectUri = `${BASE_URL}/templates/upload`;
     const authUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID_TEMPLATE}&redirect_uri=${redirectUri}&scope=repo`;
+
     window.location.href = authUrl;
 }
 
@@ -70,24 +71,4 @@ export async function handleGitHubCallbackTemplate(
     return data.access_token;
 }
 
-export async function checkAndInstallGitHubApp(token: string) {
-    if (import.meta.env.VITE_ENV === "test") {
-        return;
-    }
 
-    try {
-        const response = await fetch(`${BUILDER_BACKEND}/check-github-app`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
-        const data = await response.json();
-        if (!data.installed) {
-            // If the app is not installed, open the installation page
-            window.location.href =
-                "https://github.com/apps/arlinkapp/installations/new";
-        }
-    } catch (error) {
-        console.error("Error checking GitHub app installation:", error);
-    }
-}

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useGlobalState } from "@/store/useGlobalState";
 import {
-    checkAndInstallGitHubApp,
+   
     handleGitHubCallback,
     initiateGitHubAuth,
 } from "@/actions/github";
@@ -67,7 +67,7 @@ export function CustomDropdown({ handleProvider }: CustomDropdownProps) {
                 try {
                     const token = await handleGitHubCallback(code);
                     setGithubToken(token);
-                    await checkAndInstallGitHubApp(token);
+                 
                     window.history.replaceState(
                         {},
                         "",
