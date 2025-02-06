@@ -6,7 +6,7 @@ A React + Vite template powered by shadcn/ui.
 
 ## 🎉 Features
 
-- **React** - A JavaScript library for building user interfaces.
+- **React** - A JavaScript library for building user interface.
 - **Vite** - A fast, opinionated frontend build tool.
 - **TypeScript** - A typed superset of JavaScript that compiles to plain JavaScript.
 - **Tailwind CSS** - A utility-first CSS framework.
