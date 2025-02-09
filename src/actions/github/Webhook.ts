@@ -48,3 +48,57 @@ export async function createGitHubWebhook({
         throw error;
     }
 }
+
+export async function deleteGitHubWebhook({
+    owner,
+    repo,
+    accessToken
+}: Omit<CreateWebhookParams, 'webhookSecret'>) {
+    try {
+        // This only lists webhooks for the specified owner/repo combination
+        const listResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}/hooks`, {
+            headers: {
+                'Accept': 'application/vnd.github+json',
+                'Authorization': `Bearer ${accessToken}`,
+                'X-GitHub-Api-Version': '2022-11-28'
+            }
+        });
+
+        if (!listResponse.ok) {
+            const errorData = await listResponse.json();
+            throw new Error(`Failed to list webhooks: ${JSON.stringify(errorData)}`);
+        }
+
+        const hooks = await listResponse.json();
+        const webhookUrl = `${BUILDER_BACKEND}/github-webhook`;
+        const webhook = hooks.find((hook: any) => hook.config.url === webhookUrl);
+
+        if (!webhook) {
+            throw new Error(`No webhook found for ${owner}/${repo}`);
+        }
+
+        // Delete the specific webhook for this repo
+        const deleteResponse = await fetch(
+            `https://api.github.com/repos/${owner}/${repo}/hooks/${webhook.id}`,
+            {
+                method: 'DELETE',
+                headers: {
+                    'Accept': 'application/vnd.github+json',
+                    'Authorization': `Bearer ${accessToken}`,
+                    'X-GitHub-Api-Version': '2022-11-28'
+                }
+            }
+        );
+
+        if (!deleteResponse.ok) {
+            const errorData = await deleteResponse.text();
+            throw new Error(`Failed to delete webhook: ${errorData}`);
+        }
+
+        console.log(`Webhook deleted successfully for ${owner}/${repo}`);
+        return true;
+    } catch (error) {
+        console.error('Error deleting webhook:', error);
+        throw error;
+    }
+}
