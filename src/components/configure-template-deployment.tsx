@@ -80,6 +80,7 @@ const ConfigureTemplateDeployment = ({ repoUrl }: { repoUrl: string }) => {
             extractOwnerName(repoUrl),
             extractRepoName(repoUrl),
             configPath,
+            
         );
         const { buildSettings, configFailed, framework } =
             handleConfigurationAndBuild({

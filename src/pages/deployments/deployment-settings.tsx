@@ -142,6 +142,7 @@ export default function DeploymentSetting() {
         try {
             const ownerName = extractOwnerName(deployment.RepoUrl);
             const repoProjectName = extractRepoName(deployment.RepoUrl);
+           
             const deleted = await deleteFromServer({
                 ownerName,
                 repoProjectName,
