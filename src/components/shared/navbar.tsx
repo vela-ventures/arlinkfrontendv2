@@ -33,10 +33,9 @@ export default function Navbar() {
             name: "Deploy",
             url: "/deploy",
         },
-
         {
-            name: "Integration",
-            url: "/integration",
+            name: "Templates",
+            url: "/templates",
         },
         {
             name: "Discord",
