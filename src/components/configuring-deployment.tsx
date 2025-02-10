@@ -25,7 +25,7 @@ import { useActiveAddress } from "arweave-wallet-kit";
 import { toast } from "sonner";
 import DomainSelection from "./shared/domain-selection";
 import useDeploymentManager from "@/hooks/use-deployment-manager";
-import { BUILDER_BACKEND, getTime, TESTING_FETCH } from "@/lib/utils";
+import {  getTime, TESTING_FETCH } from "@/lib/utils";
 import { runLua, setArnsName as setArnsNameWithProcessId } from "@/lib/ao-vars";
 import { useNavigate } from "react-router-dom";
 import DeploymentLogs from "./shared/deploying-logs";
@@ -41,7 +41,10 @@ import {
 import NewDeploymentCard from "@/components/shared/new-deployment-card";
 import { BuildDeploymentSetting } from "@/components/shared/build-settings";
 import { NextJsProjectWarningCard } from "@/components/skeletons";
-import { createGitHubWebhook } from "@/actions/github/Webhook";
+import {
+    createGitHubWebhook,
+    deleteGitHubWebhook,
+} from "@/actions/github/Webhook";
 
 const ConfiguringDeploymentProject = ({
     repoUrl,
@@ -491,13 +494,44 @@ const ConfiguringDeploymentProject = ({
             const owner = urlParts[urlParts.length - 2];
 
             // 1. Create webhook first
-            await createGitHubWebhook({
-                owner,
-                repo: repoName,
-                accessToken: githubToken, // Using the same githubToken from your deployment data
-                webhookSecret: "laudalasun", // Consider moving this to env variables
-            });
+            try {
+                console.log("🟠 creating webhook......");
 
+                // if this throws error it goes in next catch block
+                await createGitHubWebhook({
+                    owner,
+                    repo: repoName,
+                    accessToken: githubToken,
+                    webhookSecret: "laudalasun",
+                });
+                console.log("🟢 created webhook......");
+            } catch (error) {
+                console.log("🔴_Failed to create the webhook");
+                console.log(error);
+
+                // if the webhook is there we delete it
+                try {
+                    console.log("🟠 deleting the webhook......");
+                    await deleteGitHubWebhook({
+                        owner,
+                        repo: repoName,
+                        accessToken: githubToken,
+                    });
+                    console.log("🟢 deleted the webhook......");
+
+                    console.log("🟠 creating webhook again......");
+                    await createGitHubWebhook({
+                        owner,
+                        repo: repoName,
+                        accessToken: githubToken,
+                        webhookSecret: "laudalasun",
+                    });
+                    console.log("🟢 created webhook......");
+                } catch (error) {
+                    console.log("🔴_Failed to delete the webhook");
+                    console.log(error);
+                }
+            }
             console.log("webhook created");
 
             // 2. If webhook creation succeeds, proceed with deployment
@@ -520,7 +554,7 @@ const ConfiguringDeploymentProject = ({
             const response = await axios.post<{
                 result: string;
                 finalUnderName: string;
-            }>(`${BUILDER_BACKEND}/deploy`, deploymentData, {
+            }>(`${TESTING_FETCH}/deploy`, deploymentData, {
                 timeout: 60 * 60 * 1000,
                 headers: { "Content-Type": "application/json" },
             });
