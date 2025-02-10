@@ -91,6 +91,9 @@ const ConfiguringDeploymentProject = ({
             extractRepoName(repoUrl),
             configPath,
         );
+        console.log({
+            config,
+        });
         const { buildSettings, configFailed, framework } =
             handleConfigurationAndBuild({
                 error: config.error,
@@ -164,7 +167,8 @@ const ConfiguringDeploymentProject = ({
         buildCommand: string;
     }
 
-    const handleConfigurationAndBuild = (config: Config) => {
+    const handleConfigurationAndBuild = (config: Config, deno?: boolean) => {
+        console.log({ bc: config.buildCommand, deno });
         let configState = {
             configFailed: {
                 error: false,
@@ -220,7 +224,7 @@ const ConfiguringDeploymentProject = ({
             };
         } else {
             configState.buildSettings = {
-                buildCommand: "npm run build",
+                buildCommand: deno ? config.buildCommand : "npm run build",
                 installCommand: "pnpm install",
                 outPutDir: config.outputDir
                     ? config.outputDir === ".next"
@@ -231,8 +235,13 @@ const ConfiguringDeploymentProject = ({
             };
         }
         console.log(config.outputDir);
-        configState.framework = detectFrameworkImage(config.outputDir);
-        console.log(detectFrameworkImage("public"));
+        configState.framework = deno
+            ? {
+                  name: "deno",
+                  svg: "deno.svg",
+                  dir: config.outputDir,
+              }
+            : detectFrameworkImage(config.outputDir);
         return configState;
     };
 
@@ -261,16 +270,20 @@ const ConfiguringDeploymentProject = ({
             // Fetch repository configuration
             setProjectName(defaultProjectName);
             const config = await getRepoConfig(owner, repo);
+            console.log(config);
             setCustomArnsName(defaultProjectName);
 
             const { buildSettings, configFailed, framework } =
-                handleConfigurationAndBuild({
-                    error: config.error,
-                    errorType: config.errorType,
-                    installCommand: config.installCommand,
-                    buildCommand: config.buildCommand,
-                    outputDir: config.outputDir,
-                });
+                handleConfigurationAndBuild(
+                    {
+                        error: config.error,
+                        errorType: config.errorType,
+                        installCommand: config.installCommand,
+                        buildCommand: config.buildCommand,
+                        outputDir: config.outputDir,
+                    },
+                    config.framework === "deno",
+                );
             handleBuildSettings({
                 ...buildSettings,
             });
