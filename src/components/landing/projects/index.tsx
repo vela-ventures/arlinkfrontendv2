@@ -28,7 +28,7 @@ const Projects = () => {
             headline: "ao-learn",
             image: "ao-learn.png",
             description:
-                "AO Learn is a decentralized AI framework for building and training agents. It supports applications like DeFi and smart recommendations.",
+                "AO Learn is an on-chain machine learning framework built on AO. It enables developers to create, train, and deploy AI models directly on the AO network.",
             link: "https://aolearn_arlink.ar.io/",
         },
         {

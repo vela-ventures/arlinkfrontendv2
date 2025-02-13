@@ -188,7 +188,7 @@ function BentoGrid() {
                                 Permanent Hosting
                             </h3>
                             <p className="text-neutral-600 transition-all group-hover:text-neutral-400  md:text-md text-sm">
-                                Your apps and data are stored on Arweaves
+                                Your apps are stored on Arweaves
                                 decentralized permaweb, always
                                 <br className="md:inline-block hidden" />
                                 online, secure, and resistant to censorship and
