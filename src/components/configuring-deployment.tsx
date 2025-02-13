@@ -41,7 +41,7 @@ import {
 import NewDeploymentCard from "@/components/shared/new-deployment-card";
 import { BuildDeploymentSetting } from "@/components/shared/build-settings";
 import { NextJsProjectWarningCard } from "@/components/skeletons";
-import { createGitHubWebhook } from "@/actions/github/Webhook";
+import { createGitHubWebhook , deleteGitHubWebhook } from "@/actions/github/Webhook";
 
 const ConfiguringDeploymentProject = ({
     repoUrl,
@@ -558,7 +558,7 @@ const ConfiguringDeploymentProject = ({
             const response = await axios.post<{
                 result: string;
                 finalUnderName: string;
-            }>(`${BUILDER_BACKEND}/deploy`, deploymentData, {
+            }>(`${TESTING_FETCH}/deploy`, deploymentData, {
                 timeout: 60 * 60 * 1000,
                 headers: { "Content-Type": "application/json" },
             });
