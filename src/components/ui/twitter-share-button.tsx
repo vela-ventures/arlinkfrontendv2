@@ -1,14 +1,15 @@
 import { XLogo } from "@phosphor-icons/react";
+import { url } from "node:inspector/promises";
 
 const TwitterShareButton = ({ undername, className }: { undername: string, className: string}) => {
     const params = new URLSearchParams({
-        text: "Take a look! Deployed on Arlink 🚀",
-        url: `https://${undername}_arlink.arweave.net`,
-        hashtags: "Web3,arweave",
-        via: "arlinklabs",
-        related: "Web3,Decentralization,Innovation",
-    });
+        text: `
+🚀 Deployed my project on @arlinklabs with 1 click!
+Now it’s permanently hosted on #Arweave, fully decentralized, and accessible via 250+ @ar_io_network gateways.
 
+Check it out: https://${undername}_arlink.ar.io`,
+      
+    });
     const twitterIntentUrl = `https://twitter.com/intent/tweet?${params.toString()}`;
 
     return (
