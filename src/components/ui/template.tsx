@@ -1,7 +1,5 @@
 import { getAllTemplates } from "@/actions/github/template";
 import { Card } from "@/components/ui/card";
-import { extractRepoName } from "@/pages/utilts";
-import { extractOwnerName } from "@/pages/utilts";
 import { useTemplateStore } from "@/store/use-template-store";
 import { TemplateDashboard } from "@/types";
 import { ChevronRightIcon, GithubIcon } from "lucide-react";

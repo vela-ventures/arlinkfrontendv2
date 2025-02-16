@@ -2,6 +2,7 @@ import useDeploymentManager from "@/hooks/use-deployment-manager";
 import { Zap, Globe, ChevronRight, ExternalLink } from "lucide-react";
 import ReactConfetti from "react-confetti";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import TwitterShareButton from "@/components/ui/twitter-share-button";
 
 export default function DeploymentCard({}) {
     const navigate = useNavigate();
@@ -114,15 +115,21 @@ export default function DeploymentCard({}) {
                         <ChevronRight className="h-5 w-5 text-neutral-600 group-hover:text-white transition-all" />
                     </Link>
                 </div>
+                <div className="space-y-2 flex items-center flex-col">
+                    <button
+                        onClick={() =>
+                            navigate("/deployment?repo=" + deployment.Name)
+                        }
+                        className="w-full text-semibold bg-neutral-100 text-neutral-900 py-2 rounded-lg text-sm font-medium hover:bg-neutral-200 transition-colors"
+                    >
+                        Continue to project dashboard
+                    </button>
 
-                <button
-                    onClick={() =>
-                        navigate("/deployment?repo=" + deployment.Name)
-                    }
-                    className="w-full text-semibold bg-neutral-100 text-neutral-900 py-2 rounded-lg text-sm font-medium hover:bg-neutral-200 transition-colors"
-                >
-                    Continue to project dashboard
-                </button>
+                    <TwitterShareButton
+                        className="bg-neutral-900/30 hover:bg-neutral-800 transition-all px-2 py-1 items-center justify-center flex w-full rounded-md border border-neutral-800"
+                        undername={deployment.UnderName}
+                    />
+                </div>
             </div>
         </div>
     );

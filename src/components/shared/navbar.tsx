@@ -80,6 +80,10 @@ export default function Navbar() {
             url: `/deployment/history?repo=${extractRepoName(repo || "")}`,
         },
         {
+            name: "Card",
+            url: `/deployment/card?repo=${extractRepoName(repo || "")}`,
+        },
+        {
             name: "Analytics",
             url: `/deployment/Analytics?repo=${extractRepoName(repo || "")}`,
         },

@@ -20,6 +20,7 @@ import DeploymentCard from "@/components/shared/deployment-card";
 import { extractGithubPath } from "../utilts";
 import { useDeploymentStore } from "@/store/use-deployment-store";
 import { Loader2 } from "lucide-react";
+import TwitterShareButton from "@/components/ui/twitter-share-button";
 
 interface DeploymentComponentProps {
     deployment: TDeployment;
@@ -414,11 +415,14 @@ export default function DeploymentOverview({
                             This production deployment is available to the user
                         </p>
                     </div>
-                    <div className="space-x-2 flex items-center">
+                    <div className="space-x-2 flex items">
                         <Button className="px-4 md:px-8 py-1 text-sm md:text-base bg-arlink-bg-secondary-color hover:bg-neutral-900 border-neutral-800 text-white border">
                             logs
                         </Button>
-
+                        <TwitterShareButton
+                            className="px-4 md:px-8 py-1 flex items-center rounded-md text-sm md:text-base bg-arlink-bg-secondary-color hover:bg-neutral-900 border-neutral-800 text-white border"
+                            undername={deployment.UnderName}
+                        />
                         <Button
                             className={`${
                                 updatingArns ? "px-2 md:px-4" : "px-4 md:px-8"

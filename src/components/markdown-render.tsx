@@ -2,6 +2,7 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import remarkGemoji from "remark-gemoji";
 import ReactMarkdown from "react-markdown";
+import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
 
 const MarkdownRender = ({
@@ -49,6 +50,7 @@ const MarkdownRender = ({
                 <ReactMarkdown
                     className="markdown"
                     remarkPlugins={[remarkGfm, remarkGemoji]}
+                    rehypePlugins={[rehypeRaw]}
                     components={{
                         code({ node, className, children, ...props }) {
                             const match = /language-(\w+)/.exec(
@@ -74,6 +76,7 @@ const MarkdownRender = ({
                                 </code>
                             );
                         },
+
                         a: ({ node, ...props }) => (
                             <a
                                 className="text-blue-400 hover:text-blue-300 underline underline-offset-4"
@@ -151,5 +154,3 @@ const MarkdownRender = ({
 };
 
 export default MarkdownRender;
-
-
