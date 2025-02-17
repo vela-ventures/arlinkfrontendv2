@@ -5,6 +5,7 @@ const TwitterShareButton = ({ undername, className }: { undername: string, class
     const params = new URLSearchParams({
         text: `
 🚀 Deployed my project on @arlinklabs with 1 click!
+
 Now it’s permanently hosted on #Arweave, fully decentralized, and accessible via 250+ @ar_io_network gateways.
 
 Check it out: https://${undername}_arlink.ar.io`,
