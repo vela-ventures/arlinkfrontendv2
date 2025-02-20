@@ -42,6 +42,7 @@ import NewDeploymentCard from "@/components/shared/new-deployment-card";
 import { BuildDeploymentSetting } from "@/components/shared/build-settings";
 import { NextJsProjectWarningCard } from "@/components/skeletons";
 import { createGitHubWebhook , deleteGitHubWebhook } from "@/actions/github/Webhook";
+import { canDeploy } from "@/lib/limitdeploy";
 
 const ConfiguringDeploymentProject = ({
     repoUrl,
@@ -381,6 +382,24 @@ const ConfiguringDeploymentProject = ({
     // build and output settings handler commands
     const deployProject = async () => {
         if (!githubToken) return;
+
+        // Check deployment limit first
+        const deploymentStatus = canDeploy(deployments);
+        if (deploymentStatus === false) {
+            setDeploymentStarted(true);
+            setDeploymentFailed(true);
+            setLogError("You have reached the maximum limit of 3 deployments.");
+            return;
+        }
+        
+        // If deployments haven't been fetched yet
+        if (deploymentStatus === null) {
+            setDeploymentStarted(true);
+            setDeploymentFailed(true);
+            setLogError("Please wait while we fetch your deployment information...");
+            return;
+        }
+
         // Validation checks
         const validationErrors = [
             { condition: !projectName, message: "Project name is required" },
