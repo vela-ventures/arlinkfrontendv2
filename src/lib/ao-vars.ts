@@ -179,7 +179,7 @@ export async function setArnsName(
         { name: "Action", value: "Set-Record" },
         { name: "Sub-Domain", value: undername },
         { name: "Transaction-Id", value: manifestId },
-        { name: "TTL-Seconds", value: "3600" },
+        { name: "TTL-Seconds", value: "900" },
     ];
     try {
         const result = await ao.message({

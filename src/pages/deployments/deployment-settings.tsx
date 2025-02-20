@@ -257,7 +257,7 @@ export default function DeploymentSetting() {
                     { name: "Action", value: "Set-Record" },
                     { name: "Sub-Domain", value: "@" },
                     { name: "Transaction-Id", value: txid.data },
-                    { name: "TTL-Seconds", value: "3600" },
+                    { name: "TTL-Seconds", value: "900" },
                 ]);
 
                 await runLua(
