@@ -14,7 +14,7 @@ A React + Vite template powered by shadcn/ui.
 - **ESLint** - A pluggable linting utility for JavaScript and TypeScript.
 - **PostCSS** - A tool for transforming CSS with JavaScr
 - **Autoprefixer** - A PostCSS plugin to parse CSS and add vendor prefixes.
-- **shadcn/ui** - Beautifully designed components that you can copy and paste into your apps.
+- **shadcn/ui** - Beautifully designed components that you can copy and paste into your apps
 
 ## ⚙️ Prerequisites
 
