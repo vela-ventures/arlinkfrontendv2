@@ -102,21 +102,7 @@ const ConfigureProtocolLandProject = ({
 
     const handleDeployProject = async () => {
             // Check deployment limit first
-            const deploymentStatus = canDeploy(deployments);
-            if (deploymentStatus === false) {
-                setDeploymentStarted(true);
-                setDeploymentFailed(true);
-                setLogError("You have reached the maximum limit of 3 deployments.");
-                return;
-            }
             
-            // If deployments haven't been fetched yet
-            if (deploymentStatus === null) {
-                setDeploymentStarted(true);
-                setDeploymentFailed(true);
-                setLogError("Please wait while we fetch your deployment information...");
-                return;
-            }
 
         // Validation checks
         const validationErrors = [
