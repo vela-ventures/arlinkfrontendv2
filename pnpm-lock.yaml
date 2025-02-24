@@ -12,8 +12,8 @@ importers:
         specifier: ^4.0.6
         version: 4.0.6(@babel/core@7.26.0)(@types/react@18.3.17)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@ar.io/sdk':
-        specifier: ^3.8.0
-        version: 3.8.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+        specifier: ^3.8.1
+        version: 3.8.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       '@arweave-wallet-kit/browser-wallet-strategy':
         specifier: ^0.1.1
         version: 0.1.1(@arweave-wallet-kit/core@0.1.1)
@@ -288,8 +288,8 @@ packages:
     resolution: {integrity: sha512-kJsoy4fAPTOhzVr7Vwq8s/AUg6BQiJDa7WOqRzev4zsuIS3+JCuIZ6vUd7UBsjnxtmguJJulMRs9qWCzVBt2XA==}
     engines: {node: '>=15.10.0'}
 
-  '@ar.io/sdk@3.8.0':
-    resolution: {integrity: sha512-ELtTZ/xrq7v7rWqNzQdMx7yQGpqSOMTwaAaujcDlcyo8weJIj/cAAO9s0WBIDbtq84vvq/CGobGmGmBc1esmCQ==, tarball: https://registry.npmjs.org/@ar.io/sdk/-/sdk-3.8.0.tgz}
+  '@ar.io/sdk@3.8.1':
+    resolution: {integrity: sha512-Y1/ks7m/XbYt0n/hVSi59veOPJ4lu/zN6pxxJNLnyaem0wt/4r44lMKo8rVg6eFB1n1V0tr5d2Eor/MuYgT6zg==, tarball: https://registry.npmjs.org/@ar.io/sdk/-/sdk-3.8.1.tgz}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -2876,7 +2876,7 @@ packages:
     engines: {node: '>= 10'}
 
   algosdk@1.24.1:
-    resolution: {integrity: sha512-9moZxdqeJ6GdE4N6fA/GlUP4LrbLZMYcYkt141J4Ss68OfEgH9qW0wBuZ3ZOKEx/xjc5bg7mLP2Gjg7nwrkmww==}
+    resolution: {integrity: sha512-9moZxdqeJ6GdE4N6fA/GlUP4LrbLZMYcYkt141J4Ss68OfEgH9qW0wBuZ3ZOKEx/xjc5bg7mLP2Gjg7nwrkmww==, tarball: https://registry.npmjs.org/algosdk/-/algosdk-1.24.1.tgz}
     engines: {node: '>=14.0.0'}
 
   anser@2.3.0:
@@ -6416,7 +6416,7 @@ packages:
     engines: {node: '>= 10'}
 
   zod@3.24.1:
-    resolution: {integrity: sha512-muH7gBL9sI1nciMZV67X5fTKKBLtwpZ5VBp1vsOQzj1MhrBZ4wlVCm3gedKZWLp0Oyel8sIGfeiz54Su+OVT+A==}
+    resolution: {integrity: sha512-muH7gBL9sI1nciMZV67X5fTKKBLtwpZ5VBp1vsOQzj1MhrBZ4wlVCm3gedKZWLp0Oyel8sIGfeiz54Su+OVT+A==, tarball: https://registry.npmjs.org/zod/-/zod-3.24.1.tgz}
 
   zustand@5.0.2:
     resolution: {integrity: sha512-8qNdnJVJlHlrKXi50LDqqUNmUbuBjoKLrYQBnoChIbVph7vni+sY+YpvdjXG9YLd/Bxr6scMcR+rm5H3aSqPaw==}
@@ -6475,7 +6475,7 @@ snapshots:
     transitivePeerDependencies:
       - debug
 
-  '@ar.io/sdk@3.8.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)':
+  '@ar.io/sdk@3.8.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)':
     dependencies:
       '@dha-team/arbundles': 1.0.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       '@permaweb/aoconnect': 0.0.57
