@@ -8,7 +8,7 @@ A React + Vite template powered by shadcn/ui.
 
 - **React** - A JavaScript library for building user interface.
 - **Vite** - A fast, opinionated frontend build tool.
-- **TypeScript** - A typed superset of JavaScript that compiles to plain JavaScript.
+- **TypeScript** - A typed superset of JavaScript that compiles to plain JavaScript
 - **Tailwind CSS** - A utility-first CSS framework.
 - **Tailwind Prettier Plugin** - A Prettier plugin for formatting Tailwind CSS cl
 - **ESLint** - A pluggable linting utility for JavaScript and TypeScript.
