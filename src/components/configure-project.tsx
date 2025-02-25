@@ -42,26 +42,38 @@ const ConfigureProject = ({ deployment }: DeploymentComponentProps) => {
         buildCommand: deployment?.BuildCMD || "",
         outputDir: deployment?.OutputDIR || "",
     });
+    const [savingChanges, setSavingChanges] = useState<boolean>(false);
     const [branches, setBranches] = useState<string[]>([]);
-    const [selectedBranch, setSelectedBranch] = useState<string | undefined>(
-        undefined,
-    );
+    const [selectedBranch, setSelectedBranch] = useState<string>("main");
     const [loadingBranches, setLoadingBranches] = useState<boolean>(false);
 
     // handlers
     const handleSaveConfig = async () => {
         if (!globalState.managerProcess || !deployment) return;
-
+        const { installCommand, buildCommand, outputDir } = editedConfig;
+        if (
+            !installCommand ||
+            !buildCommand ||
+            !outputDir ||
+            selectedBranch.trim().length === 0 ||
+            !deployment.Name
+        ) {
+            console.error("One or more required values are null or undefined.");
+            toast.error("Fields are missing");
+            return;
+        }
+        setSavingChanges(true);
         try {
             const query = `
-        db:exec[[
-          UPDATE Deployments 
-          SET InstallCMD = '${editedConfig.installCommand}',
-              BuildCMD = '${editedConfig.buildCommand}',
-              OutputDIR = '${editedConfig.outputDir}'
-          WHERE Name = '${deployment.Name}'
-        ]]
-      `;
+              db:exec[[
+              UPDATE Deployments 
+                SET InstallCMD = '${installCommand}',
+                BuildCMD = '${buildCommand}',
+                OutputDIR = '${outputDir}',
+                Branch = '${selectedBranch}'
+              WHERE Name = '${deployment.Name}'
+            ]]
+            `;
 
             const res = await runLua(query, globalState.managerProcess);
             if (res.Error) {
@@ -75,6 +87,8 @@ const ConfigureProject = ({ deployment }: DeploymentComponentProps) => {
         } catch (error) {
             console.error("Error updating configuration:", error);
             toast.error("Failed to update configuration");
+        } finally {
+            setSavingChanges(false);
         }
     };
 
@@ -144,12 +158,22 @@ const ConfigureProject = ({ deployment }: DeploymentComponentProps) => {
                     ) : (
                         <div className="flex items-center my-8 gap-2">
                             <Button
+                                disabled={savingChanges}
                                 variant="default"
                                 onClick={handleSaveConfig}
                                 className="w-full sm:w-auto bg-neutral-900 hover:bg-neutral-800 text-white transition-colors"
                             >
-                                <Save className="w-4 h-4 mr-2" />
-                                Save Changes
+                                {savingChanges ? (
+                                    <>
+                                        <Loader2 className="w-4 animate-spin h-4 mr-2" />
+                                        Saving
+                                    </>
+                                ) : (
+                                    <>
+                                        <Save className="w-4 h-4 mr-2" />
+                                        Save Changes
+                                    </>
+                                )}
                             </Button>
                             <Button
                                 variant="default"
@@ -170,51 +194,73 @@ const ConfigureProject = ({ deployment }: DeploymentComponentProps) => {
                         value={deployment.RepoUrl}
                         readOnly
                     />
-                    <div className="space-y-2">
-                        <label
-                            htmlFor={"branch"}
-                            className="flex items-center text-sm font-medium text-neutral-400"
-                        >
-                            <GitBranch className="w-5 h-5 text-neutral-600" />
-                            <span className="ml-2">{"branch"}</span>
-                        </label>
-                        {loadingBranches ? (
-                            <Skeleton className="w-full text-sm border border-neutral-600 flex items-center justify-between gap-3 px-3 h-10 text-center focus:ring-0 focus:ring-offset-0 outline-none  bg-neutral-900 text-white">
-                                <div className="flex items-center gap-3">
-                                    Fetching branches
-                                    <Loader2
-                                        size={15}
-                                        className="animate-spin"
-                                    />
-                                </div>
-                                <ChevronDown size={15} />
-                            </Skeleton>
-                        ) : (
-                            <Select
-                                value={selectedBranch}
-                                onValueChange={(value) =>
-                                    setSelectedBranch(value)
-                                }
-                                disabled={!isEditing}
+                    {globalState.githubToken ? (
+                        <div className="space-y-2">
+                            <label
+                                htmlFor={"branch"}
+                                className="flex items-center text-sm font-medium text-neutral-400"
                             >
-                                <SelectTrigger className="bg-neutral-800/50 border-0 text-white placeholder-neutral-500 focus-visible:ring-1 focus-visible:ring-neutral-600 focus:outline-none">
-                                    <SelectValue placeholder="main" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectGroup>
-                                        {branches.map((branch) => (
-                                            <SelectItem
-                                                key={branch}
-                                                value={branch}
-                                            >
-                                                {branch}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
-                        )}
-                    </div>
+                                <GitBranch className="w-5 h-5 text-neutral-600" />
+                                <span className="ml-2">{"branch"}</span>
+                            </label>
+                            {loadingBranches ? (
+                                <Skeleton className="w-full text-sm border border-neutral-600 flex items-center justify-between gap-3 px-3 h-10 text-center focus:ring-0 focus:ring-offset-0 outline-none  bg-neutral-900 text-white">
+                                    <div className="flex items-center gap-3">
+                                        Fetching branches
+                                        <Loader2
+                                            size={15}
+                                            className="animate-spin"
+                                        />
+                                    </div>
+                                    <ChevronDown size={15} />
+                                </Skeleton>
+                            ) : (
+                                <Select
+                                    value={selectedBranch}
+                                    onValueChange={(value) =>
+                                        setSelectedBranch(value)
+                                    }
+                                    disabled={!isEditing}
+                                >
+                                    <SelectTrigger className="bg-neutral-800/50 border-0 text-white placeholder-neutral-500 focus-visible:ring-1 focus-visible:ring-neutral-600 focus:outline-none">
+                                        <SelectValue placeholder="main" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectGroup>
+                                            {branches.map((branch) => (
+                                                <SelectItem
+                                                    key={branch}
+                                                    value={branch}
+                                                >
+                                                    {branch}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectGroup>
+                                    </SelectContent>
+                                </Select>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="space-y-2">
+                            <label
+                                htmlFor={"branch"}
+                                className="flex items-center text-sm font-medium text-neutral-400"
+                            >
+                                <GitBranch className="w-5 h-5 text-neutral-600" />
+                                <span className="ml-2">{"branch"}</span>
+                            </label>
+
+                            <Input
+                                onChange={(e) =>
+                                    setSelectedBranch(e.target.value)
+                                }
+                                value={selectedBranch ?? "main"}
+                                placeholder="Enter a branch name"
+                                disabled={!isEditing}
+                                className="bg-neutral-900 border-0 text-white placeholder-neutral-500 focus:outline-none focus:ring-0"
+                            />
+                        </div>
+                    )}
                     <ConfigItem
                         icon={<Package className="w-5 h-5 text-neutral-600" />}
                         label="Install Command"
