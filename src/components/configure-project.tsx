@@ -79,12 +79,14 @@ const ConfigureProject = ({ deployment }: DeploymentComponentProps) => {
     };
 
     async function handleFetchBranches() {
+        console.log("Fetching branches....");
         if (!deployment.RepoUrl) return;
         const [owner, repo] = deployment.RepoUrl.replace(
             "https://github.com/",
             "",
         ).split("/");
 
+        console.log("inside if condititon....");
         try {
             const response = await axios.get<[{ name: string }]>(
                 `https://api.github.com/repos/${owner}/${repo}/branches`,
@@ -96,6 +98,7 @@ const ConfigureProject = ({ deployment }: DeploymentComponentProps) => {
                 },
             );
 
+            console.log(response);
             const branchesNames = response.data.map((branch) => branch.name);
             setBranches(branchesNames);
         } catch (error) {
