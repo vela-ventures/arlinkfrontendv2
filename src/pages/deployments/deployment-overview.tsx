@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { connect } from "@permaweb/aoconnect";
 import { toast } from "sonner";
@@ -33,7 +33,7 @@ export default function DeploymentOverview({
     // zustand stores and hooks
     const globalState = useGlobalState();
     const deploymentConfigStore = useDeploymentStore();
-
+    const navigate = useNavigate();
     // @ts-ignore
     const { managerProcess, deployments, refresh } = useDeploymentManager();
     const { name } = useParams();
@@ -416,7 +416,14 @@ export default function DeploymentOverview({
                         </p>
                     </div>
                     <div className="space-x-2 flex items">
-                        <Button className="px-4 md:px-8 py-1 text-sm md:text-base bg-arlink-bg-secondary-color hover:bg-neutral-900 border-neutral-800 text-white border">
+                        <Button
+                            onClick={() => {
+                                navigate(
+                                    `/deployment/logs?repo=${deployment.Name}`,
+                                );
+                            }}
+                            className="px-4 md:px-8 py-1 text-sm md:text-base bg-arlink-bg-secondary-color hover:bg-neutral-900 border-neutral-800 text-white border"
+                        >
                             logs
                         </Button>
                         <TwitterShareButton
