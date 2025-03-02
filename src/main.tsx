@@ -4,8 +4,6 @@ import App from "./App.tsx";
 import "./globals.css";
 import { ArweaveWalletKit } from "arweave-wallet-kit";
 
-
-
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <React.StrictMode>
         <ArweaveWalletKit
@@ -24,5 +22,5 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
         >
             <App />
         </ArweaveWalletKit>
-    </React.StrictMode>
+    </React.StrictMode>,
 );

@@ -17,7 +17,7 @@ import ComingSoon from "./components/coming-soon";
 import NewDeployment from "./pages/deployments/new-deployment";
 import DeploymentSetting from "./pages/deployments/deployment-settings";
 import DeploymentCard from "./pages/deployments/deployment-card";
-import AnalyticsSkeleton from "./pages/deployments/analytics";
+import Analytics from "./pages/deployments/analytics";
 import DeploymentHistory from "./pages/deployments/deployment-history";
 import TemplateDashboard from "./pages/template/template-dashboard";
 import SelectedTemplate from "./pages/template/selected-template";
@@ -109,7 +109,7 @@ const router = createBrowserRouter([
                     },
                     {
                         path: "deployment/analytics",
-                        element: <AnalyticsSkeleton />,
+                        element: <Analytics />,
                     },
                     {
                         path: "deployment/settings",

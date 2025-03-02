@@ -1,56 +1,90 @@
-import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { ChartConfig } from "@/components/ui/chart";
+import {
+    ChartDetailInterface,
+    HorizontalChartCard,
+} from "@/components/ui/horizontal-chart-card";
 
-export default function AnalyticsSkeleton() {
+const chartConfig = {
+    desktop: {
+        label: "Desktop",
+        color: "hsl(var(--chart-1))",
+    },
+} satisfies ChartConfig;
+
+const pageViewDetails: ChartDetailInterface = {
+    name: "Page views",
+    value: "97,123",
+    volatility: {
+        type: "up",
+        value: 20,
+    },
+    data: [
+        { month: "January", desktop: 186 },
+        { month: "February", desktop: 305 },
+        { month: "March", desktop: 237 },
+        { month: "April", desktop: 73 },
+        { month: "May", desktop: 209 },
+        { month: "June", desktop: 214 },
+        { month: "July", desktop: 200 },
+    ],
+};
+
+const visitorDetails: ChartDetailInterface = {
+    name: "Visitors ",
+    value: "100",
+    volatility: {
+        type: "up",
+        value: 20,
+    },
+    data: [
+        { month: "January", desktop: 186 },
+        { month: "February", desktop: 305 },
+        { month: "March", desktop: 237 },
+        { month: "April", desktop: 73 },
+        { month: "May", desktop: 209 },
+        { month: "June", desktop: 214 },
+        { month: "July", desktop: 200 },
+    ],
+};
+const avgLoadTimeDetails: ChartDetailInterface = {
+    name: "avg load time",
+    value: "0.2",
+    volatility: {
+        type: "up",
+        value: 20,
+    },
+    data: [
+        { month: "January", desktop: 186 },
+        { month: "February", desktop: 305 },
+        { month: "March", desktop: 237 },
+        { month: "April", desktop: 73 },
+        { month: "May", desktop: 209 },
+        { month: "June", desktop: 214 },
+        { month: "July", desktop: 200 },
+    ],
+};
+
+const chartData: ChartDetailInterface[] = [
+    pageViewDetails,
+    visitorDetails,
+    avgLoadTimeDetails,
+];
+
+function Analytics() {
     return (
-        <div className="container relative mx-auto p-8 space-y-2 text-neutral-200 min-h-screen">
-            <div className="fixed inset-0 bg-gradient-to-t z-40 from-black to-transparent pointer-events-none"></div>
-            <div className="fixed z-50 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-                <h1 className="text-4xl font-bold text-neutral-100 mb-4">
-                    Coming Soon
-                </h1>
-                <p className="text-lg text-neutral-400 mb-8">
-                    Analytics features are currently under development
-                </p>
-                <a
-                    href="/dashboard"
-                    className="px-6 py-3 bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg transition-colors"
-                >
-                    Back to Dashboard
-                </a>
-            </div>
-            <div className="opacity-60">
-                <div className="absolute inset-0"></div>
-                {/* Main Chart */}
-                <Card className="p-4 mb-8 bg-neutral-950 border-neutral-800">
-                    <div className="text-xl font-semibold mb-4">
-                        Analytics Overview
-                    </div>
-                    <Skeleton className="h-8 w-40 mb-4 bg-neutral-900" />
-                    <Skeleton className="h-[300px] w-full bg-neutral-900" />
-                </Card>
-
-                {/* Recent Activity Table */}
-                <Card className="p-4  bg-neutral-950 border-neutral-800">
-                    <div className="text-xl font-semibold mb-4">
-                        Recent Activity
-                    </div>
-                    <div className="space-y-2">
-                        {[...Array(5)].map((_, i) => (
-                            <div
-                                key={i}
-                                className="flex justify-between items-center"
-                            >
-                                <div className="text-sm text-neutral-400">
-                                    Activity {i + 1}
-                                </div>
-                                <Skeleton className="h-4 w-1/3 bg-neutral-900" />
-                                <Skeleton className="h-4 w-1/4 bg-neutral-900" />
-                            </div>
-                        ))}
-                    </div>
-                </Card>
+        <div className="px-[60px] py-[30px]">
+            <div className="grid gap-2 grid-cols-3">
+                {chartData.map((data) => {
+                    return (
+                        <HorizontalChartCard
+                            chartConfig={chartConfig}
+                            chartDetail={data}
+                        />
+                    );
+                })}
             </div>
         </div>
     );
 }
+
+export default Analytics;
