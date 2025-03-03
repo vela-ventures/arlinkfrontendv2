@@ -124,32 +124,6 @@ const DeploymentLogs = () => {
 
         fetchLogsFromDB();
         fetchLatestLogs();
-
-        // Fetch ArNS info
-        // connect()
-        // 	.dryrun({
-        // 		process: deployment?.ArnsProcess,
-        // 		tags: [{ name: "Action", value: "Info" }],
-        // 	})
-        // 	.then((r) => {
-        // 		if (r.Messages && r.Messages.length > 0) {
-        // 			const d = JSON.parse(r.Messages[0].Data);
-        // 			setAntName(d.Name);
-        // 		} else {
-        // 			console.error("No messages received or messages array is empty");
-        // 			// Keep the last known antName value
-        // 			setError(
-        // 				"Failed to fetch latest ArNS information. Using last known value.",
-        // 			);
-        // 		}
-        // 	})
-        // 	.catch((error) => {
-        // 		console.error("Error during dryrun:", error);
-        // 		// Keep the last known antName value
-        // 		setError(
-        // 			"Failed to fetch latest ArNS information. Using last known value.",
-        // 		);
-        // 	});
     }, [deployment, globalState.managerProcess]);
 
     return (

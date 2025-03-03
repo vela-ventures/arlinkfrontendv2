@@ -15,16 +15,7 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import { ArrowDown, ArrowUp } from "lucide-react";
-
-export interface ChartDetailInterface {
-    name: string;
-    value: string;
-    volatility: {
-        type: "up" | "down";
-        value: number;
-    };
-    data: any;
-}
+import { ChartDetailInterface } from "@/types";
 
 export const HorizontalChartCard = ({
     chartDetail,

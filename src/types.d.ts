@@ -5,6 +5,7 @@ export type DeploymentRecord = {
     Date: string;
     AssignedUndername?: string; // Optional, as it's not present in all records
 };
+
 export type PackageConfig = {
     framework:
         | "next"
@@ -19,6 +20,7 @@ export type PackageConfig = {
     buildCommand: string;
     outputDir: string;
 };
+
 export interface Template {
     id: string;
     framework: string;
@@ -230,4 +232,15 @@ export interface TemplateDetails extends Template {
         rating: string;
         stars: string;
     };
+}
+
+export interface ChartDetailInterface {
+    name: string;
+    description?: string;
+    value: string;
+    volatility: {
+        type: "up" | "down";
+        value: number;
+    };
+    data: any;
 }
