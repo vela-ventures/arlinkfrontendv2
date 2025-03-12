@@ -1,4 +1,5 @@
 import { runLua, spawnProcess } from "@/lib/ao-vars";
+import { result } from "@permaweb/aoconnect";
 
 const setUpCommands = `
 local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local math = _tl_compat and _tl_compat.math or math; local os = _tl_compat and _tl_compat.os or os; local pairs = _tl_compat and _tl_compat.pairs or pairs; local pcall = _tl_compat and _tl_compat.pcall or pcall
@@ -128,7 +129,7 @@ Handlers.add("track", Handlers.utils.hasMatchingTag("Action", "Track"), function
 
     State.pages[data.pageVisited] = (State.pages[data.pageVisited] or 0) + 1
 
--- Update recent activity (keeping only last 6 items)
+    -- Update recent activity (keeping only last 6 items)
     -- Validate the load time for display
     local displayLoadTime = loadTime and loadTime > 0 and loadTime < 60 
                            and (loadTime .. "s") 
@@ -242,12 +243,45 @@ Handlers.add("getAnalytics", Handlers.utils.hasMatchingTag("Action", "GetAnalyti
     Data = json.encode(response)
   })
 end)
+print("ok")
 `;
 
 export const spawnReportProcess = async (projectName: string) => {
     const processId = await spawnProcess(`${projectName}-report-manager`);
-    console.log("spawing process, with processId of spawn", processId);
-    await runLua(setUpCommands, processId);
-    console.log("process spawend with the processId", processId);
+    console.log("spawned process", processId);
+
+    if (processId) {
+        console.log("process Id spawned, running run lua function now");
+
+        let result;
+        let retryCount = 0;
+        const maxRetries = 5;
+
+        do {
+            if (retryCount > 0) {
+                console.log(`Retry attempt ${retryCount} for runLua`);
+            }
+
+            result = await runLua(setUpCommands, processId);
+
+            if (result.Error) {
+                console.log(
+                    `Error detected in runLua, will retry. Error: ${result.Error}`,
+                );
+            }
+
+            retryCount++;
+        } while (result.Error && retryCount < maxRetries);
+
+        if (result.Error) {
+            console.warn(`runLua still failing after ${maxRetries} retries`);
+        }
+
+        console.log({ runLuaResult: result });
+        console.log("run lua function has been executed");
+    } else {
+        throw new Error("Process ID is not spawned");
+    }
+
     return processId;
 };

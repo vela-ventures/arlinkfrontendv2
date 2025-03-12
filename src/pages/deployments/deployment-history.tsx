@@ -127,7 +127,7 @@ export default function DeploymentHistory() {
             <div className="container mx-auto px-4 py-10 md:px-10">
                 <div className="space-y-6">
                     <div className="space-y-2">
-                        <h1 className="text-2xl font-semibold flex items-center tracking-tight text-neutral-100">
+                        <h1 className="text-3xl font-semibold flex items-center tracking-tight text-neutral-100">
                             Deployment history
                         </h1>
                         <div className="flex items-center space-x-2 text-sm text-neutral-400">

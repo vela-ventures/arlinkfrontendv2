@@ -128,12 +128,12 @@ const DeploymentLogs = () => {
 
     return (
         <Layout>
-            <div className="md:container px-4 md:py-5 ">
+            <div className="md:container p-4">
                 <div className="rounded-lg mt-6 border-[#383838]">
-                    <h1 className="md:text-3xl text-xl font-semibold mb-6">
+                    <h1 className="text-3xl font-semibold flex items-center tracking-tight text-neutral-100">
                         Deployment Logs
                     </h1>
-                    <div className="space-y-2 w-full">
+                    <div className="space-y-2 w-full mt-4">
                         <Accordion type="single" collapsible className="w-full">
                             <AccordionItem
                                 value="item-1"

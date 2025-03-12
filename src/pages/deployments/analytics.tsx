@@ -1,5 +1,8 @@
-import { enableAnalytics, getProjectPID } from "@/actions/analytics";
-import { Button } from "@/components/ui/button";
+import { checkProcessId } from "@/actions/analytics";
+import AnalyticsOverview from "@/components/analytics/analytics-overview";
+import EnableAnalytics from "@/components/analytics/enable-analytics";
+import AnalyticsDashboardSkeleton from "@/components/skeletons";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useGlobalState } from "@/store/useGlobalState";
 import { useActiveAddress } from "arweave-wallet-kit";
 import { useEffect, useMemo, useState } from "react";
@@ -10,18 +13,21 @@ const Analytics = () => {
     const [searchParams] = useSearchParams();
     const projectName = searchParams.get("repo");
     const deployments = useGlobalState((state) => state.deployments);
-    const walletAddress = useActiveAddress();
     const selectedProject = useMemo(() => {
         return deployments.find((project) => project.Name === projectName);
     }, []);
+    const walletAddress = useActiveAddress();
+    const [completedAnalyticsProcess, setCompletedAnalyticsProcess] =
+        useState<boolean>(false);
 
     // process Id states
     const [isCheckingProcessId, setIsCheckingProcessId] =
         useState<boolean>(false);
     const [processId, setProcessId] = useState<string | null>(null);
 
-    //analytics states
-    const [enablingAnalytics, setEnablingAnalytics] = useState<boolean>(false);
+    const handleProcessId = (value: string) => {
+        setProcessId(value);
+    };
 
     // useEffects
     useEffect(() => {
@@ -30,9 +36,12 @@ const Analytics = () => {
         const init = async () => {
             setIsCheckingProcessId(true);
             try {
-                const processId = await checkProcessId(selectedProject.Name);
+                const processId = await checkProcessId(
+                    selectedProject.Name,
+                    walletAddress,
+                );
                 setProcessId(processId);
-                console.log({ processId });
+                console.log(processId);
             } catch (error) {
                 if (error instanceof Error) {
                     console.error(error);
@@ -46,42 +55,61 @@ const Analytics = () => {
         init();
     }, []);
 
-    const checkProcessId = async (projectName: string) => {
-        console.log("checking process id...");
-        const res = await getProjectPID(projectName);
-        if (res.processId === null) {
-            throw new Error("process Id is not available");
-        }
-
-        if (res.error) {
-            throw new Error(res.errorMessage);
-        }
-        return res.processId;
-    };
-
-    const activateAnalytics = async () => {
-        if (!selectedProject?.Name || !walletAddress) return;
-        setEnablingAnalytics(true);
-        await enableAnalytics(selectedProject.Name, walletAddress);
-        setEnablingAnalytics(false);
+    const handlehandleEnabledAnalytics = () => {
+        setCompletedAnalyticsProcess(true);
     };
 
     // conditions
     if (!selectedProject || !projectName || !walletAddress)
         return <div>No project exists with the name ${projectName}</div>;
 
+    if (isCheckingProcessId) {
+        return (
+            <div className="py-10 container space-y-4">
+                <div className="space-y-4">
+                    <Skeleton className="h-8 w-[200px]" />
+                    <Skeleton className="h-20 w-2/3" />
+                </div>
+                <h3 className="text-xl font-semibold my-4">Analytics metric</h3>
+                <AnalyticsDashboardSkeleton />
+            </div>
+        );
+    }
+
     return (
-        <section>
-            <Button
-                disabled={isCheckingProcessId || enablingAnalytics}
-                onClick={() => {
-                    if (!processId) {
-                        activateAnalytics();
-                    }
-                }}
-            >
-                {enablingAnalytics ? "Enabling..." : "Enable"} analytics
-            </Button>
+        <section className="py-10 container">
+            <header>
+                {/* if we don't have process Id show the  Analytics Integration header */}
+                {processId ? (
+                    <h1 className="text-3xl font-semibold tracking-tight text-neutral-100">
+                        Web analytics
+                    </h1>
+                ) : (
+                    <h1 className="text-3xl font-semibold tracking-tight text-neutral-100">
+                        Analytics Integration
+                    </h1>
+                )}
+                <p className="mt-2 text-sm max-w-xl text-neutral-400">
+                    Collect valuable insights on user behaviour and site
+                    performance with detailed page view metrics. Gain knowledge
+                    on top pages.
+                </p>
+
+                {/* if we don't have process Id show the enable Analytics option */}
+                {!processId && (
+                    <EnableAnalytics
+                        walletAddress={walletAddress}
+                        handleEnabledAnalytics={handlehandleEnabledAnalytics}
+                        handleProcessId={handleProcessId}
+                        processId={processId}
+                    />
+                )}
+            </header>
+            {processId && (
+                <>
+                    <AnalyticsOverview processId={processId} />
+                </>
+            )}
         </section>
     );
 };

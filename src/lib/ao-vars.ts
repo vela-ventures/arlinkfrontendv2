@@ -31,7 +31,6 @@ export async function spawnProcess(
         tags,
         signer: createDataItemSigner(window.arweaveWallet),
     });
-
     return result;
 }
 

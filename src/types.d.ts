@@ -6,6 +6,111 @@ export type DeploymentRecord = {
     AssignedUndername?: string; // Optional, as it's not present in all records
 };
 
+type VolatilityType = "up" | "down" | "neutral";
+
+export interface AnalyticsMetric {
+    value: number;
+    change: number;
+    trend: "up" | "down";
+    chartData: Array<{
+        date: string;
+        value: number;
+    }>;
+}
+
+export interface CountryData {
+    visitors: number;
+    percentage: number;
+    [key: string]: string | number;
+}
+
+export interface TopCountriesDataItem {
+    name: string;
+    description: string;
+    value: string;
+    volatility: {
+        type: VolatilityType;
+        value: number;
+    };
+    data: CountryData[];
+}
+
+export interface MostUsedBrowserData {
+    visitors: number;
+    percentage: number;
+    [key: string]: string | number;
+}
+
+export interface MostUsedBrowserInterface {
+    name: string;
+    description: string;
+    data: MostUsedBrowserData[];
+}
+
+export interface MostUsedWalletData {
+    visitors: number;
+    percentage: number;
+    [key: string]: string | number;
+}
+
+export interface MostUsedWalletInterface {
+    name: string;
+    description: string;
+    data: MostUsedWalletData[];
+}
+
+export interface MostVisitedPagesData {
+    visitors: number;
+    percentage: number;
+    [key: string]: string | number;
+}
+
+export interface MostVisitedPagesDataInterface {
+    name: string;
+    description: string;
+    data: MostVisitedPagesData[];
+}
+
+export interface AnalyticsData {
+    analyticsMetrics: {
+        pageViews: AnalyticsMetric;
+        visitors: AnalyticsMetric;
+        avgLoadTime: AnalyticsMetric;
+        globalTraffic: {
+            regions: Record<string, number>;
+        };
+        topCountries: CountryData[];
+    };
+    browsers: Array<{
+        name: string;
+        visitors: number;
+        percentage: number;
+    }>;
+    wallets: Array<{
+        name: string;
+        visitors: number;
+        percentage: number;
+    }>;
+    topPages: Array<{
+        path: string;
+        visitors: number;
+        percentage: number;
+    }>;
+    recentActivity: Array<{
+        timestamp: string;
+        browserDevice: string;
+        pageVisited: string;
+        loadTime: string;
+        country: string;
+    }>;
+}
+
+export interface AnalyticsResponse {
+    messageId: string | null;
+    data: AnalyticsData | null;
+    error: string | null;
+}
+
 export type PackageConfig = {
     framework:
         | "next"
