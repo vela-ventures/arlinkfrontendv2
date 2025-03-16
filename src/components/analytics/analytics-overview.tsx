@@ -166,9 +166,7 @@ const AnalyticsOverview = ({ processId }: { processId: string }) => {
 
     return (
         <div>
-            <div className="w-full border-b border-neutral-800 pt-4" />
             <div>
-                <h3 className="text-xl font-semibold my-4">Analytics metric</h3>
                 {analyticsData ? (
                     <div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -240,7 +238,7 @@ const AnalyticsOverview = ({ processId }: { processId: string }) => {
                     </div>
                 ) : (
                     <>
-                        <AnalyticsDashboardSkeleton />
+                        <AnalyticsDashboardSkeleton pulseAnimation />
                     </>
                 )}
             </div>

@@ -62,12 +62,6 @@ const Analytics = () => {
     if (isCheckingProcessId) {
         return (
             <div className="py-10 container space-y-4">
-                <div className="space-y-4">
-                    <Skeleton className="h-8 w-[200px]" />
-                    <Skeleton className="h-20 w-2/3" />
-                </div>
-                <h3 className="text-xl font-semibold my-4">Analytics metric</h3>
-
                 <AnalyticsDashboardSkeleton pulseAnimation />
             </div>
         );
@@ -76,22 +70,6 @@ const Analytics = () => {
     return (
         <section className="py-10 container">
             <header className="space-y-4">
-                <div className="space-y-2">
-                    {/* {processId ? ( */}
-                    {/*     <h1 className="text-3xl font-semibold tracking-tight text-neutral-100"> */}
-                    {/*         Web analytics */}
-                    {/*     </h1> */}
-                    {/* ) : ( */}
-                    {/*     <h1 className="text-3xl font-semibold tracking-tight text-neutral-100"> */}
-                    {/*         Analytics Integration */}
-                    {/*     </h1> */}
-                    {/* )} */}
-                    {/* <p className="mt-2 text-base max-w-xl text-neutral-500"> */}
-                    {/*     Collect valuable insights on user behaviour and site */}
-                    {/*     performance with detailed page view metrics. Gain */}
-                    {/*     knowledge on top pages. */}
-                    {/* </p> */}
-                </div>
                 {!processId && (
                     <EnableAnalytics
                         walletAddress={walletAddress}
