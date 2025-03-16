@@ -1,11 +1,6 @@
 // shadcn imports
 import { Skeleton } from "./ui/skeleton";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 // icon imports
 import {
@@ -22,6 +17,7 @@ import {
     ExternalLink,
 } from "lucide-react";
 import { CardTitle } from "./ui/card-hover-effect";
+import { cn } from "@/lib/utils";
 
 export const ProjectCardSkeleton = ({ viewMode }: { viewMode: string }) => (
     <div
@@ -299,64 +295,192 @@ export const AnalyticsSkeleton = () => {
     );
 };
 
-export default function AnalyticsDashboardSkeleton() {
+export const AnalyticsDashboardSkeleton = ({
+    pulseAnimation = false,
+    className,
+}: {
+    pulseAnimation?: boolean;
+    className?: string;
+}) => {
+    const barChartsData = [
+        {
+            title: "Global Traffic",
+            description: "Where your visitors are coming from",
+            data: [
+                { name: "USA", value: 40 },
+                { name: "Canada", value: 20 },
+                { name: "Germany", value: 15 },
+                { name: "Japan", value: 10 },
+                { name: "France", value: 9 },
+                { name: "Others", value: 6 },
+            ],
+        },
+        {
+            title: "Most Used Browser",
+            description: "Track the browser used to access your site",
+            data: [
+                { name: "Chrome", value: 40 },
+                { name: "Brave", value: 20 },
+                { name: "Zen", value: 15 },
+                { name: "Safari", value: 10 },
+                { name: "Mozilla", value: 9 },
+                { name: "Others", value: 6 },
+            ],
+        },
+        {
+            title: "Top Wallets",
+            description: "Crypto wallets that your visitors have installed",
+            data: [
+                { name: "ArConnect", value: 40 },
+                { name: "Phantom", value: 20 },
+                { name: "Meta mask", value: 15 },
+                { name: "Japan", value: 10 }, // Note: This looks like a data error in your original
+                { name: "France", value: 9 }, // Note: This looks like a data error in your original
+                { name: "Others", value: 6 },
+            ],
+        },
+    ];
     return (
-        <div className="text-foreground">
-            {/* Top metrics grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                {["Page Views", "Visitors", "Avg Load Time"].map(
-                    (title, index) => (
-                        <Card
-                            key={index}
-                            className="bg-card py-0 text-card-foreground flex"
-                        >
-                            <CardHeader className="pb-2 py-2 space-y-2">
-                                <CardTitle className="text-xs text-nowrap ">
-                                    {title}
-                                </CardTitle>
-
-                                <Skeleton className="h-[40px] w-[80px] mt-2" />
-                            </CardHeader>
-                            <CardContent className="my-auto py-4 flex flex-1 items-center">
-                                <Skeleton className="h-[130px] flex-1" />
-                            </CardContent>
-                        </Card>
-                    ),
-                )}
-            </div>
-
-            {/* Bottom expanded metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ">
-                <Card className="bg-card text-card-foreground py-4">
-                    <CardHeader className="pb-2 py-2">
-                        <CardTitle className="text-sm font-medium">
+        <div className={cn(`space-y-4`, className)}>
+            <div className="grid grid-cols-9 gap-4 h-[175px]">
+                <div className="rounded-xl  flex gap-3 p-4 transition-all col-span-3 border hover:border-neutral-600 border-neutral-800 ">
+                    <header className="text-sm flex flex-col gap-2">
+                        <div className="text-neutral-200 font-semibold text-base">
                             Page Views
-                        </CardTitle>
-                        <CardDescription>
-                            Total number of times your pages have been accessed
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="py-2">
-                        <Skeleton className="h-64 w-full" />
-                    </CardContent>
-                </Card>
-
-                <Card className="bg-card text-card-foreground">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium">
+                        </div>
+                        <div
+                            className={`h-full ${pulseAnimation && "animate-pulse"} bg-neutral-900 rounded-md`}
+                        ></div>
+                    </header>
+                    <section
+                        className={`flex-1 h-full bg-neutral-900 rounded-md ${pulseAnimation && "animate-pulse"}`}
+                    />
+                </div>
+                <div className="rounded-xl  flex gap-3 p-4 transition-all col-span-3 border hover:border-neutral-600 border-neutral-800 ">
+                    <header className="text-sm flex flex-col gap-2">
+                        <div className="text-neutral-200 font-semibold text-base">
+                            Top Visitors
+                        </div>
+                        <div
+                            className={`h-full ${pulseAnimation && "animate-pulse"} bg-neutral-900 rounded-md`}
+                        ></div>
+                    </header>
+                    <section
+                        className={`flex-1 h-full bg-neutral-900 rounded-md ${pulseAnimation && "animate-pulse"}`}
+                    />
+                </div>
+                <div className="rounded-xl  flex gap-3 p-4 transition-all col-span-3 border hover:border-neutral-600 border-neutral-800 ">
+                    <header className="text-sm flex flex-col gap-2">
+                        <div className="text-neutral-200 font-semibold text-base">
+                            Avg Load Time
+                        </div>
+                        <div
+                            className={`h-full ${pulseAnimation && "animate-pulse"} bg-neutral-900 rounded-md`}
+                        ></div>
+                    </header>
+                    <section
+                        className={`flex-1 h-full bg-neutral-900 rounded-md ${pulseAnimation && "animate-pulse"}`}
+                    />
+                </div>
+            </div>
+            <div className="grid grid-cols-12 h-[400px] gap-4">
+                <div className="rounded-xl p-5 flex flex-col gap-4 transition-all col-span-5 border hover:border-neutral-600 border-neutral-800 h-full">
+                    <header className="space-y-0.5">
+                        <div className="text-xl font-semibold">Page views</div>
+                        <p className="text-sm text-neutral-400">
+                            Total number of time your page has been accessed
+                        </p>
+                    </header>
+                    <section
+                        className={`flex-1 h-full bg-neutral-900 rounded-md ${pulseAnimation && "animate-pulse"}`}
+                    />
+                </div>
+                <div className="rounded-xl p-5 flex flex-col gap-4 transition-all col-span-7 border hover:border-neutral-600 border-neutral-800 h-full">
+                    <header className="space-y-0.5">
+                        <div className="text-xl font-semibold">
                             Global Traffic
-                        </CardTitle>
-                        <CardDescription>
+                        </div>
+                        <p className="text-sm text-neutral-400">
                             Track visitor distribution with an interactive world
                             map
-                        </CardDescription>
-                    </CardHeader>
-
-                    <CardContent className="py-2">
-                        <Skeleton className="h-64 w-full" />
-                    </CardContent>
-                </Card>
+                        </p>
+                    </header>
+                    <section
+                        className={`flex-1 h-full bg-neutral-900 rounded-md ${pulseAnimation && "animate-pulse"}`}
+                    />
+                </div>
             </div>
+            <div className="grid grid-cols-9 h-[400px] gap-4">
+                {barChartsData.map((chart, index) => (
+                    <AnalyticsBarChart
+                        key={index}
+                        title={chart.title}
+                        description={chart.description}
+                        data={chart.data}
+                        pulseAnimation={pulseAnimation}
+                    />
+                ))}
+            </div>
+            <div className="grid grid-cols-12 h-[400px] gap-4">
+                <div className="rounded-xl p-5 flex flex-col gap-4 transition-all col-span-5 border hover:border-neutral-600 border-neutral-800 h-full">
+                    <header className="space-y-0.5">
+                        <div className="text-xl font-semibold">Top Pages</div>
+                        <p className="text-sm text-neutral-400">
+                            See your most visited pages at glance{" "}
+                        </p>
+                    </header>
+                    <section
+                        className={`flex-1 h-full bg-neutral-900 rounded-md ${pulseAnimation && "animate-pulse"}`}
+                    />
+                </div>
+                <div className="rounded-xl p-5 flex flex-col gap-4 transition-all col-span-7 border hover:border-neutral-600 border-neutral-800 h-full">
+                    <header className="space-y-0.5">
+                        <div className="text-xl font-semibold">
+                            Recent Activity
+                        </div>
+                        <p className="text-sm text-neutral-400">
+                            Latest visitor interactions
+                        </p>
+                    </header>
+                    <section
+                        className={`flex-1 h-full bg-neutral-900 rounded-md ${pulseAnimation && "animate-pulse"}`}
+                    />
+                </div>
+            </div>{" "}
         </div>
     );
-}
+};
+
+const AnalyticsBarChart = ({
+    title,
+    description,
+    data,
+    pulseAnimation,
+}: {
+    title: string;
+    description: string;
+    data: any;
+    pulseAnimation?: boolean;
+}) => {
+    return (
+        <div className="rounded-xl justify-between flex flex-col p-5 gap-4 transition-all col-span-3 border hover:border-neutral-600 border-neutral-800 h-full">
+            <header className="space-y-0.5">
+                <div className="text-xl font-semibold">{title}</div>
+                <p className="text-sm text-neutral-400">{description}</p>
+            </header>
+            <section className="flex flex-col gap-2">
+                {data.map((item: { name: string; value: number }) => (
+                    <div
+                        key={item.name}
+                        className="h-[40px] w-full relative rounded-md items-center p-2 flex justify-between"
+                    >
+                        <div
+                            className={`bg-neutral-900 ${pulseAnimation && "animate-pulse"} absolute inset-0 rounded-md`}
+                            style={{ width: `${item.value}%` }}
+                        ></div>
+                    </div>
+                ))}
+            </section>
+        </div>
+    );
+};

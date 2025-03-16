@@ -9,6 +9,23 @@ body {
     overflow-x: hidden;
 }
 
+@property --angle {
+    syntax: "<angle>";
+    initial-value: 0deg;
+    inherits: false;
+}
+@property --glow-color {
+    syntax: "<color>";
+    initial-value: #ffffff;
+    inherits: false;
+}
+
+@property --glow-intensity {
+    syntax: "<number>";
+    initial-value: 0;
+    inherits: false;
+}
+
 html {
     scroll-padding-top: 100px;
     scroll-behavior: smooth;
@@ -27,12 +44,29 @@ html {
     );
 }
 
+.glow-btn {
+    transition: all 0.4s ease-in-out;
+}
+
+.glow-btn:hover {
+    box-shadow:
+        0 56px 280.627197265625px 0 rgba(255, 255, 255, 0.77),
+        0 21px 160.3583984375px 0 rgba(255, 255, 255, 0.66),
+        0 12px 93.54239654541016px 0 rgba(255, 255, 255, 0.2),
+        0 9px 46.77119827270508px 0 rgba(255, 255, 255, 0.68),
+        0 4px 13.363200187683105px 0 #fff,
+        0 0 6.681600093841553px 0 rgba(255, 255, 255, 0.18);
+}
+
 .debug {
     @apply border border-red-500;
 }
 
 @layer base {
     :root {
+        --angle: 0deg;
+        --glow-color: #ffffff; /* White color */
+        --glow-intensity: 0; /* Initial glow intensity */
         --background: 0 0% 100%;
         --foreground: 240 10% 3.9%;
         --card: 0 0% 100%;
@@ -126,4 +160,103 @@ body {
 
 .inner-shadow-template {
     box-shadow: inset 0px 0px 19.1px 0px rgba(23, 23, 23, 0.56);
+}
+
+.glowing-button_text {
+    transition: all 0.3s ease-in-out;
+}
+
+.glowing-button_top_layer {
+    position: absolute;
+    inset: 1px;
+    background: rgba(0, 0, 0, 0.796);
+    z-index: 40;
+    border-radius: inherit;
+    backdrop-filter: blur(50px);
+    transition: all 0.3s ease-in-out;
+}
+
+.glowing_button:hover .glowing-button_text {
+    color: black;
+}
+
+.glowing_button:hover .glowing-button_top_layer {
+    background: rgba(255, 255, 255);
+}
+
+.glowing-button_effect {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+}
+
+.glowing-button_effect:hover {
+    --glow-intensity: 1;
+}
+
+.glowing-button_effect::before {
+    position: absolute;
+    content: "";
+    inset: 0;
+    background: conic-gradient(from var(--angle), white, black);
+    z-index: 10;
+    opacity: 0.4;
+    border-radius: inherit;
+    animation: rotate 8s linear infinite;
+    filter: blur(10px);
+}
+
+.glowing-button_effect::after {
+    position: absolute;
+    content: "";
+    inset: 0;
+    background: conic-gradient(from var(--angle), white, black);
+    z-index: 10;
+    opacity: 1;
+    border-radius: inherit;
+    animation: rotate 8s linear infinite;
+}
+
+.glowing_button:hover .glowing-button_effect::after {
+    background: conic-gradient(from var(--angle), white, white);
+}
+
+@keyframes rotate {
+    to {
+        --angle: -360deg;
+    }
+}
+
+@keyframes spin-slow {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+@keyframes spin-medium {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(-360deg);
+    }
+}
+@keyframes spin-fast {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+.animate-spin-slow {
+    animation: spin-slow 40s linear infinite;
+}
+.animate-spin-medium {
+    animation: spin-medium 30s linear infinite;
+}
+.animate-spin-fast {
+    animation: spin-fast 20s linear infinite;
 }

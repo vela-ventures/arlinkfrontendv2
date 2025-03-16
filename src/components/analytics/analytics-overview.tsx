@@ -16,7 +16,7 @@ import MostUsedWallets from "./most-used-wallets";
 import RecentActivityTable from "./recent-activity";
 import { VerticalChartCard } from "./vertical-chart-card";
 import { HorizontalChartCard } from "./horizontal-chart-card";
-import AnalyticsDashboardSkeleton from "../skeletons.tsx";
+import { AnalyticsDashboardSkeleton } from "../skeletons.tsx";
 
 const AnalyticsOverview = ({ processId }: { processId: string }) => {
     const [analyticsData, setAnaalyticsData] = useState<AnalyticsData | null>(
