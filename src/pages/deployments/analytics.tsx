@@ -78,28 +78,27 @@ const Analytics = () => {
 
     return (
         <section className="py-10 container">
-            <header>
+            <header className="space-y-4">
                 {/* if we don't have process Id show the  Analytics Integration header */}
-                {processId ? (
-                    <h1 className="text-3xl font-semibold tracking-tight text-neutral-100">
-                        Web analytics
-                    </h1>
-                ) : (
-                    <h1 className="text-3xl font-semibold tracking-tight text-neutral-100">
-                        Analytics Integration
-                    </h1>
-                )}
-                <p className="mt-2 text-sm max-w-xl text-neutral-400">
-                    Collect valuable insights on user behaviour and site
-                    performance with detailed page view metrics. Gain knowledge
-                    on top pages.
-                </p>
-
-                {/* if we don't have process Id show the enable Analytics option */}
+                <div className="space-y-2">
+                    {processId ? (
+                        <h1 className="text-3xl font-semibold tracking-tight text-neutral-100">
+                            Web analytics
+                        </h1>
+                    ) : (
+                        <h1 className="text-3xl font-semibold tracking-tight text-neutral-100">
+                            Analytics Integration
+                        </h1>
+                    )}
+                    <p className="mt-2 text-base max-w-xl text-neutral-500">
+                        Collect valuable insights on user behaviour and site
+                        performance with detailed page view metrics. Gain
+                        knowledge on top pages.
+                    </p>
+                </div>
                 {!processId && (
                     <EnableAnalytics
                         walletAddress={walletAddress}
-                        handleEnabledAnalytics={handlehandleEnabledAnalytics}
                         handleProcessId={handleProcessId}
                         processId={processId}
                     />

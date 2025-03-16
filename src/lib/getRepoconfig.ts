@@ -1,30 +1,31 @@
 // Move getDefaultConfig before it's used
+import { getGithubToken } from "@/store/useGlobalState";
 import { PackageConfig } from "@/types";
 import { Octokit } from "@octokit/rest";
 
-const octokit = new Octokit();
-
+async function getOctokit() {
+    return new Octokit({
+        auth: getGithubToken(), // Always gets the fresh value
+    });
+}
 interface FrameworkConfig {
     framework: "next" | "vite" | "create-react-app" | "gatsby" | "unknown";
     outputDir: string;
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 function detectFramework(packageJson: any): FrameworkConfig {
     const dependencies = {
         ...packageJson.dependencies,
         ...packageJson.devDependencies,
     };
 
-    // Next.js detection
     if (dependencies.next) {
         return {
             framework: "next",
-            outputDir: ".next", // Next.js default build output
+            outputDir: ".next",
         };
     }
 
-    // Vite detection
     if (dependencies.vite) {
         const viteOutputDir = packageJson?.config?.build?.outDir || "./dist";
         return {
@@ -33,23 +34,20 @@ function detectFramework(packageJson: any): FrameworkConfig {
         };
     }
 
-    // Create React App detection
     if (dependencies["react-scripts"]) {
         return {
             framework: "create-react-app",
-            outputDir: "build", // CRA default build output
+            outputDir: "build",
         };
     }
 
-    // Gatsby detection
     if (dependencies.gatsby) {
         return {
             framework: "gatsby",
-            outputDir: "public", // Gatsby default build output
+            outputDir: "public",
         };
     }
 
-    // Default case
     return {
         framework: "unknown",
         outputDir: "./dist",
@@ -75,7 +73,7 @@ export async function getRepoConfig(
         const indexHtmlPath = path ? `${path}/index.html` : "index.html";
         const denoJsonPath = path ? `${path}/deno.json` : "deno.json";
         const denoJsoncPath = path ? `${path}/deno.jsonc` : "deno.jsonc";
-
+        const octokit = await getOctokit();
         // Try to load package.json
         for (const branch of branches) {
             try {
@@ -132,6 +130,7 @@ export async function getRepoConfig(
         if (!denoJson) {
             for (const branch of branches) {
                 try {
+                    const octokit = await getOctokit();
                     const { data } = await octokit.repos.getContent({
                         owner,
                         repo,
@@ -176,6 +175,7 @@ export async function getRepoConfig(
         // If no config file found, check for index.html for a static site.
         for (const branch of branches) {
             try {
+                const octokit = await getOctokit();
                 const { data } = await octokit.repos.getContent({
                     owner,
                     repo,
@@ -240,6 +240,7 @@ export async function getRepoReadme(
         const branches = ["main", "master"];
         const readmePath = path ? `${path}/README.md` : "README.md";
 
+        const octokit = await getOctokit();
         for (const branch of branches) {
             try {
                 const { data } = await octokit.repos.getContent({

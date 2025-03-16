@@ -9,20 +9,25 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import { Check, ClipboardCopy, Code, LineChart, CopyCheck } from "lucide-react";
+import {
+    Check,
+    ClipboardCopy,
+    Code,
+    LineChart,
+    CopyCheck,
+    ExternalLink,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 interface EnableAnalyticsProps {
     walletAddress: string;
-    handleEnabledAnalytics: () => void;
     handleProcessId: (value: string) => void;
     processId: string | null;
 }
 
 const EnableAnalytics = ({
     walletAddress,
-    handleEnabledAnalytics,
     handleProcessId,
     processId,
 }: EnableAnalyticsProps) => {
@@ -69,27 +74,39 @@ const EnableAnalytics = ({
     return (
         <div className="space-y-6">
             {!innerProcessId && (
-                <Button
-                    className="font-medium mt-4"
-                    size="sm"
-                    disabled={enablingAnalytics}
-                    onClick={() => activateAnalytics(repoName || "default")}
-                >
-                    {enablingAnalytics ? (
-                        <>
-                            <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-neutral-400 border-t-white"></div>
-                            Enabling...
-                        </>
-                    ) : (
-                        <>
-                            <LineChart className="mr-2 h-4 w-4" />
-                            Enable Analytics
-                        </>
-                    )}
-                </Button>
+                <div className="flex items-center gap-2 pt-4">
+                    <Button
+                        className="font-semibold hover:bg-neutral-400"
+                        size="sm"
+                        disabled={enablingAnalytics}
+                        onClick={() => activateAnalytics(repoName || "default")}
+                    >
+                        {enablingAnalytics ? (
+                            <>
+                                <div className=" h-4 w-4 animate-spin rounded-full border-2 border-neutral-400 border-t-white"></div>
+                                Enabling...
+                            </>
+                        ) : (
+                            <>
+                                <LineChart className=" h-4 w-4" />
+                                Enable
+                            </>
+                        )}
+                    </Button>
+                    <Link
+                        to="/hello"
+                        className="text-sm transition-all flex items-center gap-1 px-4 rounded-md py-2 hover:bg-neutral-800"
+                    >
+                        Learn More
+                        <ExternalLink
+                            size={15}
+                            className="-translate-y-[0.3]"
+                        />
+                    </Link>
+                </div>
             )}
             <div className="w-full border-b border-neutral-800 my-6" />
-            {innerProcessId && (
+            {innerProcessId ? (
                 <motion.div
                     initial={{
                         opacity: 0,
@@ -238,9 +255,169 @@ const EnableAnalytics = ({
                         </CardFooter>
                     </Card>
                 </motion.div>
+            ) : (
+                <AnalytisSkeleton />
             )}
         </div>
     );
 };
 
+const AnalytisSkeleton = () => {
+    const barChartsData = [
+        {
+            title: "Global Traffic",
+            description: "Where your visitors are coming from",
+            data: [
+                { name: "USA", value: 40 },
+                { name: "Canada", value: 20 },
+                { name: "Germany", value: 15 },
+                { name: "Japan", value: 10 },
+                { name: "France", value: 9 },
+                { name: "Others", value: 6 },
+            ],
+        },
+        {
+            title: "Most Used Browser",
+            description: "Track the browser used to access your site",
+            data: [
+                { name: "Chrome", value: 40 },
+                { name: "Brave", value: 20 },
+                { name: "Zen", value: 15 },
+                { name: "Safari", value: 10 },
+                { name: "Mozilla", value: 9 },
+                { name: "Others", value: 6 },
+            ],
+        },
+        {
+            title: "Top Wallets",
+            description: "Crypto wallets that your visitors have installed",
+            data: [
+                { name: "ArConnect", value: 40 },
+                { name: "Phantom", value: 20 },
+                { name: "Meta mask", value: 15 },
+                { name: "Japan", value: 10 }, // Note: This looks like a data error in your original
+                { name: "France", value: 9 }, // Note: This looks like a data error in your original
+                { name: "Others", value: 6 },
+            ],
+        },
+    ];
+    return (
+        <div className="space-y-4">
+            <div className="grid grid-cols-9 gap-4 h-[175px]">
+                <div className="rounded-xl  flex gap-3 p-4 transition-all col-span-3 border hover:border-neutral-600 border-neutral-800 ">
+                    <header className="text-sm flex flex-col gap-2">
+                        <div className="text-neutral-200 font-semibold text-base">
+                            Page Views
+                        </div>
+                        <div className="h-full  bg-neutral-900 rounded-md"></div>
+                    </header>
+                    <section className="flex-1 h-full bg-neutral-900 rounded-md"></section>
+                </div>
+                <div className="rounded-xl  flex gap-3 p-4 transition-all col-span-3 border hover:border-neutral-600 border-neutral-800 ">
+                    <header className="text-sm flex flex-col gap-2">
+                        <div className="text-neutral-200 font-semibold text-base">
+                            Top Visitors
+                        </div>
+                        <div className="h-full  bg-neutral-900 rounded-md"></div>
+                    </header>
+                    <section className="flex-1 h-full bg-neutral-900 rounded-md"></section>
+                </div>
+                <div className="rounded-xl  flex gap-3 p-4 transition-all col-span-3 border hover:border-neutral-600 border-neutral-800 ">
+                    <header className="text-sm flex flex-col gap-2">
+                        <div className="text-neutral-200 font-semibold text-base">
+                            Avg Load Time
+                        </div>
+                        <div className="h-full  bg-neutral-900 rounded-md"></div>
+                    </header>
+                    <section className="flex-1 h-full bg-neutral-900 rounded-md"></section>
+                </div>
+            </div>
+            <div className="grid grid-cols-12 h-[400px] gap-4">
+                <div className="rounded-xl p-5 flex flex-col gap-4 transition-all col-span-5 border hover:border-neutral-600 border-neutral-800 h-full">
+                    <header className="space-y-0.5">
+                        <div className="text-xl font-semibold">Page views</div>
+                        <p className="text-sm text-neutral-400">
+                            Total number of time your page has been accessed
+                        </p>
+                    </header>
+                    <section className="flex-1 bg-neutral-900 rounded-md"></section>
+                </div>
+                <div className="rounded-xl p-5 flex flex-col gap-4 transition-all col-span-7 border hover:border-neutral-600 border-neutral-800 h-full">
+                    <header className="space-y-0.5">
+                        <div className="text-xl font-semibold">
+                            Global Traffic
+                        </div>
+                        <p className="text-sm text-neutral-400">
+                            Track visitor distribution with an interactive world
+                            map
+                        </p>
+                    </header>
+                    <section className="flex-1 bg-neutral-900 rounded-md"></section>
+                </div>
+            </div>
+            <div className="grid grid-cols-9 h-[400px] gap-4">
+                {barChartsData.map((chart, index) => (
+                    <AnalyticsBarChart
+                        key={index}
+                        title={chart.title}
+                        description={chart.description}
+                        data={chart.data}
+                    />
+                ))}
+            </div>
+            <div className="grid grid-cols-12 h-[400px] gap-4">
+                <div className="rounded-xl p-5 flex flex-col gap-4 transition-all col-span-5 border hover:border-neutral-600 border-neutral-800 h-full">
+                    <header className="space-y-0.5">
+                        <div className="text-xl font-semibold">Top Pages</div>
+                        <p className="text-sm text-neutral-400">
+                            See your most visited pages at glance{" "}
+                        </p>
+                    </header>
+                    <section className="flex-1 bg-neutral-900 rounded-md"></section>
+                </div>
+                <div className="rounded-xl p-5 flex flex-col gap-4 transition-all col-span-7 border hover:border-neutral-600 border-neutral-800 h-full">
+                    <header className="space-y-0.5">
+                        <div className="text-xl font-semibold">
+                            Recent Activity
+                        </div>
+                        <p className="text-sm text-neutral-400">
+                            Latest visitor interactions
+                        </p>
+                    </header>
+                    <section className="flex-1 bg-neutral-900 rounded-md"></section>
+                </div>
+            </div>{" "}
+        </div>
+    );
+};
+
+const AnalyticsBarChart = ({ title, description, data }) => {
+    return (
+        <div className="rounded-xl justify-between flex flex-col p-5 gap-4 transition-all col-span-3 border hover:border-neutral-600 border-neutral-800 h-full">
+            <header className="space-y-0.5">
+                <div className="text-xl font-semibold">{title}</div>
+                <p className="text-sm text-neutral-400">{description}</p>
+            </header>
+            <section className="flex flex-col gap-2">
+                {data.map((item, index) => (
+                    <div
+                        key={index}
+                        className="h-[40px] w-full relative rounded-md items-center p-2 flex justify-between"
+                    >
+                        <span className="text-lg relative z-10 font-medium">
+                            {item.name}
+                        </span>
+                        <span className="text-lg relative z-10 font-medium">
+                            {item.value}%
+                        </span>
+                        <div
+                            className="bg-neutral-900 absolute inset-0 rounded-md"
+                            style={{ width: `${item.value}%` }}
+                        ></div>
+                    </div>
+                ))}
+            </section>
+        </div>
+    );
+};
 export default EnableAnalytics;
