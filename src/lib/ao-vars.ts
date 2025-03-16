@@ -3,6 +3,7 @@ import { connect, createDataItemSigner } from "@permaweb/aoconnect";
 export const AppVersion = "1.0.0";
 export const AOModule = "u1Ju_X8jiuq4rX9Nh-ZGRQuYQZgV2MKLMT3CZsykk54"; // sqlite
 export const AOScheduler = "_GQ33BkPtZrqxA84vM8Zk-N2aO0toNNu_C-l-rawrBA";
+export const CU_URL = "https://cu6.ao-testnet.xyz";
 
 const CommonTags = [
     { name: "App-Name", value: "ARlink" },
@@ -16,7 +17,9 @@ export async function spawnProcess(
     tags?: Tag[],
     newProcessModule?: string,
 ) {
-    const ao = connect();
+    const ao = connect({
+        CU_URL,
+    });
 
     if (tags) {
         tags = [...CommonTags, ...tags];
@@ -35,7 +38,9 @@ export async function spawnProcess(
 }
 
 export async function runLua(code: string, process: string, tags?: Tag[]) {
-    const ao = connect();
+    const ao =  connect({
+        CU_URL,
+    });
 
     if (tags) {
         tags = [...CommonTags, ...tags];

@@ -53,7 +53,7 @@ Follow these steps to get started with the react-vite-ui template:
 
 ## 📜 Available Scripts
 
-- pnpm dev - Starts the development server.
+- pnpm dev - Starts the development server
 - pnpm build - Builds the production-ready code.
 - pnpm lint - Runs ESLint to analyze and lint the code.
 - pnpm preview - Starts the Vite development server in preview mod
