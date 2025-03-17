@@ -48,7 +48,7 @@ export default function Footer() {
                                 <div className="py-6 text-sm md:text-right text-left">
                                     <span>©</span>{" "}
                                     <span className="text-nowrap">
-                                        2025 Arlink 2.0.2
+                                        2025 Arlink 2.0.3
                                     </span>
                                 </div>
                             </div>
