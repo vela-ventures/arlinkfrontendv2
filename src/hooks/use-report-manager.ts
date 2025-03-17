@@ -1,5 +1,4 @@
 import { runLua, spawnProcess } from "@/lib/ao-vars";
-import { result } from "@permaweb/aoconnect";
 
 const setUpCommands = `
 local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local math = _tl_compat and _tl_compat.math or math; local os = _tl_compat and _tl_compat.os or os; local pairs = _tl_compat and _tl_compat.pairs or pairs; local pcall = _tl_compat and _tl_compat.pcall or pcall
@@ -261,12 +260,15 @@ export const spawnReportProcess = async (projectName: string) => {
             if (retryCount > 0) {
                 console.log(`Retry attempt ${retryCount} for runLua`);
             }
+            //added this delay to fix thhe mu 500 error 
+            await new Promise(resolve => setTimeout(resolve, 3000));
 
             result = await runLua(setUpCommands, processId);
+            console.log("result is ", result);
 
-            if (result.Error) {
+            if (!result) {
                 console.log(
-                    `Error detected in runLua, will retry. Error: ${result.Error}`,
+                    `Error detected in runLua, will retry. Error: ${result}`,
                 );
             }
 

@@ -152,16 +152,21 @@ export async function enableAnalytics(
         const pid = await spawnReportProcess(projectName);
         console.log("registering procject with the processId", pid);
 
-        const registration = await registerProject(
-            projectName,
-            pid,
-            walletAddress,
-        );
+        try {
+            const registration = await registerProject(
+                projectName,
+                pid,
+                walletAddress,
+            );
 
-        console.log("registering process has been completed");
-        console.log({ registration });
-        if (registration.success) {
-            return pid;
+            console.log("registering process has been completed");
+            console.log({ registration });
+            if (registration.success) {
+                return pid;
+            }
+        } catch (registrationError) {
+            console.error("Error during project registration:", registrationError);
+            throw new Error(`Failed to register project: ${registrationError}`);
         }
     } catch (error) {
         console.error("Error from registering project", error);
