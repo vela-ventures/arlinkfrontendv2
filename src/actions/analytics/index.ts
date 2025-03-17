@@ -2,7 +2,7 @@ import { spawnReportProcess } from "@/hooks/use-report-manager";
 import { AnalyticsResponse } from "@/types";
 import { connect, createDataItemSigner } from "@permaweb/aoconnect";
 
-const REGISTRY_PROCESS = "92kbvqIMFG6qKb3gKRBV6bbK58bJZSaB3Ls6xkKrnM4";
+const REGISTRY_PROCESS = "-M03tLhxzgf552RFPGiSCTOhqhvtRsk4bRsXKJ06CzE";
 
 type GetProcessPIDResponse = {
     messageId: string;
