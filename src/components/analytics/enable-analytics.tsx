@@ -1,6 +1,6 @@
 import { enableAnalytics } from "@/actions/analytics";
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -10,18 +10,12 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import {
-    Check,
-    ClipboardCopy,
-    Code,
-    CopyCheck,
-    ExternalLink,
-    UnlockIcon,
-} from "lucide-react";
+import { Check, ClipboardCopy, ExternalLink, UnlockIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link, useSearchParams } from "react-router-dom";
 import { AnalyticsDashboardSkeleton } from "../skeletons";
 import { GlowingOutlineButton } from "../ui/glowing-outline-button";
+import AnimatedDots from "../ui/animation-dots";
 
 interface EnableAnalyticsProps {
     walletAddress: string;
@@ -74,29 +68,6 @@ const EnableAnalytics = ({
         .split("\n")
         .map((line) => line.trim())
         .filter(Boolean);
-
-    const containerVariants = {
-        hidden: { opacity: 0 },
-        visible: {
-            opacity: 1,
-            transition: {
-                staggerChildren: 0.3,
-                delayChildren: 0.2,
-            },
-        },
-    };
-
-    const itemVariants = {
-        hidden: { opacity: 0, y: 20 },
-        visible: {
-            opacity: 1,
-            y: 0,
-            transition: {
-                duration: 0.5,
-                ease: "easeOut",
-            },
-        },
-    };
 
     return (
         <div className="space-y-6">
@@ -280,16 +251,20 @@ const EnableAnalytics = ({
                             <div className="flex items-center gap-2 pt-4">
                                 <GlowingOutlineButton
                                     disabled={enablingAnalytics}
-                                    className={`glow-btn ${enablingAnalytics ? "opacity-80" : "opacity-100"} font-semibold`}
+                                    className={`${enablingAnalytics ? "glow-btn-default-active glowing_button-default " : "glow-btn  opacity-100"} font-semibold`}
                                     onClick={() =>
                                         activateAnalytics(repoName || "default")
                                     }
                                 >
-                                    <div className="flex gap-2 items-center">
+                                    <div className="flex justify-center gap-2 items-center">
                                         <UnlockIcon size={16} strokeWidth={2} />
-                                        {enablingAnalytics
-                                            ? "Unlocking..."
-                                            : "Unlock"}
+                                        {enablingAnalytics ? (
+                                            <AnimatedDots>
+                                                Unlocking
+                                            </AnimatedDots>
+                                        ) : (
+                                            "Unlock"
+                                        )}
                                     </div>
                                 </GlowingOutlineButton>
                                 <Link

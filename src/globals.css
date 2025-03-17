@@ -48,6 +48,16 @@ html {
     transition: all 0.4s ease-in-out;
 }
 
+.glow-btn-default-active {
+    box-shadow:
+        0 56px 280.627197265625px 0 rgba(255, 255, 255, 0.77),
+        0 21px 160.3583984375px 0 rgba(255, 255, 255, 0.66),
+        0 12px 93.54239654541016px 0 rgba(255, 255, 255, 0.2),
+        0 9px 46.77119827270508px 0 rgba(255, 255, 255, 0.68),
+        0 4px 13.363200187683105px 0 #fff,
+        0 0 6.681600093841553px 0 rgba(255, 255, 255, 0.18);
+}
+
 .glow-btn:hover {
     box-shadow:
         0 56px 280.627197265625px 0 rgba(255, 255, 255, 0.77),
@@ -182,6 +192,30 @@ body {
 
 .glowing_button:hover .glowing-button_top_layer {
     background: rgba(255, 255, 255);
+}
+
+.glowing_button-default .glowing-button_top_layer {
+    background: rgba(255, 255, 255) !important;
+}
+
+.glowing_button-default .glowing-button_text {
+    color: black;
+}
+
+.glowing_button-default .glowing-button_effect::after {
+    background: conic-gradient(from var(--angle), white, white);
+}
+
+.glowing_button-default .glowing-button_effect::before {
+    position: absolute;
+    content: "";
+    inset: 0;
+    background: conic-gradient(from var(--angle), white, black);
+    z-index: 10;
+    opacity: 1;
+    border-radius: inherit;
+    animation: rotate 8s linear infinite;
+    filter: blur(50px);
 }
 
 .glowing-button_effect {

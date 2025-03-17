@@ -1,7 +1,6 @@
 import { spawnReportProcess } from "@/hooks/use-report-manager";
 import { AnalyticsResponse } from "@/types";
 import { connect, createDataItemSigner } from "@permaweb/aoconnect";
-import { toast } from "sonner";
 
 const REGISTRY_PROCESS = "92kbvqIMFG6qKb3gKRBV6bbK58bJZSaB3Ls6xkKrnM4";
 
@@ -162,7 +161,6 @@ export async function enableAnalytics(
         console.log("registering process has been completed");
         console.log({ registration });
         if (registration.success) {
-            toast.success("Analytics enabled successfully!");
             return pid;
         }
     } catch (error) {

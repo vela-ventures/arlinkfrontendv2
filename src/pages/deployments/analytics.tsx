@@ -7,7 +7,6 @@ import { useGlobalState } from "@/store/useGlobalState";
 import { useActiveAddress } from "arweave-wallet-kit";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { toast } from "sonner";
 
 const Analytics = () => {
     const [searchParams] = useSearchParams();
@@ -45,7 +44,6 @@ const Analytics = () => {
             } catch (error) {
                 if (error instanceof Error) {
                     console.error(error);
-                    toast.error(error.message);
                 }
             } finally {
                 setIsCheckingProcessId(false);

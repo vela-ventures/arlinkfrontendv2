@@ -41,7 +41,10 @@ import {
 import NewDeploymentCard from "@/components/shared/new-deployment-card";
 import { BuildDeploymentSetting } from "@/components/shared/build-settings";
 import { NextJsProjectWarningCard } from "@/components/skeletons";
-import { createGitHubWebhook , deleteGitHubWebhook } from "@/actions/github/Webhook";
+import {
+    createGitHubWebhook,
+    deleteGitHubWebhook,
+} from "@/actions/github/Webhook";
 import { canDeploy } from "@/lib/limitdeploy";
 
 const ConfiguringDeploymentProject = ({
@@ -233,8 +236,8 @@ const ConfiguringDeploymentProject = ({
                     ? config.outputDir === ".next"
                         ? "./out"
                         : deno
-                        ? "./dist"
-                        : config.outputDir
+                          ? "./dist"
+                          : config.outputDir
                     : "./dist",
                 enabled: false,
             };
@@ -382,8 +385,6 @@ const ConfiguringDeploymentProject = ({
     // build and output settings handler commands
     const deployProject = async () => {
         if (!githubToken) return;
-
-     
 
         // Validation checks
         const validationErrors = [
@@ -648,8 +649,8 @@ const ConfiguringDeploymentProject = ({
                     `db:exec[[
                                 INSERT INTO NewDeploymentHistory (Name, DeploymentID, AssignedUndername, Date) VALUES
                                 ('${projectName}', '${
-                        response.data.result
-                    }', '${response.data.finalUnderName}', '${getTime()}')
+                                    response.data.result
+                                }', '${response.data.finalUnderName}', '${getTime()}')
                             ]]`,
                     mgProcess,
                 );
@@ -688,11 +689,11 @@ const ConfiguringDeploymentProject = ({
             }
             setDeploymentSucceded(false);
             setDeploymentComplete(false);
-            setDeploymentFailed(true);
         } finally {
             if (pollingIntervalId) {
                 clearInterval(pollingIntervalId);
             }
+            setDeploymentFailed(true);
             setIsDeploying(false);
             setDeploymentComplete(true);
             setIsFetchingLogs(false);
@@ -750,6 +751,7 @@ const ConfiguringDeploymentProject = ({
             <button
                 type="button"
                 onClick={() => setStep("importing")}
+                disabled={deploymentStarted}
                 className="mb-6 flex items-center gap-2 text-neutral-600 hover:text-neutral-100 text-sm cursor-pointer"
             >
                 <ChevronLeft size={18} /> Go back
