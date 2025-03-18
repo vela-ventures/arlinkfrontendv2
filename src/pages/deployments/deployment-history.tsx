@@ -330,6 +330,15 @@ const DeploymentHistoryCard = ({
                                 <button
                                     type="button"
                                     aria-label="Copy deployment ID"
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(deployment.DeploymentID)
+                                            .then(() => {
+                                                console.log("Deployment ID copied to clipboard");
+                                            })
+                                            .catch(err => {
+                                                console.error("Failed to copy: ", err);
+                                            });
+                                    }}
                                 >
                                     <Copy size={14} />
                                 </button>

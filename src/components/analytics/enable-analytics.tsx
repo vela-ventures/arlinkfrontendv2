@@ -37,11 +37,36 @@ const EnableAnalytics = ({
         processId,
     );
 
-    const scriptTag = `<script type="module" src="https://analytics_arlink.ar.io/browser.js" 
-    data-process-id="${innerProcessId}" 
-    data-track-url-hashes="true" 
-    data-debug="false">
-</script>`;
+    const scriptTag = `<script>
+    // Analytics initialization - just copy this entire script tag to any project
+    (function() {
+      // Configuration
+      const ANALYTICS_CONFIG = {
+        src: 'https://analytics_arlink.ar.io/browser.js',
+        processId: '${innerProcessId}',
+        trackUrlHashes: true,
+        debug: false
+      };
+
+      // Wait for DOM to be ready
+      function init() {
+        const script = document.createElement('script');
+        script.type = 'module';
+        script.src = ANALYTICS_CONFIG.src;
+        script.setAttribute('data-process-id', ANALYTICS_CONFIG.processId);
+        script.setAttribute('data-track-url-hashes', ANALYTICS_CONFIG.trackUrlHashes);
+        script.setAttribute('data-debug', ANALYTICS_CONFIG.debug);
+        document.body.appendChild(script);
+      }
+
+      // Handle different loading states
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+    })();
+  </script>`;
 
     const activateAnalytics = async (projectName: string) => {
         if (!walletAddress) return;
