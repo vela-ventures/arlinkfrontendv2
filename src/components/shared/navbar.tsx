@@ -1,5 +1,5 @@
 import { Link, useLocation, useSearchParams } from "react-router-dom";
-import { useConnection, useActiveAddress } from "arweave-wallet-kit";
+import { useConnection, useActiveAddress } from "@arweave-wallet-kit/react";
 import { useState, useEffect } from "react";
 import { getProfileByWalletAddress, type ProfileHeaderType } from "@/lib/Bazar";
 import { extractRepoName } from "@/pages/utilts";

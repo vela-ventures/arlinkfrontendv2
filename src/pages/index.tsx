@@ -8,7 +8,7 @@ import FAQSection from "@/components/landing/faq";
 import Features from "@/components/landing/features";
 import Footer from "@/components/landing/footer";
 
-import { useConnection } from "arweave-wallet-kit";
+import { useConnection } from "@arweave-wallet-kit/react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLocation } from "react-router-dom";
